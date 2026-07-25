@@ -1,12 +1,21 @@
 import { v4 as uuidv4 } from 'uuid';
 import { SyncMutation, SyncOperation } from '@nurturelink/shared';
+import { execute, query } from '../db';
 
-// TODO: inject db instance
-// import { db } from '../db';
+interface OutboxRow {
+  id: number;
+  idempotency_key: string;
+  entity_type: string;
+  entity_id: string;
+  operation: string;
+  payload: string;
+  created_at: number;
+}
 
 /**
  * Adds a mutation to the local outbox for later push to the server.
- * Every local write should call this to guarantee sync eventually delivers it.
+ * Every local write should call this immediately after writing to SQLite
+ * to guarantee eventual delivery via sync.
  */
 export async function enqueue(
   entityType: string,
@@ -17,32 +26,32 @@ export async function enqueue(
   const idempotencyKey = uuidv4();
   const createdAt = Date.now();
 
-  // TODO: db.execute(
-  //   'INSERT INTO outbox (idempotency_key, entity_type, entity_id, operation, payload, created_at) VALUES (?,?,?,?,?,?)',
-  //   [idempotencyKey, entityType, entityId, operation, JSON.stringify(payload), createdAt]
-  // );
-
-  console.debug('[Outbox] Enqueued', { entityType, entityId, operation, idempotencyKey });
+  await execute(
+    `INSERT INTO outbox
+       (idempotency_key, entity_type, entity_id, operation, payload, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [idempotencyKey, entityType, entityId, operation, JSON.stringify(payload), createdAt],
+  );
 }
 
 /** Returns all pending outbox mutations ordered by creation time. */
 export async function drain(): Promise<SyncMutation[]> {
-  // TODO: const rows = await db.execute('SELECT * FROM outbox ORDER BY id ASC');
-  // return rows.map(row => ({
-  //   idempotencyKey: row.idempotency_key,
-  //   entityType: row.entity_type,
-  //   entityId: row.entity_id,
-  //   operation: row.operation as SyncOperation,
-  //   payload: JSON.parse(row.payload),
-  // }));
-  return [];
+  const rows = await query<OutboxRow>('SELECT * FROM outbox ORDER BY id ASC');
+  return rows.map((row) => ({
+    idempotencyKey: row.idempotency_key,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    operation: row.operation as SyncOperation,
+    payload: JSON.parse(row.payload) as Record<string, unknown>,
+  }));
 }
 
 /** Removes successfully accepted mutations from the outbox. */
 export async function acknowledge(idempotencyKeys: string[]): Promise<void> {
   if (idempotencyKeys.length === 0) return;
-  // TODO: db.execute(
-  //   `DELETE FROM outbox WHERE idempotency_key IN (${idempotencyKeys.map(() => '?').join(',')})`,
-  //   idempotencyKeys
-  // );
+  const placeholders = idempotencyKeys.map(() => '?').join(', ');
+  await execute(
+    `DELETE FROM outbox WHERE idempotency_key IN (${placeholders})`,
+    idempotencyKeys,
+  );
 }
