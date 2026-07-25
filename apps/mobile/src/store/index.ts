@@ -7,6 +7,7 @@
  */
 import { create } from 'zustand';
 import { loadReferenceBundle } from '../db/bundle-loader';
+import { clearSession } from '../auth/session';
 import type { ReferenceBundle } from '../engine/types';
 
 // ─── Domain types (local, demo-optimised) ────────────────────────────────────
@@ -446,7 +447,10 @@ export const useAppStore = create<StoreState>((set, get) => ({
 
   // ── Auth ──
   login: (role) => set({ isLoggedIn: true, role }),
-  logout: () => set({ isLoggedIn: false }),
+  logout: () => {
+    clearSession().catch(() => {});
+    set({ isLoggedIn: false });
+  },
   setUiLang: (lang) => set({ uiLang: lang }),
 
   // ── Clients ──

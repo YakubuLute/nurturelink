@@ -15,7 +15,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <nav
         style={{
           width: 220,
-          background: '#1a7c4e',
+          background: '#08283B',
           padding: '24px 0',
           flexShrink: 0,
         }}
@@ -30,8 +30,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             style={({ isActive }) => ({
               display: 'block',
               padding: '12px 20px',
-              color: isActive ? '#fff' : '#b2dfcb',
-              background: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
+              color: isActive ? '#fff' : '#92C9F9',
+              background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
               textDecoration: 'none',
               fontWeight: isActive ? 600 : 400,
               fontSize: 14,

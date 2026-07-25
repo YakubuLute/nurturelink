@@ -9,13 +9,13 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a7c4e"
+      "backgroundColor": "#08283B"
     },
     "assetBundlePatterns": ["**/*"],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a7c4e"
+        "backgroundColor": "#08283B"
       },
       "package": "com.nurturelink.app",
       "versionCode": 1,

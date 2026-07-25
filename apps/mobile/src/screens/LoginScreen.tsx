@@ -11,6 +11,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
 import { useAppStore } from '../store';
+import { storeSession } from '../auth/session';
 import type { Role } from '../store';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
@@ -53,7 +54,9 @@ export function LoginScreen({ navigation }: Props) {
     setPin(next);
 
     if (next.length === 4) {
-      setTimeout(() => {
+      setTimeout(async () => {
+        // Store demo token so sync layer has a non-empty Authorization header
+        await storeSession(role).catch(() => { /* non-fatal */ });
         login(role);
         if (role === 'sup') {
           navigation.replace('Supervisor');
