@@ -31,7 +31,7 @@
     "plugins": [
       "expo-secure-store",
       [
-        "@op-engineering/op-sqlite",
+        "./plugins/with-op-sqlite",
         {
           "sqlcipher": true
         }

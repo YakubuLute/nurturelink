@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@expo/config-plugins": "~10.0.0",
     "@types/jest": "^29.5.13",
     "@types/react": "^19.0.0",
     "@types/uuid": "^10.0.0",
