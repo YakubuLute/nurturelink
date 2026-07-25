@@ -3,7 +3,7 @@ import { LoginSchema, RefreshTokenSchema } from '@nurturelink/shared';
 import { AuthService } from '../services/auth.service';
 
 const authService = new AuthService();
-export const authRouter = Router();
+export const authRouter: Router = Router();
 
 authRouter.post('/login', async (req, res, next) => {
   try {
