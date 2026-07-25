@@ -6,12 +6,10 @@
  * stored in expo-secure-store (Keychain on iOS, Android Keystore on Android).
  *
  * Usage:
- *   import { getDb } from '../db';
- *   const db = await getDb();
- *   await db.executeAsync('SELECT * FROM clients WHERE id = ?', [id]);
+ *   import { execute, query, transaction } from '../db';
  */
 
-import { open, type DB } from '@op-engineering/op-sqlite';
+import { open, type DB, type Scalar } from '@op-engineering/op-sqlite';
 import * as SecureStore from 'expo-secure-store';
 import { CREATE_TABLES } from './schema';
 
@@ -20,12 +18,10 @@ const KEY_ALIAS = 'nl_db_key';
 
 // ─── Key management ───────────────────────────────────────────────────────────
 
-/** Returns the existing encryption key or generates and stores a new one. */
 async function getOrCreateKey(): Promise<string> {
   const existing = await SecureStore.getItemAsync(KEY_ALIAS);
   if (existing) return existing;
 
-  // Generate a 256-bit hex key
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   const key = Array.from(bytes)
@@ -43,25 +39,30 @@ async function getOrCreateKey(): Promise<string> {
 let _db: DB | null = null;
 let _initPromise: Promise<DB> | null = null;
 
+/** Split a multi-statement SQL string into individual executable statements. */
+function splitStatements(sql: string): string[] {
+  return sql
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !s.startsWith('--'));
+}
+
 async function initDb(): Promise<DB> {
   const encryptionKey = await getOrCreateKey();
 
-  const db = open({
-    name: DB_NAME,
-    encryptionKey,
-  });
+  const db = open({ name: DB_NAME, encryptionKey });
 
-  // Enable WAL and foreign keys, then run schema migrations
-  await db.executeAsync('PRAGMA journal_mode = WAL;');
-  await db.executeAsync('PRAGMA foreign_keys = ON;');
-  await db.executeAsync(CREATE_TABLES);
+  // Run schema creation — split into individual statements
+  for (const stmt of splitStatements(CREATE_TABLES)) {
+    await db.execute(stmt);
+  }
 
   return db;
 }
 
 /**
  * Returns the initialised database instance, creating it on first call.
- * Safe to call from multiple places — only opens the DB once.
+ * Safe to call from multiple places — opens the DB exactly once.
  */
 export async function getDb(): Promise<DB> {
   if (_db) return _db;
@@ -74,10 +75,6 @@ export async function getDb(): Promise<DB> {
   return _initPromise;
 }
 
-/**
- * Closes the database. Call on app unmount or before background-task handoff
- * if you need a clean flush.
- */
 export async function closeDb(): Promise<void> {
   if (_db) {
     _db.close();
@@ -88,45 +85,34 @@ export async function closeDb(): Promise<void> {
 
 // ─── Convenience wrappers ─────────────────────────────────────────────────────
 
-/**
- * Execute a write statement (INSERT / UPDATE / DELETE).
- * @returns rowsAffected
- */
-export async function execute(sql: string, params: unknown[] = []): Promise<number> {
+/** Execute a write statement (INSERT / UPDATE / DELETE / PRAGMA). */
+export async function execute(sql: string, params: Scalar[] = []): Promise<number> {
   const db = await getDb();
-  const result = await db.executeAsync(sql, params);
-  return result.rowsAffected ?? 0;
+  const result = await db.execute(sql, params);
+  return result.rowsAffected;
 }
 
-/**
- * Query rows as typed objects.
- * op-sqlite returns `rows._array` for row results.
- */
-export async function query<T = Record<string, unknown>>(
+/** Query rows and return them as typed objects. */
+export async function query<T = Record<string, Scalar>>(
   sql: string,
-  params: unknown[] = [],
+  params: Scalar[] = [],
 ): Promise<T[]> {
   const db = await getDb();
-  const result = await db.executeAsync(sql, params);
-  return (result.rows?._array ?? []) as T[];
+  const result = await db.execute(sql, params);
+  return result.rows as T[];
 }
 
 /**
- * Run multiple statements in a single transaction.
+ * Run multiple write statements in a single transaction via the native callback API.
  * Rolls back automatically on any error.
  */
 export async function transaction(
-  statements: Array<{ sql: string; params?: unknown[] }>,
+  statements: Array<{ sql: string; params?: Scalar[] }>,
 ): Promise<void> {
   const db = await getDb();
-  await db.executeAsync('BEGIN;');
-  try {
+  await db.transaction(async (tx) => {
     for (const { sql, params } of statements) {
-      await db.executeAsync(sql, params ?? []);
+      await tx.execute(sql, params ?? []);
     }
-    await db.executeAsync('COMMIT;');
-  } catch (err) {
-    await db.executeAsync('ROLLBACK;');
-    throw err;
-  }
+  });
 }
