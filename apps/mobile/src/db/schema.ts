@@ -1,5 +1,5 @@
 /**
- * On-device SQLite schema (op-sqlite + SQLCipher).
+ * On-device SQLite schema (@op-engineering/op-sqlite + SQLCipher).
  * Mirrors the server PostgreSQL schema for client-writable entities.
  * Reference data tables are populated from downloaded bundles (read-only).
  */

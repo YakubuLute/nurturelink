@@ -1,4 +1,4 @@
-// TODO: Replace with op-sqlite DB instance from db/index.ts once wired
+// TODO: Replace with @op-engineering/op-sqlite DB instance from db/index.ts once wired
 // All queries use parameterised statements — never string-concatenate user input
 
 export interface ClientRow {
