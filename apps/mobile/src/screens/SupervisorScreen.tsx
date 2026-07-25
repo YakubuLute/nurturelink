@@ -275,7 +275,7 @@ export function SupervisorScreen({ navigation }: Props) {
               <View style={styles.divider} />
               <View style={styles.pipelineRow}>
                 <View style={[styles.pipelineDot, { backgroundColor: '#C81E1E' }]} />
-                <Text style={styles.pipelineLabel}>Overdue (> 7 days)</Text>
+                <Text style={styles.pipelineLabel}>{'Overdue (> 7 days)'}</Text>
                 <Text style={[styles.pipelineValue, { color: '#C81E1E' }]}>1</Text>
               </View>
             </View>
