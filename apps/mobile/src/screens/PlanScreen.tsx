@@ -1,150 +1,410 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { PlanCard } from '../components/PlanCard';
-import { playPlanAudio, sharePlanAudio } from '../audio/player';
+import {
+  useAppStore,
+  PLANS,
+  PlanFood,
+  priorityStyle,
+} from '../store';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Plan'>;
 
-export function PlanScreen({ route }: Props) {
-  const { clientId, visitId } = route.params;
-  const [plan, setPlan] = useState<null | {
-    selectedFoods: Array<{ id: string; name: string; localName: string; reasons: string[] }>;
-    adequacy: Record<string, number>;
-    voiceScript: string;
-  }>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const C = {
+  primary:         '#08283B',
+  accent:          '#FF5A00',
+  bg:              '#F2F4F5',
+  surface:         '#FDFDFD',
+  border:          '#E5E7EB',
+  fg1:             '#08283B',
+  fg2:             '#374151',
+  fg3:             '#6B7280',
+  fg4:             '#9CA3AF',
+  lb50:            '#EFF7FE',
+  lb200:           '#B4DAFB',
+  lb700:           '#427CAF',
+  success:         '#057A55',
+  successBg:       '#F3FAF7',
+  successBorder:   '#BCF0DA',
+  warning:         '#B48700',
+  warningBg:       '#FFF9E6',
+  error:           '#C81E1E',
+  errorBg:         '#FDF2F2',
+  highPriority:    '#B54000',
+  highPriorityBg:  '#FFEFE6',
+  warningDark:     '#8C6900',
+};
 
-  useEffect(() => {
-    // TODO: load existing plan for visitId from SQLite
-    // TODO: if no plan, run engine.generatePlan() with reference bundle
-  }, [visitId]);
+// ─── Group tints & dots ───────────────────────────────────────────────────────
+const GROUP_TINT: Record<string, string> = {
+  vita:    '#F3FAF7',
+  legumes: '#FFEFE6',
+  eggs:    '#FDF2F8',
+  grains:  '#FFF9E6',
+  flesh:   '#EDFAFA',
+  dairy:   '#EFF7FE',
+  veg:     '#F6F5FF',
+};
+const GROUP_DOT: Record<string, string> = {
+  vita:    '#057A55',
+  legumes: '#B54000',
+  eggs:    '#BF125D',
+  grains:  '#B48700',
+  flesh:   '#036672',
+  dairy:   '#427CAF',
+  veg:     '#6C2BD9',
+};
 
-  async function handleGenerate() {
-    setIsGenerating(true);
-    // TODO:
-    // 1. Load flags for visitId
-    // 2. If severe flags → navigate to ReferralScreen (guardrail enforced here too)
-    // 3. Load reference bundle from SQLite
-    // 4. Run generatePlan(input, bundle)
-    // 5. Save plan to SQLite + enqueue to outbox
-    setIsGenerating(false);
-  }
+function tierStyle(tier: string): { color: string; bg: string } {
+  const t = tier.toLowerCase();
+  if (t.includes('free') || t.includes('garden')) return { color: C.success,      bg: C.successBg };
+  if (t.includes('low'))                           return { color: C.highPriority, bg: C.highPriorityBg };
+  return { color: C.fg2, bg: '#ECECEB' };
+}
 
-  async function handlePlayAudio() {
-    if (!plan) return;
-    setIsPlaying(true);
-    try {
-      // TODO: assemblePlanAudio → playPlanAudio
-      await playPlanAudio([]);
-    } finally {
-      setIsPlaying(false);
-    }
-  }
+function adequacyColor(pct: number): string {
+  if (pct >= 90) return C.success;
+  if (pct >= 70) return C.warning;
+  return C.error;
+}
 
-  if (isGenerating) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#1a7c4e" />
-        <Text style={styles.generatingText}>Generating plan…</Text>
-      </View>
-    );
-  }
+// ─── Generic plan fallback ────────────────────────────────────────────────────
+import { DemoClient } from '../store';
 
-  if (!plan) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyText}>No plan generated yet for this visit.</Text>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleGenerate}>
-          <Text style={styles.primaryButtonText}>Generate Nutrition Plan</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+function genericPlan(client: DemoClient) {
+  const pStyle = priorityStyle(client.priority);
+  return {
+    seasonNote: `In season · November · ${client.community} zone`,
+    targetNote: `${client.name}'s ${client.flag.toLowerCase()}. This plan uses locally available, affordable foods to support recovery.`,
+    foods: [
+      { name: 'Enriched koko',   local: 'Koko',     group: 'grains',  tier: 'Low cost',       why: 'Energy-dense base for daily meals.' },
+      { name: 'Cowpea (beans)',  local: 'Tuya',     group: 'legumes', tier: 'Low cost',       why: 'Iron & protein from a local staple.' },
+      { name: 'Moringa leaves',  local: 'Zogale',   group: 'vita',    tier: 'Free / garden',  why: 'Vitamins A & C; grows locally.' },
+    ],
+    alternates: [
+      { name: 'Boiled egg', local: 'Gala', group: 'eggs', tier: 'Market', why: 'Protein when affordable.' },
+    ],
+    adequacy: [
+      { label: 'Energy',  pct: 80 },
+      { label: 'Protein', pct: 85 },
+      { label: 'Iron',    pct: 75 },
+    ],
+    rationale: [
+      `Flag: ${client.flag}`,
+      'Foods chosen are available and affordable in this community.',
+      'Review with client and adjust based on household budget.',
+    ],
+  };
+}
+
+// ─── Food card ────────────────────────────────────────────────────────────────
+function FoodCard({
+  food,
+  onRemove,
+}: {
+  food: PlanFood;
+  onRemove: () => void;
+}) {
+  const tint = GROUP_TINT[food.group] ?? '#F5F5F5';
+  const dot  = GROUP_DOT[food.group]  ?? '#9CA3AF';
+  const ts   = tierStyle(food.tier);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionTitle}>Recommended foods this week</Text>
-      {plan.selectedFoods.map((food) => (
-        <PlanCard key={food.id} food={food} />
-      ))}
-
-      <Text style={styles.sectionTitle}>Nutrient adequacy</Text>
-      {Object.entries(plan.adequacy).map(([nutrient, fraction]) => (
-        <View key={nutrient} style={styles.adequacyRow}>
-          <Text style={styles.nutrientLabel}>{nutrient}</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${Math.min(fraction * 100, 100)}%` }]} />
+    <View style={styles.foodCard}>
+      {/* icon box */}
+      <View style={[styles.foodIconBox, { backgroundColor: tint }]}>
+        <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: dot }} />
+      </View>
+      {/* text */}
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontSize: 14.5, fontWeight: '700', color: C.fg1 }}>{food.name}</Text>
+        <Text style={{ fontSize: 12, fontStyle: 'italic', color: C.fg3 }}>{food.local}</Text>
+        <Text style={{ fontSize: 12, color: C.fg2, lineHeight: 17 }}>{food.why}</Text>
+        <View style={{ flexDirection: 'row', marginTop: 4 }}>
+          <View style={{ backgroundColor: ts.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: ts.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {food.tier}
+            </Text>
           </View>
-          <Text style={styles.adequacyPct}>{Math.round(fraction * 100)}%</Text>
         </View>
-      ))}
-
+      </View>
+      {/* remove */}
       <TouchableOpacity
-        style={[styles.audioButton, isPlaying && styles.audioButtonActive]}
-        onPress={handlePlayAudio}
-        disabled={isPlaying}
-        accessibilityRole="button"
-        accessibilityLabel="Play nutrition plan voice note"
+        style={styles.removeBtn}
+        onPress={onRemove}
+        accessibilityLabel={`Remove ${food.name}`}
       >
-        <Text style={styles.audioButtonText}>{isPlaying ? '▶ Playing…' : '▶ Play Voice Note'}</Text>
+        <Text style={{ fontSize: 15, color: C.fg4 }}>✕</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.shareButton}
-        onPress={() => sharePlanAudio('')}
-        accessibilityRole="button"
-        accessibilityLabel="Share voice note with caregiver"
-      >
-        <Text style={styles.shareButtonText}>Share with Caregiver</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
+// ─── Main screen ──────────────────────────────────────────────────────────────
+export function PlanScreen({ navigation, route }: Props) {
+  const { clientId } = route.params;
+  const store = useAppStore();
+  const client = store.clients.find((c) => c.id === clientId);
+  const edits  = store.planEdits[clientId] ?? { removed: [], added: [] };
+
+  if (!client) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: C.fg3 }}>Client not found.</Text>
+      </View>
+    );
+  }
+
+  const basePlan  = PLANS[clientId] ?? genericPlan(client);
+  const isAiPlan  = clientId === 'amina' || clientId === 'rahim';
+
+  // Compute visible foods: base foods + added alternates, minus removed
+  const allFoods: PlanFood[] = [
+    ...basePlan.foods,
+    ...(basePlan.alternates ?? []).filter((a) => edits.added.includes(a.name)),
+  ].filter((f) => !edits.removed.includes(f.name));
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.primary }}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityLabel="Go back">
+          <Text style={{ color: '#fff', fontSize: 20 }}>‹</Text>
+        </TouchableOpacity>
+        <View style={{ marginTop: 4 }}>
+          <Text style={styles.headerTitle}>Feeding plan</Text>
+          <Text style={styles.headerSub}>{client.name}</Text>
+        </View>
+      </View>
+
+      {/* ── Body ── */}
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
+      >
+        {/* Status badge row */}
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+          {isAiPlan ? (
+            <View style={{ backgroundColor: C.successBg, borderWidth: 1, borderColor: C.successBorder, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: C.success }}>AI enriched</Text>
+            </View>
+          ) : (
+            <View style={{ backgroundColor: C.lb50, borderWidth: 1, borderColor: C.lb200, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: C.lb700 }}>Deterministic</Text>
+            </View>
+          )}
+          <View style={{ backgroundColor: C.successBg, borderWidth: 1, borderColor: C.successBorder, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: C.success }}>
+              {basePlan.seasonNote}
+            </Text>
+          </View>
+        </View>
+
+        {/* Target note */}
+        <Text style={{ fontSize: 14, color: C.fg2, lineHeight: 21, marginBottom: 18 }}>
+          {basePlan.targetNote}
+        </Text>
+
+        {/* ── Recommended foods ── */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <Text style={styles.sectionTitle}>Recommended foods</Text>
+          <TouchableOpacity
+            style={{ backgroundColor: C.lb50, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}
+            onPress={() => store.regeneratePlan()}
+            accessibilityLabel="Regenerate plan"
+          >
+            <Text style={{ fontSize: 12.5, fontWeight: '600', color: C.lb700 }}>↺ Regenerate</Text>
+          </TouchableOpacity>
+        </View>
+
+        {allFoods.map((food) => (
+          <FoodCard
+            key={food.name}
+            food={food}
+            onRemove={() => store.removePlanFood(clientId, food.name)}
+          />
+        ))}
+
+        {/* Add another food */}
+        <TouchableOpacity
+          style={styles.addFoodBtn}
+          onPress={() => store.addPlanAlternate(clientId)}
+          accessibilityLabel="Add another local food"
+        >
+          <Text style={{ fontSize: 13, color: '#395362', fontWeight: '600' }}>+ Add another local food</Text>
+        </TouchableOpacity>
+
+        {/* ── Nutrient adequacy ── */}
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Nutrient adequacy</Text>
+        <View style={styles.adequacyCard}>
+          {basePlan.adequacy.map((row) => {
+            const col = adequacyColor(row.pct);
+            return (
+              <View key={row.label} style={{ marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <Text style={{ fontSize: 12.5, color: C.fg2 }}>{row.label}</Text>
+                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: col }}>{row.pct}%</Text>
+                </View>
+                <View style={{ height: 8, backgroundColor: '#ECECEB', borderRadius: 8, overflow: 'hidden' }}>
+                  <View style={{ width: `${Math.min(row.pct, 100)}%`, height: '100%', backgroundColor: col, borderRadius: 8 }} />
+                </View>
+              </View>
+            );
+          })}
+          <Text style={{ fontSize: 11, color: C.fg4, marginTop: 4 }}>
+            Against WHO/IYCF targets · computed on-device
+          </Text>
+        </View>
+
+        {/* ── Why this plan ── */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 10 }}>
+          <Text style={{ fontSize: 13 }}>ℹ</Text>
+          <Text style={styles.sectionTitle}>Why this plan</Text>
+        </View>
+        <View style={[styles.rationaleCard]}>
+          {basePlan.rationale.map((item, i) => (
+            <View key={i} style={{ flexDirection: 'row', gap: 10, marginBottom: i < basePlan.rationale.length - 1 ? 10 : 0 }}>
+              <Text style={{ fontSize: 14, color: C.lb700, marginTop: 1 }}>✓</Text>
+              <Text style={{ flex: 1, fontSize: 12.5, color: C.fg1, lineHeight: 18 }}>{item}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* ── Bottom action bar ── */}
+      <View style={styles.actionBar}>
+        {/* Responsible AI note */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
+          <Text style={{ fontSize: 13, color: C.warningDark }}>🛡</Text>
+          <Text style={{ flex: 1, fontSize: 11.5, color: C.warningDark, lineHeight: 17 }}>
+            You remain responsible for this advice — edit it, then approve before sending.
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.approveBtn}
+          onPress={() => navigation.navigate('Voice', { clientId })}
+          accessibilityLabel="Approve and create voice note"
+        >
+          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+            ✓ Approve & create voice note
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  content: { padding: 16, paddingBottom: 48 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  generatingText: { marginTop: 16, color: '#555', fontSize: 16 },
-  emptyText: { color: '#555', fontSize: 16, textAlign: 'center', marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#444', marginTop: 20, marginBottom: 12 },
-  adequacyRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10 },
-  nutrientLabel: { width: 80, fontSize: 13, color: '#444' },
-  progressBar: { flex: 1, height: 10, backgroundColor: '#e0e0e0', borderRadius: 5, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#1a7c4e', borderRadius: 5 },
-  adequacyPct: { width: 40, textAlign: 'right', fontSize: 13, fontWeight: '600', color: '#333' },
-  primaryButton: {
-    backgroundColor: '#1a7c4e',
-    padding: 18,
-    borderRadius: 8,
-    alignItems: 'center',
-    minHeight: 56,
+  header: {
+    backgroundColor: C.primary,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
     justifyContent: 'center',
   },
-  primaryButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  audioButton: {
-    backgroundColor: '#1a7c4e',
-    padding: 18,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  headerSub: {
+    fontSize: 13,
+    color: '#92C9F9',
+    marginTop: 2,
+  },
+  body: {
+    flex: 1,
+    backgroundColor: C.bg,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    marginTop: -8,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.fg1,
+    marginBottom: 0,
+  },
+  foodCard: {
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 15,
+    padding: 13,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 10,
+  },
+  foodIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  removeBtn: {
+    width: 28,
+    height: 28,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 24,
-    minHeight: 56,
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  audioButtonActive: { backgroundColor: '#145c3a' },
-  audioButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  shareButton: {
-    borderColor: '#1a7c4e',
-    borderWidth: 2,
+  addFoodBtn: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#B2BCC2',
+    borderRadius: 13,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  adequacyCard: {
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 15,
     padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
-    minHeight: 56,
-    justifyContent: 'center',
   },
-  shareButtonText: { color: '#1a7c4e', fontSize: 15, fontWeight: '600' },
+  rationaleCard: {
+    backgroundColor: C.lb50,
+    borderWidth: 1,
+    borderColor: C.lb200,
+    borderRadius: 15,
+    padding: 16,
+  },
+  actionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    paddingBottom: 28,
+    backgroundColor: C.surface,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+  },
+  approveBtn: {
+    backgroundColor: C.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
 });
