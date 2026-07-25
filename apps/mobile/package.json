@@ -10,6 +10,7 @@
     "build": "eas build --platform android --profile preview",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "test:engine": "jest --config jest.engine.config.js --no-coverage",
     "lint": "eslint src/"
   },
   "dependencies": {
@@ -41,6 +42,7 @@
     "@types/uuid": "^10.0.0",
     "jest": "^29.7.0",
     "jest-expo": "~53.0.0",
+    "ts-jest": "^29.4.0",
     "typescript": "^5.5.0"
   },
   "jest": {
