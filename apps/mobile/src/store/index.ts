@@ -6,6 +6,8 @@
  * for the hackathon demo everything lives in memory.
  */
 import { create } from 'zustand';
+import { loadReferenceBundle } from '../db/bundle-loader';
+import type { ReferenceBundle } from '../engine/types';
 
 // ─── Domain types (local, demo-optimised) ────────────────────────────────────
 
@@ -337,6 +339,10 @@ interface StoreState {
   recorded: boolean;
   recordT: number;
 
+  // Reference bundle (loaded from SQLite at startup; null until first download)
+  referenceBundle: ReferenceBundle | null;
+  loadBundle: () => Promise<void>;
+
   // Device / sync
   offline: boolean;
   syncing: boolean;
@@ -420,6 +426,12 @@ export const useAppStore = create<StoreState>((set, get) => ({
   recording: false,
   recorded: false,
   recordT: 0,
+
+  referenceBundle: null,
+  loadBundle: async () => {
+    const bundle = await loadReferenceBundle();
+    if (bundle) set({ referenceBundle: bundle });
+  },
 
   offline: true,
   syncing: false,
