@@ -10,7 +10,7 @@ export class AuthRepository {
     return prisma.user.findUnique({ where: { phone } });
   }
 
-  async createRefreshToken(userId: string): Promise<string> {
+  async createRefreshToken(_userId: string): Promise<string> {
     const token = uuidv4();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_TTL_DAYS);

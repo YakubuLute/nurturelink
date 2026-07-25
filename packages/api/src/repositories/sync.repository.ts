@@ -8,6 +8,9 @@ export class SyncRepository {
   async upsert(mutation: SyncMutation, _actor: AuthUser): Promise<void> {
     const { entityType, entityId, operation, payload } = mutation;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = payload as any;
+
     switch (entityType) {
       case 'clients':
         if (operation === 'delete') {
@@ -18,8 +21,8 @@ export class SyncRepository {
         } else {
           await prisma.client.upsert({
             where: { id: entityId },
-            update: { ...payload as object, syncedAt: new Date() },
-            create: { ...(payload as object), syncedAt: new Date() },
+            update: { ...p, syncedAt: new Date() },
+            create: { ...p, syncedAt: new Date() },
           });
         }
         break;
@@ -28,8 +31,8 @@ export class SyncRepository {
         if (operation !== 'delete') {
           await prisma.visit.upsert({
             where: { id: entityId },
-            update: { ...payload as object, syncedAt: new Date() },
-            create: { ...(payload as object), syncedAt: new Date() },
+            update: { ...p, syncedAt: new Date() },
+            create: { ...p, syncedAt: new Date() },
           });
         }
         break;
@@ -37,8 +40,8 @@ export class SyncRepository {
       case 'referrals':
         await prisma.referral.upsert({
           where: { id: entityId },
-          update: { ...payload as object, syncedAt: new Date() },
-          create: { ...(payload as object), syncedAt: new Date() },
+          update: { ...p, syncedAt: new Date() },
+          create: { ...p, syncedAt: new Date() },
         });
         break;
 
@@ -51,9 +54,9 @@ export class SyncRepository {
     since: string,
     tables: string[],
     facilityId: string | null,
-  ): Promise<Record<string, unknown[]>> {
+  ): Promise<Record<string, Record<string, unknown>[]>> {
     const sinceDate = new Date(since);
-    const rows: Record<string, unknown[]> = {};
+    const rows: Record<string, Record<string, unknown>[]> = {};
 
     if (tables.includes('clients')) {
       rows['clients'] = await prisma.client.findMany({

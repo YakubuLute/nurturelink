@@ -17,7 +17,7 @@ export class AuthService {
     if (!valid) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
     const payload = { id: user.id, role: user.role, facilityId: user.facilityId };
-    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as never });
     const refreshToken = await this.repo.createRefreshToken(user.id);
 
     return {
@@ -33,7 +33,7 @@ export class AuthService {
       throw Object.assign(new Error('Invalid refresh token'), { status: 401 });
     }
     const payload = { id: stored.userId, role: stored.user.role, facilityId: stored.user.facilityId };
-    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as never });
     return { accessToken };
   }
 }

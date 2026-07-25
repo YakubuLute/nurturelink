@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, IRouter } from 'express';
 import { z } from 'zod';
 import { SyncPushSchema } from '@nurturelink/shared';
 import { authenticate } from '../middleware/authenticate';
 import { SyncService } from '../services/sync.service';
 
 const syncService = new SyncService();
-export const syncRouter = Router();
+export const syncRouter: IRouter = Router();
 
 // POST /sync/push  — batch mutations from device outbox
 syncRouter.post('/push', authenticate, async (req, res, next) => {

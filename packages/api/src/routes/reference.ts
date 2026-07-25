@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, IRouter } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
 import { ReferenceService } from '../services/reference.service';
 
 const referenceService = new ReferenceService();
-export const referenceRouter = Router();
+export const referenceRouter: IRouter = Router();
 
 // GET /reference/manifest — current bundle versions
 referenceRouter.get('/manifest', authenticate, async (_req, res, next) => {
