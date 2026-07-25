@@ -1,0 +1,670 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  StyleSheet,
+  Platform,
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RootStackParamList } from '../../App';
+import { BottomTabBar } from '../components/BottomTabBar';
+import {
+  useAppStore,
+  DemoClient,
+  initials,
+  avatarStyle,
+  priorityStyle,
+} from '../store';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+
+// ─── Greeting helpers ─────────────────────────────────────────────────────────
+
+function greeting(lang: 'en' | 'dag'): string {
+  const hour = new Date().getHours();
+  if (lang === 'dag') return 'Dasiba';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// ─── Sync status banner ───────────────────────────────────────────────────────
+
+function SyncBanner({
+  offline,
+  syncing,
+  pendingRecords,
+  onSync,
+}: {
+  offline: boolean;
+  syncing: boolean;
+  pendingRecords: number;
+  onSync: () => void;
+}) {
+  if (offline) {
+    return (
+      <View style={[banner.wrap, banner.warnWrap]}>
+        <View style={banner.warnIconBox}>
+          <Text style={banner.warnIcon}>⊘</Text>
+        </View>
+        <View style={banner.mid}>
+          <Text style={banner.titleDark}>
+            Working offline · {pendingRecords} record{pendingRecords !== 1 ? 's' : ''} on device
+          </Text>
+          <Text style={banner.subWarn}>They'll sync automatically when you're online</Text>
+        </View>
+        <TouchableOpacity style={banner.warnBtn} onPress={onSync} accessibilityRole="button">
+          <Text style={banner.warnBtnText}>Sync now</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (syncing) {
+    return (
+      <View style={[banner.wrap, banner.blueWrap]}>
+        <ActivityIndicator color="#427CAF" size="small" style={{ marginRight: 12 }} />
+        <View style={banner.mid}>
+          <Text style={banner.titleBlue}>Syncing…</Text>
+          <Text style={banner.subBlue}>Uploading {pendingRecords} records to DHIMS2</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (pendingRecords > 0) {
+    return (
+      <View style={[banner.wrap, banner.blueWrap]}>
+        <View style={banner.mid}>
+          <Text style={banner.titleBlue}>{pendingRecords} changes ready to sync</Text>
+          <Text style={banner.subBlue}>You're back online</Text>
+        </View>
+        <TouchableOpacity style={banner.darkBtn} onPress={onSync} accessibilityRole="button">
+          <Text style={banner.darkBtnText}>Sync now</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[banner.wrap, banner.greenWrap]}>
+      <View style={banner.greenIconBox}>
+        <Text style={banner.greenIcon}>✓</Text>
+      </View>
+      <View style={banner.mid}>
+        <Text style={banner.titleGreen}>All caught up</Text>
+        <Text style={banner.subGreen}>Last synced to DHIMS2 · 11:01 am</Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── Client card ─────────────────────────────────────────────────────────────
+
+function ClientCard({
+  client,
+  rank,
+  onPress,
+}: {
+  client: DemoClient;
+  rank?: number;
+  onPress: () => void;
+}) {
+  const av = avatarStyle(client.type);
+  const ps = priorityStyle(client.priority);
+  const ins = initials(client.name);
+  const showRank = rank !== undefined;
+
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.75}
+      accessibilityRole="button"
+      accessibilityLabel={`${client.name}, ${ps.label}`}
+    >
+      {showRank && (
+        <Text style={styles.rank}>#{rank}</Text>
+      )}
+      <View
+        style={[
+          styles.avatar,
+          { backgroundColor: av.bg },
+          !showRank && styles.avatarLarge,
+        ]}
+      >
+        <Text style={[styles.avatarText, { color: av.fg }]}>{ins}</Text>
+      </View>
+      <View style={styles.cardBody}>
+        <View style={styles.cardRow}>
+          <Text style={styles.clientName} numberOfLines={1}>{client.name}</Text>
+          <View style={[styles.priorityBadge, { backgroundColor: ps.bg }]}>
+            <Text style={[styles.priorityText, { color: ps.color }]}>{ps.label.toUpperCase()}</Text>
+          </View>
+        </View>
+        <Text style={styles.clientMeta}>
+          {typeof client.age === 'number' ? `${client.age} yrs` : client.age} · {client.community}
+        </Text>
+        <View style={styles.flagRow}>
+          <View style={[styles.flagDot, { backgroundColor: client.trendColor }]} />
+          <Text style={styles.flagText} numberOfLines={1}>{client.flag}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
+
+export function HomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  const {
+    clients,
+    referrals,
+    notifications,
+    offline,
+    syncing,
+    pendingRecords,
+    uiLang,
+    sync,
+  } = useAppStore();
+
+  const [query, setQuery] = useState('');
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const pendingReferrals = referrals.filter((r) => r.status === 'issued').length;
+
+  const isSearching = query.trim().length > 0;
+
+  const followUpClients = clients
+    .filter((c) => c.priority === 'urgent' || c.priority === 'high')
+    .sort((a, b) => (a.priority === 'urgent' && b.priority !== 'urgent' ? -1 : b.priority === 'urgent' && a.priority !== 'urgent' ? 1 : 0));
+
+  const stableClients = clients.filter(
+    (c) => c.priority === 'stable' || c.priority === 'new',
+  );
+
+  const searchResults = isSearching
+    ? clients.filter((c) => {
+        const q = query.toLowerCase();
+        return (
+          c.name.toLowerCase().includes(q) ||
+          c.community.toLowerCase().includes(q) ||
+          c.flag.toLowerCase().includes(q)
+        );
+      })
+    : [];
+
+  const todayLabel = 'Needs follow-up today';
+  const stableLabel = 'Stable · monitoring';
+
+  // Date string
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Greeting ── */}
+        <View style={styles.greetingRow}>
+          <View style={styles.greetingLeft}>
+            <Text style={styles.greetingTime}>{greeting(uiLang)}</Text>
+            <Text style={styles.greetingName}>Yakubu Lute</Text>
+            <Text style={styles.greetingDate}>{dateStr} · Kukuo CHPS zone</Text>
+          </View>
+          <View style={styles.greetingActions}>
+            <TouchableOpacity
+              style={styles.registerBtn}
+              onPress={() => navigation.navigate('Register')}
+              accessibilityRole="button"
+              accessibilityLabel="Register new client"
+            >
+              <Text style={styles.registerBtnText}>+</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => navigation.navigate('Notifications')}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
+            >
+              <Text style={styles.bellIcon}>🔔</Text>
+              {unreadCount > 0 && <View style={styles.bellDot} />}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Sync banner ── */}
+        <View style={styles.bannerWrap}>
+          <SyncBanner
+            offline={offline}
+            syncing={syncing}
+            pendingRecords={pendingRecords}
+            onSync={sync}
+          />
+        </View>
+
+        {/* ── Search bar ── */}
+        <View style={styles.searchWrap}>
+          <Text style={styles.searchIcon}>⌕</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search clients…"
+            placeholderTextColor="#9CA3AF"
+            value={query}
+            onChangeText={setQuery}
+            returnKeyType="search"
+            accessibilityLabel="Search clients"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setQuery('')}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              style={styles.searchClear}
+            >
+              <Text style={{ color: '#9CA3AF', fontSize: 16 }}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* ── Content ── */}
+        {isSearching ? (
+          /* Search results */
+          searchResults.length > 0 ? (
+            <View>
+              <Text style={styles.sectionHeader}>
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+              </Text>
+              {searchResults.map((c) => (
+                <ClientCard
+                  key={c.id}
+                  client={c}
+                  onPress={() => navigation.navigate('Client', { clientId: c.id })}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateTitle}>No clients found</Text>
+              <Text style={styles.emptyStateSub}>Try a different name or community</Text>
+            </View>
+          )
+        ) : (
+          <>
+            {/* ── Priority follow-up ── */}
+            {followUpClients.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionHeader}>{todayLabel}</Text>
+                  <View style={styles.sectionBadge}>
+                    <Text style={styles.sectionBadgeText}>{followUpClients.length}</Text>
+                  </View>
+                </View>
+                <Text style={styles.sectionSub}>
+                  Ranked by NurtureLink from each client's own visit trend
+                </Text>
+                {followUpClients.map((c, i) => (
+                  <ClientCard
+                    key={c.id}
+                    client={c}
+                    rank={i + 1}
+                    onPress={() => navigation.navigate('Client', { clientId: c.id })}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* ── Stable / monitoring ── */}
+            {stableClients.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionHeader}>{stableLabel}</Text>
+                </View>
+                {stableClients.map((c) => (
+                  <ClientCard
+                    key={c.id}
+                    client={c}
+                    onPress={() => navigation.navigate('Client', { clientId: c.id })}
+                  />
+                ))}
+              </View>
+            )}
+          </>
+        )}
+
+        <View style={{ height: 16 }} />
+      </ScrollView>
+
+      <BottomTabBar
+        active="home"
+        onHome={() => {}}
+        onReferrals={() => navigation.navigate('ReferralsList')}
+        onSync={sync}
+        onProfile={() => navigation.navigate('Settings')}
+        referralBadge={pendingReferrals}
+      />
+    </View>
+  );
+}
+
+// ─── Banner styles ────────────────────────────────────────────────────────────
+
+const banner = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+  },
+  mid: { flex: 1 },
+
+  // Warning (offline)
+  warnWrap: { backgroundColor: '#FFF9E6', borderColor: '#FFE18A' },
+  warnIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#FFEBB0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  warnIcon: { fontSize: 18, color: '#8C6900' },
+  titleDark: { fontSize: 13.5, fontWeight: '700', color: '#08283B' },
+  subWarn: { fontSize: 11.5, color: '#8C6900', marginTop: 2 },
+  warnBtn: {
+    backgroundColor: '#FFE18A',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  warnBtnText: { fontSize: 12, fontWeight: '600', color: '#08283B' },
+
+  // Blue (syncing / pending)
+  blueWrap: { backgroundColor: '#EFF7FE', borderColor: '#B4DAFB' },
+  titleBlue: { fontSize: 14, fontWeight: '700', color: '#08283B' },
+  subBlue: { fontSize: 12, color: '#427CAF', marginTop: 2 },
+  darkBtn: {
+    backgroundColor: '#08283B',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  darkBtnText: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
+
+  // Green (synced)
+  greenWrap: { backgroundColor: '#F3FAF7', borderColor: '#BCF0DA' },
+  greenIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#BCF0DA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  greenIcon: { fontSize: 16, color: '#057A55', fontWeight: '700' },
+  titleGreen: { fontSize: 13.5, fontWeight: '700', color: '#057A55' },
+  subGreen: { fontSize: 11.5, color: '#057A55', marginTop: 2, opacity: 0.8 },
+});
+
+// ─── Screen styles ────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#F2F4F5',
+  },
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+
+  // Greeting
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  greetingLeft: { flex: 1, paddingRight: 12 },
+  greetingTime: { fontSize: 13, color: '#6B7280', marginBottom: 2 },
+  greetingName: { fontSize: 22, fontWeight: '700', color: '#08283B', lineHeight: 28 },
+  greetingDate: { fontSize: 12.5, color: '#6B7280', marginTop: 3 },
+  greetingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingTop: 4,
+  },
+  registerBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#08283B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  registerBtnText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    lineHeight: 26,
+    marginTop: Platform.OS === 'android' ? -2 : 0,
+  },
+  bellBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FDFDFD',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  bellIcon: { fontSize: 18 },
+  bellDot: {
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF5A00',
+    borderWidth: 1.5,
+    borderColor: '#FDFDFD',
+  },
+
+  // Banner
+  bannerWrap: { marginBottom: 14 },
+
+  // Search
+  searchWrap: {
+    position: 'relative',
+    marginBottom: 20,
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: 14,
+    top: 0,
+    bottom: 0,
+    fontSize: 17,
+    color: '#9CA3AF',
+    textAlignVertical: 'center',
+    lineHeight: 46,
+    zIndex: 1,
+  },
+  searchInput: {
+    backgroundColor: '#FDFDFD',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingLeft: 40,
+    paddingRight: 40,
+    fontSize: 14,
+    color: '#08283B',
+    height: 46,
+  },
+  searchClear: {
+    position: 'absolute',
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+
+  // Sections
+  section: { marginBottom: 8 },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  sectionHeader: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#08283B',
+  },
+  sectionBadge: {
+    backgroundColor: '#FFEFE6',
+    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+  },
+  sectionBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#B54000',
+  },
+  sectionSub: {
+    fontSize: 11.5,
+    color: '#9CA3AF',
+    marginBottom: 12,
+    lineHeight: 16,
+  },
+
+  // Client card
+  card: {
+    backgroundColor: '#FDFDFD',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 15,
+    padding: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  rank: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    width: 26,
+    textAlign: 'center',
+    marginRight: 4,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarLarge: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+  },
+  avatarText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  cardBody: { flex: 1 },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 2,
+  },
+  clientName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#08283B',
+    flex: 1,
+  },
+  priorityBadge: {
+    borderRadius: 20,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  priorityText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  clientMeta: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginBottom: 5,
+  },
+  flagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  flagDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  flagText: {
+    fontSize: 12.5,
+    color: '#374151',
+    flex: 1,
+  },
+
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  emptyStateSub: {
+    fontSize: 13,
+    color: '#9CA3AF',
+  },
+});
