@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -10,7 +10,7 @@ import { referenceRouter } from './routes/reference';
 import { exportRouter } from './routes/export';
 import { errorMiddleware } from './middleware/error';
 
-export function createApp() {
+export function createApp(): Application {
   const app = express();
 
   // ── Security & parsing ──────────────────────────────────────────────────────
