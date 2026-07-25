@@ -1,101 +1,530 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { NutritionTrendChart } from '../components/NutritionTrendChart';
-import { FlagBadge } from '../components/FlagBadge';
-import { useAppStore } from '../store';
+import {
+  useAppStore,
+  DemoClient,
+  DemoVisit,
+  initials,
+  avatarStyle,
+  priorityStyle,
+  formatMetric,
+  metricLabel,
+} from '../store';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
-export function ClientScreen({ navigation, route }: Props) {
-  const { clientId } = route.params;
-  const { clients, visits } = useAppStore();
-  const client = clients.find((c) => c.id === clientId);
-  const clientVisits = visits[clientId] ?? [];
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const C = {
+  primary:         '#08283B',
+  accent:          '#FF5A00',
+  bg:              '#F2F4F5',
+  surface:         '#FDFDFD',
+  border:          '#E5E7EB',
+  borderStrong:    '#D1D5DB',
+  fg1:             '#08283B',
+  fg2:             '#374151',
+  fg3:             '#6B7280',
+  fg4:             '#9CA3AF',
+  lb50:            '#EFF7FE',
+  lb200:           '#B4DAFB',
+  lb300:           '#92C9F9',
+  lb700:           '#427CAF',
+  success:         '#057A55',
+  successBg:       '#F3FAF7',
+  successBorder:   '#BCF0DA',
+  warning:         '#B48700',
+  warningBg:       '#FFF9E6',
+  warningBorder:   '#FFE18A',
+  error:           '#C81E1E',
+  errorBg:         '#FDF2F2',
+  errorBorder:     '#FBD5D5',
+  errorDark:       '#9B1C1C',
+  highPriority:    '#B54000',
+  highPriorityBg:  '#FFEFE6',
+};
 
-  if (!client) return <Text style={{ padding: 24 }}>Client not found.</Text>;
+// ─── Food group config ────────────────────────────────────────────────────────
+const FOOD_GROUPS = [
+  { id: 'grains',  label: 'Grains',   color: '#B48700' },
+  { id: 'legumes', label: 'Legumes',  color: '#B54000' },
+  { id: 'dairy',   label: 'Dairy',    color: '#427CAF' },
+  { id: 'flesh',   label: 'Meat',     color: '#036672' },
+  { id: 'eggs',    label: 'Eggs',     color: '#BF125D' },
+  { id: 'vita',    label: 'Vit-A',    color: '#057A55' },
+  { id: 'veg',     label: 'Veg',      color: '#6C2BD9' },
+  { id: 'breast',  label: 'Breast',   color: '#559FE0' },
+];
 
-  const latestVisit = clientVisits[0];
+// ─── Ranking signals per client ───────────────────────────────────────────────
+const RANK_SIGNALS: Record<string, string[]> = {
+  amina:  ['Hb fell from 11.2 → 9.6 g/dL across 3 visits', 'MUAC declining: 242 → 235 mm', 'Diet of only 2 food groups last visit'],
+  rahim:  ['No weight gain in 2 consecutive months', 'Diet restricted to only 2 food groups', 'MUAC below expected range for age'],
+  latif:  ['MUAC 108 mm — below severe-wasting threshold (115 mm)', 'Weight falling: 6.4 → 6.1 kg', 'Danger-zone measurement at last visit'],
+  zeinab: ['Hb stable at 11.8 g/dL across 2 visits', 'Good diet diversity: 5 food groups', 'Weight gaining appropriately'],
+  sadia:  ['Diet improved from 3 to 5 food groups', 'Weight gaining: 10.2 → 10.9 kg', 'MUAC stable at healthy range'],
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getMetricValues(visits: DemoVisit[], metric: 'hb' | 'weight' | 'muac'): (number | null)[] {
+  return visits.map((v) => {
+    if (metric === 'hb')     return v.hb;
+    if (metric === 'weight') return v.weight;
+    return v.muac;
+  });
+}
+
+function dietScore(diet: string[]): number {
+  return diet.length;
+}
+
+function dietScoreColor(score: number): string {
+  if (score >= 5) return C.success;
+  if (score >= 3) return C.warning;
+  return C.error;
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function TrendChart({
+  visits,
+  metric,
+  trendColor,
+}: {
+  visits: DemoVisit[];
+  metric: 'hb' | 'weight' | 'muac';
+  trendColor: string;
+}) {
+  const values = getMetricValues(visits, metric);
+  const nonNull = values.filter((v): v is number => v !== null);
+  if (nonNull.length === 0) return null;
+
+  const min = Math.min(...nonNull) * 0.92;
+  const max = Math.max(...nonNull) * 1.08;
+  const range = max - min || 1;
+  const chartH = 80;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.name}>{client.name}</Text>
-        <Text style={styles.type}>{client.type === 'pregnant' ? 'Pregnant woman' : 'Child under 5'}</Text>
-        {/* TODO: render current flag badge from latest flag computation */}
-        {latestVisit && <FlagBadge severity="watch" label="Falling haemoglobin" />}
-      </View>
-
-      <Text style={styles.sectionTitle}>Nutrition trend</Text>
-      <NutritionTrendChart visits={clientVisits} clientType={client.type} />
-
-      <TouchableOpacity
-        style={styles.primaryButton}
-        onPress={() => navigation.navigate('Visit', { clientId })}
-        accessibilityRole="button"
-        accessibilityLabel="Record new visit"
-      >
-        <Text style={styles.primaryButtonText}>Record Visit</Text>
-      </TouchableOpacity>
-
-      {latestVisit && (
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('Plan', { clientId, visitId: latestVisit.id })}
-          accessibilityRole="button"
-          accessibilityLabel="Generate nutrition plan"
-        >
-          <Text style={styles.secondaryButtonText}>Generate Nutrition Plan</Text>
-        </TouchableOpacity>
-      )}
-
-      <Text style={styles.sectionTitle}>Visit history</Text>
-      {clientVisits.map((visit) => (
-        <View key={visit.id} style={styles.visitRow}>
-          <Text style={styles.visitDate}>{visit.visitedAt.slice(0, 10)}</Text>
-          {visit.weightKg && <Text style={styles.visitStat}>Wt: {visit.weightKg} kg</Text>}
-          {visit.hbGDl && <Text style={styles.visitStat}>Hb: {visit.hbGDl} g/dL</Text>}
-          {visit.muacMm && <Text style={styles.visitStat}>MUAC: {visit.muacMm} mm</Text>}
-        </View>
+    <View style={{ height: chartH + 24, flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 4, position: 'relative' }}>
+      {/* grid lines */}
+      {[0.25, 0.5, 0.75].map((frac) => (
+        <View
+          key={frac}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 24 + chartH * frac,
+            height: 1,
+            backgroundColor: '#ECECEB',
+          }}
+        />
       ))}
-    </ScrollView>
+      {visits.map((v, i) => {
+        const val = getMetricValues([v], metric)[0];
+        const barH = val !== null ? Math.max(8, ((val - min) / range) * chartH) : 8;
+        const isLast = i === visits.length - 1;
+        return (
+          <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+            <View
+              style={{
+                width: '100%',
+                height: barH,
+                backgroundColor: trendColor,
+                opacity: isLast ? 1 : 0.5,
+                borderRadius: 4,
+              }}
+            />
+            <Text style={{ fontSize: 9, color: C.fg4, textAlign: 'center', marginTop: 4 }} numberOfLines={1}>
+              {v.date.split(',')[0]}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
+function DietDiversityCard({ lastVisit }: { lastVisit: DemoVisit }) {
+  const score = dietScore(lastVisit.diet);
+  const scoreColor = dietScoreColor(score);
+  const met = score >= 5;
+
+  return (
+    <View style={[styles.card, { marginBottom: 12 }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Diet diversity · last visit</Text>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: scoreColor }}>{score}/8 groups</Text>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 5, marginBottom: 10 }}>
+        {FOOD_GROUPS.map((g) => {
+          const eaten = lastVisit.diet.includes(g.id);
+          return (
+            <View
+              key={g.id}
+              style={{
+                flex: 1,
+                height: 34,
+                borderRadius: 8,
+                backgroundColor: eaten ? g.color : '#ECECEB',
+                borderWidth: 1,
+                borderColor: eaten ? g.color : C.border,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            />
+          );
+        })}
+      </View>
+      <Text style={{ fontSize: 11.5, color: met ? C.success : C.warning, fontWeight: '600' }}>
+        {met ? 'Minimum diet diversity \u2713 met' : 'Below minimum diet diversity'}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
+export function ClientScreen({ navigation, route }: Props) {
+  const { clientId } = route.params;
+  const { clients, referrals, confirmReferralSeen } = useAppStore();
+  const client = clients.find((c) => c.id === clientId);
+  const referral = referrals.find((r) => r.clientId === clientId);
+
+  if (!client) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: C.fg3 }}>Client not found.</Text>
+      </View>
+    );
+  }
+
+  const visits = client.visits;
+  const lastVisit = visits[visits.length - 1] ?? null;
+  const pStyle = priorityStyle(client.priority);
+  const aStyle = avatarStyle(client.type);
+  const abbrev = initials(client.name);
+  const label = metricLabel(client.metric);
+  const currentValue = lastVisit
+    ? formatMetric(client.metric, client.metric === 'hb' ? lastVisit.hb : client.metric === 'weight' ? lastVisit.weight : lastVisit.muac)
+    : '—';
+
+  // trend delta
+  let trendDelta = '';
+  if (visits.length >= 2) {
+    const getVal = (v: DemoVisit) =>
+      client.metric === 'hb' ? v.hb : client.metric === 'weight' ? v.weight : v.muac;
+    const first = getVal(visits[0]);
+    const last  = getVal(visits[visits.length - 1]);
+    if (first !== null && last !== null) {
+      const diff = last - first;
+      const sign = diff >= 0 ? '+' : '';
+      if (client.metric === 'hb')     trendDelta = `${client.trendArrow === 'down' ? '↓' : client.trendArrow === 'up' ? '↑' : '→'} ${sign}${diff.toFixed(1)} g/dL`;
+      else if (client.metric === 'weight') trendDelta = `${client.trendArrow === 'down' ? '↓' : client.trendArrow === 'up' ? '↑' : '→'} ${sign}${diff.toFixed(1)} kg`;
+      else trendDelta = `${client.trendArrow === 'down' ? '↓' : client.trendArrow === 'up' ? '↑' : '→'} ${sign}${Math.round(diff)} mm`;
+    }
+  }
+
+  const rankSignals = RANK_SIGNALS[client.id] ?? ['No historical signals yet'];
+
+  // priority flag styles
+  let flagBg = C.successBg;
+  let flagBorder = C.successBorder;
+  let flagTextColor = C.success;
+  let flagIcon = '✓';
+  if (client.priority === 'urgent') {
+    flagBg = C.errorBg; flagBorder = C.errorBorder; flagTextColor = C.error; flagIcon = '⚠';
+  } else if (client.priority === 'high') {
+    flagBg = C.highPriorityBg; flagBorder = '#FFCAA8'; flagTextColor = C.highPriority; flagIcon = '⚠';
+  }
+
+  const subLine = client.type === 'pregnant'
+    ? `Pregnant · ${client.age} yrs · ${client.community}`
+    : `Child · ${client.age} · ${client.community}`;
+
+  function handlePlanPress() {
+    if (client!.severe) {
+      navigation.navigate('ReferralGuardrail', { clientId });
+    } else {
+      navigation.navigate('Plan', { clientId });
+    }
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.primary }}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityLabel="Go back">
+          <Text style={{ color: '#fff', fontSize: 20 }}>‹</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerLabel}>Client record</Text>
+
+        {/* Avatar row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 14 }}>
+          <View style={[styles.avatar, { backgroundColor: aStyle.bg }]}>
+            <Text style={{ color: aStyle.fg, fontSize: 18, fontWeight: '700' }}>{abbrev}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.clientName}>{client.name}</Text>
+            <Text style={styles.clientSub}>{subLine}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* ── Scrollable body ── */}
+      <ScrollView
+        style={{ flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 16, borderTopRightRadius: 16, marginTop: -8 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      >
+        {/* Referral banner */}
+        {client.referred && referral && (
+          <View style={[styles.card, { backgroundColor: C.errorBg, borderColor: C.errorBorder, marginBottom: 12 }]}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: C.error, marginBottom: 4 }}>
+              Referral issued · {referral.facility}
+            </Text>
+            <Text style={{ fontSize: 12.5, color: C.errorDark, marginBottom: referral.status === 'issued' ? 12 : 0 }}>
+              {referral.reason}
+            </Text>
+            {referral.status === 'issued' && (
+              <TouchableOpacity
+                style={{ backgroundColor: C.error, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14, alignSelf: 'flex-start' }}
+                onPress={() => confirmReferralSeen(clientId)}
+              >
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Confirm client was seen</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Risk flag banner */}
+        <View style={[styles.card, { backgroundColor: flagBg, borderColor: flagBorder, marginBottom: 12 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+            <Text style={{ fontSize: 16, color: flagTextColor, marginTop: 1 }}>{flagIcon}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: flagTextColor, marginBottom: 3 }}>
+                {client.flag}
+              </Text>
+              <Text style={{ fontSize: 12.5, color: C.fg2, lineHeight: 18 }}>{client.flagDetail}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* "Why ranked" card */}
+        <View style={[styles.card, { marginBottom: 12 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+              <Text style={{ fontSize: 13 }}>📊</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Why NurtureLink ranked this client</Text>
+            </View>
+            <View style={{ backgroundColor: pStyle.bg, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 }}>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: pStyle.color }}>{pStyle.label}</Text>
+            </View>
+          </View>
+          {rankSignals.map((s, i) => (
+            <Text key={i} style={{ fontSize: 12.5, color: C.fg2, marginBottom: 4 }}>
+              {'● '}{s}
+            </Text>
+          ))}
+          <Text style={{ fontSize: 11, color: C.fg4, marginTop: 8, lineHeight: 16 }}>
+            Explainable flag from this client's own visits — you decide who to counsel.
+          </Text>
+        </View>
+
+        {/* Trend chart card */}
+        <View style={[styles.card, { marginBottom: 12 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>{label}</Text>
+              <Text style={{ fontSize: 11, color: C.fg3 }}>across {visits.length} visits</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ fontSize: 26, fontWeight: '700', color: C.fg1, lineHeight: 30 }}>{currentValue}</Text>
+              {trendDelta ? (
+                <Text style={{ fontSize: 13, color: client.trendColor, fontWeight: '600' }}>{trendDelta}</Text>
+              ) : null}
+            </View>
+          </View>
+          <Text style={{ fontSize: 11.5, color: client.trendColor, fontWeight: '500', marginBottom: 10 }}>
+            {client.trendNote}
+          </Text>
+          {visits.length > 0 && (
+            <TrendChart visits={visits} metric={client.metric} trendColor={client.trendColor} />
+          )}
+        </View>
+
+        {/* Diet diversity card */}
+        {lastVisit && <DietDiversityCard lastVisit={lastVisit} />}
+
+        {/* Visit history */}
+        <Text style={styles.sectionHeader}>Visit history</Text>
+        {visits.length === 0 ? (
+          <View style={{ alignItems: 'center', paddingVertical: 36 }}>
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>📋</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg2, marginBottom: 6 }}>No visits yet</Text>
+            <Text style={{ fontSize: 13, color: C.fg3, textAlign: 'center', lineHeight: 20 }}>
+              Record a visit to start tracking nutrition trends for this client.
+            </Text>
+          </View>
+        ) : (
+          visits.map((v, i) => {
+            const isLast = i === visits.length - 1;
+            const metricVal = client.metric === 'hb' ? v.hb : client.metric === 'weight' ? v.weight : v.muac;
+            return (
+              <View
+                key={i}
+                style={[styles.visitRow, { borderColor: isLast ? C.borderStrong : C.border }]}
+              >
+                <View style={{ width: 9, height: 9, borderRadius: 4.5, backgroundColor: client.trendColor, marginTop: 3 }} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1 }}>{v.date}</Text>
+                  <Text style={{ fontSize: 11.5, color: C.fg3, marginTop: 2 }}>
+                    {`Wt: ${v.weight.toFixed(1)} kg · Hb: ${v.hb !== null ? v.hb.toFixed(1) + ' g/dL' : '—'} · MUAC: ${v.muac} mm`}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg1 }}>
+                    {formatMetric(client.metric, metricVal)}
+                  </Text>
+                  <View style={{
+                    backgroundColor: v.synced ? C.successBg : C.warningBg,
+                    borderRadius: 20,
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                  }}>
+                    <Text style={{ fontSize: 10.5, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
+                      {v.synced ? 'Synced ✓' : 'Draft — offline'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+
+      {/* ── Bottom action bar ── */}
+      <View style={styles.actionBar}>
+        <TouchableOpacity
+          style={styles.actionBtnOutline}
+          onPress={() => navigation.navigate('Visit', { clientId })}
+          accessibilityLabel="Record visit"
+        >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
+        </TouchableOpacity>
+
+        {visits.length > 0 && (
+          <TouchableOpacity
+            style={[
+              styles.actionBtnFill,
+              { backgroundColor: client.severe ? C.error : C.primary },
+            ]}
+            onPress={handlePlanPress}
+            accessibilityLabel={client.severe ? 'Referral required' : 'View plan'}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>
+              {client.severe ? 'Referral required' : visits.length > 0 ? 'View plan →' : 'Generate plan →'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  content: { padding: 16 },
-  header: { backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 16, elevation: 2 },
-  name: { fontSize: 22, fontWeight: '700', color: '#111' },
-  type: { fontSize: 14, color: '#666', marginTop: 4 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#444', marginTop: 20, marginBottom: 8 },
-  primaryButton: {
-    backgroundColor: '#1a7c4e',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 16,
+  header: {
+    backgroundColor: C.primary,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  secondaryButton: {
-    backgroundColor: '#fff',
-    borderColor: '#1a7c4e',
-    borderWidth: 2,
+  backBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+  },
+  headerLabel: {
+    fontSize: 13,
+    color: '#8D9CA5',
+    marginTop: 2,
+  },
+  avatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clientName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  clientSub: {
+    fontSize: 13,
+    color: C.lb300,
+    marginTop: 2,
+  },
+  card: {
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 15,
     padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
+    marginBottom: 0,
   },
-  secondaryButtonText: { color: '#1a7c4e', fontSize: 15, fontWeight: '600' },
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.fg3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+    marginTop: 4,
+  },
   visitRow: {
     flexDirection: 'row',
-    gap: 12,
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 6,
+    alignItems: 'flex-start',
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 13,
     marginBottom: 8,
   },
-  visitDate: { fontWeight: '600', color: '#333' },
-  visitStat: { color: '#555' },
+  actionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    gap: 10,
+    padding: 16,
+    paddingBottom: 28,
+    backgroundColor: C.surface,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+  },
+  actionBtnOutline: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: C.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  actionBtnFill: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
 });
