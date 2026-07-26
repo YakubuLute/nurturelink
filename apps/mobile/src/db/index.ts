@@ -2,19 +2,42 @@
  * On-device SQLCipher database — NurtureLink mobile.
  *
  * Uses @op-engineering/op-sqlite which compiles SQLite with SQLCipher for
- * at-rest encryption. The encryption key is generated on first launch and
- * stored in expo-secure-store (Keychain on iOS, Android Keystore on Android).
+ * at-rest encryption. The native module is only available in a custom dev
+ * client (EAS Build) — not in Expo Go.
  *
- * Usage:
- *   import { execute, query, transaction } from '../db';
+ * When the native module is absent the DB layer becomes a safe no-op so the
+ * app runs with in-memory demo data in Expo Go or CI without crashing.
  */
 
-import { open, type DB, type Scalar } from '@op-engineering/op-sqlite';
+// Type-only imports are erased at runtime — safe regardless of native availability.
+import type { DB, Scalar } from '@op-engineering/op-sqlite';
 import * as SecureStore from 'expo-secure-store';
 import { CREATE_TABLES } from './schema';
 
+export type { Scalar };
+
 const DB_NAME = 'nurturelink.db';
 const KEY_ALIAS = 'nl_db_key';
+
+// ─── Native module availability check ────────────────────────────────────────
+
+/** True when op-sqlite's native TurboModule is registered in the current binary. */
+function isNativeAvailable(): boolean {
+  try {
+    // Attempt a lazy require — will throw if the TurboModule isn't compiled in.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require('@op-engineering/op-sqlite');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+let _nativeAvailable: boolean | null = null;
+function nativeAvailable(): boolean {
+  if (_nativeAvailable === null) _nativeAvailable = isNativeAvailable();
+  return _nativeAvailable;
+}
 
 // ─── Key management ───────────────────────────────────────────────────────────
 
@@ -48,11 +71,12 @@ function splitStatements(sql: string): string[] {
 }
 
 async function initDb(): Promise<DB> {
-  const encryptionKey = await getOrCreateKey();
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { open } = require('@op-engineering/op-sqlite') as typeof import('@op-engineering/op-sqlite');
 
+  const encryptionKey = await getOrCreateKey();
   const db = open({ name: DB_NAME, encryptionKey });
 
-  // Run schema creation — split into individual statements
   for (const stmt of splitStatements(CREATE_TABLES)) {
     await db.execute(stmt);
   }
@@ -63,8 +87,15 @@ async function initDb(): Promise<DB> {
 /**
  * Returns the initialised database instance, creating it on first call.
  * Safe to call from multiple places — opens the DB exactly once.
+ *
+ * Returns null when the op-sqlite native module isn't available (Expo Go /
+ * CI). All callers must handle null.
  */
-export async function getDb(): Promise<DB> {
+export async function getDb(): Promise<DB | null> {
+  if (!nativeAvailable()) {
+    console.log('[DB] op-sqlite native module not available — running without SQLite');
+    return null;
+  }
   if (_db) return _db;
   if (!_initPromise) {
     _initPromise = initDb().then((db) => {
@@ -85,31 +116,34 @@ export async function closeDb(): Promise<void> {
 
 // ─── Convenience wrappers ─────────────────────────────────────────────────────
 
-/** Execute a write statement (INSERT / UPDATE / DELETE / PRAGMA). */
+/** Execute a write statement. Returns 0 (no-op) when SQLite is unavailable. */
 export async function execute(sql: string, params: Scalar[] = []): Promise<number> {
   const db = await getDb();
+  if (!db) return 0;
   const result = await db.execute(sql, params);
   return result.rowsAffected;
 }
 
-/** Query rows and return them as typed objects. */
+/** Query rows. Returns an empty array when SQLite is unavailable. */
 export async function query<T = Record<string, Scalar>>(
   sql: string,
   params: Scalar[] = [],
 ): Promise<T[]> {
   const db = await getDb();
+  if (!db) return [];
   const result = await db.execute(sql, params);
   return result.rows as T[];
 }
 
 /**
- * Run multiple write statements in a single transaction via the native callback API.
- * Rolls back automatically on any error.
+ * Run multiple write statements in a transaction.
+ * No-op when SQLite is unavailable.
  */
 export async function transaction(
   statements: Array<{ sql: string; params?: Scalar[] }>,
 ): Promise<void> {
   const db = await getDb();
+  if (!db) return;
   await db.transaction(async (tx) => {
     for (const { sql, params } of statements) {
       await tx.execute(sql, params ?? []);
