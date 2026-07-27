@@ -10,18 +10,19 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, AppNotification, NotifKind } from '../store';
+import { ChevronLeft, Shield, AlertTriangle, RefreshCw, Package, Volume2, Bell } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
 
 // ─── Icon helpers ─────────────────────────────────────────────────────────────
 
-function iconForKind(kind: NotifKind): { char: string; bg: string } {
+function iconForKind(kind: NotifKind): { icon: React.ReactNode; bg: string } {
   switch (kind) {
-    case 'referral': return { char: '🛡', bg: '#FDE8E8' };
-    case 'risk':     return { char: '⚠',  bg: '#FFEFE6' };
-    case 'sync':     return { char: '↺',  bg: '#EFF7FE' };
-    case 'bundle':   return { char: '📦', bg: '#F6F5FF' };
-    case 'voice':    return { char: '🔊', bg: '#F3FAF7' };
+    case 'referral': return { icon: <Shield size={20} color="#C81E1E" />,      bg: '#FDE8E8' };
+    case 'risk':     return { icon: <AlertTriangle size={20} color="#B48700" />, bg: '#FFEFE6' };
+    case 'sync':     return { icon: <RefreshCw size={20} color="#427CAF" />,    bg: '#EFF7FE' };
+    case 'bundle':   return { icon: <Package size={20} color="#6C2BD9" />,      bg: '#F6F5FF' };
+    case 'voice':    return { icon: <Volume2 size={20} color="#057A55" />,      bg: '#F3FAF7' };
   }
 }
 
@@ -45,7 +46,7 @@ function NotifCard({
       accessibilityLabel={notif.title}
     >
       <View style={[styles.iconBox, { backgroundColor: icon.bg }]}>
-        <Text style={styles.iconChar}>{icon.char}</Text>
+        {icon.icon}
       </View>
       <View style={styles.cardBody}>
         <View style={styles.titleRow}>
@@ -91,7 +92,7 @@ export function NotificationsScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Text style={styles.backArrow}>‹</Text>
+            <ChevronLeft size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
           {hasUnread ? (
@@ -116,7 +117,9 @@ export function NotificationsScreen({ navigation }: Props) {
       >
         {notifications.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🔔</Text>
+            <View style={{ marginBottom: 16 }}>
+              <Bell size={48} color="#9CA3AF" />
+            </View>
             <Text style={styles.emptyTitle}>You're all caught up</Text>
             <Text style={styles.emptyBody}>No notifications right now.</Text>
           </View>
@@ -231,9 +234,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  iconChar: {
-    fontSize: 18,
-  },
   cardBody: {
     flex: 1,
   },
@@ -272,10 +272,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 80,
     paddingHorizontal: 32,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 17,

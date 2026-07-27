@@ -20,6 +20,7 @@ import {
   avatarStyle,
   priorityStyle,
 } from '../store';
+import { Bell, WifiOff, Check, Search, X, Plus } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -50,7 +51,7 @@ function SyncBanner({
     return (
       <View style={[banner.wrap, banner.warnWrap]}>
         <View style={banner.warnIconBox}>
-          <Text style={banner.warnIcon}>⊘</Text>
+          <WifiOff size={18} color="#8C6900" />
         </View>
         <View style={banner.mid}>
           <Text style={banner.titleDark}>
@@ -94,7 +95,7 @@ function SyncBanner({
   return (
     <View style={[banner.wrap, banner.greenWrap]}>
       <View style={banner.greenIconBox}>
-        <Text style={banner.greenIcon}>✓</Text>
+        <Check size={16} color="#057A55" strokeWidth={3} />
       </View>
       <View style={banner.mid}>
         <Text style={banner.titleGreen}>All caught up</Text>
@@ -233,7 +234,7 @@ export function HomeScreen({ navigation }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Register new client"
             >
-              <Text style={styles.registerBtnText}>+</Text>
+              <Plus size={22} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.bellBtn}
@@ -241,7 +242,7 @@ export function HomeScreen({ navigation }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Notifications"
             >
-              <Text style={styles.bellIcon}>🔔</Text>
+              <Bell size={20} color="#08283B" />
               {unreadCount > 0 && <View style={styles.bellDot} />}
             </TouchableOpacity>
           </View>

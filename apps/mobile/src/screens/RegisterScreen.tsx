@@ -13,6 +13,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
+import { ChevronLeft } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -216,7 +217,7 @@ export function RegisterScreen({ navigation }: Props) {
           accessibilityLabel="Go back"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backArrow}>←</Text>
+          <ChevronLeft size={24} color="#FDFDFD" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Register a client</Text>
         <View style={styles.backBtnPlaceholder} />

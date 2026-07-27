@@ -12,6 +12,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, UiLang } from '../store';
 import { BottomTabBar } from '../components/BottomTabBar';
+import { ChevronLeft } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -49,7 +50,7 @@ export function SettingsScreen({ navigation }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Text style={styles.backArrow}>‹</Text>
+              <ChevronLeft size={24} color="#FDFDFD" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Profile & device</Text>
             <View style={{ width: 36 }} />

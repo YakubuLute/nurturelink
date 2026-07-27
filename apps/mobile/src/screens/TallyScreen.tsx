@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
+import { ChevronLeft } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Tally'>;
 
@@ -89,7 +90,7 @@ export function TallyScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Text style={styles.backArrow}>‹</Text>
+            <ChevronLeft size={24} color="#FDFDFD" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Outreach tally</Text>

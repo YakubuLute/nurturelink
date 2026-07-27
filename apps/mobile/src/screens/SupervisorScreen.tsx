@@ -18,6 +18,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
+import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Supervisor'>;
 
@@ -161,7 +162,7 @@ export function SupervisorScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Text style={styles.backArrow}>‹</Text>
+            <ChevronLeft size={24} color="#FDFDFD" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>District overview</Text>
@@ -203,7 +204,7 @@ export function SupervisorScreen({ navigation }: Props) {
             {/* Sync alert if any CHO behind */}
             {syncBehind > 0 && (
               <View style={styles.alertBanner}>
-                <Text style={styles.alertIcon}>⚠</Text>
+                <AlertTriangle size={20} color="#B48700" />
                 <View style={styles.alertBody}>
                   <Text style={styles.alertTitle}>
                     {syncBehind} CHO{syncBehind !== 1 ? 's' : ''} not synced recently
@@ -349,7 +350,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { fontSize: 28, color: '#FDFDFD', lineHeight: 32 },
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: '#FDFDFD' },
   headerDate: { fontSize: 11, color: '#8D9CA5', marginTop: 2 },
@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
-  alertIcon: { fontSize: 20, color: '#B48700' },
   alertBody: { flex: 1 },
   alertTitle: { fontSize: 14, fontWeight: '700', color: '#08283B' },
   alertSub: { fontSize: 12, color: '#8C6900', marginTop: 2 },

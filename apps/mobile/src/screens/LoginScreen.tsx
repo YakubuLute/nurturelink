@@ -13,6 +13,7 @@ import { LogoMark } from '../assets/LogoMark';
 import { useAppStore } from '../store';
 import { storeTokens, storeSession } from '../auth/session';
 import type { Role } from '../store';
+import { Delete, Users } from 'lucide-react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
@@ -31,7 +32,7 @@ const KEYPAD_ROWS: (string | null)[][] = [
   ['1', '2', '3'],
   ['4', '5', '6'],
   ['7', '8', '9'],
-  [null, '0', '⌫'],
+  [null, '0', 'DEL'],
 ];
 
 // ─── User profiles shown per role ────────────────────────────────────────────
@@ -81,7 +82,7 @@ export function LoginScreen({ navigation }: Props) {
   function handleKey(key: string | null) {
     if (key === null) return;
 
-    if (key === '⌫') {
+    if (key === 'DEL') {
       setPin((p) => p.slice(0, -1));
       setLoginError(null);
       return;
@@ -154,7 +155,7 @@ export function LoginScreen({ navigation }: Props) {
 
         {/* ── Shared device info ── */}
         <View style={styles.sharedRow}>
-          <Text style={styles.sharedIcon}>👥</Text>
+          <Users size={16} color="#8D9CA5" />
           <Text style={styles.sharedText}>
             Shared device · 3 worker profiles · drafts stay locked to you
           </Text>
@@ -193,8 +194,8 @@ export function LoginScreen({ navigation }: Props) {
             <View key={rowIdx} style={styles.keypadRow}>
               {row.map((key, colIdx) => {
                 const isBlank = key === null;
-                const isDelete = key === '⌫';
-                const isDigit = key !== null && key !== '⌫';
+                const isDelete = key === 'DEL';
+                const isDigit = key !== null && key !== 'DEL';
 
                 return (
                   <Pressable
@@ -209,15 +210,10 @@ export function LoginScreen({ navigation }: Props) {
                     accessibilityLabel={isDelete ? 'Delete' : key ?? undefined}
                     accessibilityRole="button"
                   >
-                    {isBlank ? null : (
-                      <Text
-                        style={[
-                          styles.keyText,
-                          isDelete && styles.keyTextDelete,
-                        ]}
-                      >
-                        {key}
-                      </Text>
+                    {isBlank ? null : isDelete ? (
+                      <Delete size={22} color="#08283B" />
+                    ) : (
+                      <Text style={styles.keyText}>{key}</Text>
                     )}
                   </Pressable>
                 );
@@ -320,9 +316,6 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 16,
   },
-  sharedIcon: {
-    fontSize: 13,
-  },
   sharedText: {
     fontSize: 11.5,
     color: '#5A6F7C',
@@ -415,11 +408,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#FDFDFD',
-  },
-  keyTextDelete: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#92C9F9',
   },
 
   // Demo hint

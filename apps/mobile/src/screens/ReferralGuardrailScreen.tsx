@@ -10,6 +10,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
+import { ChevronLeft, AlertTriangle, Shield, Phone } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralGuardrail'>;
 
@@ -42,7 +43,7 @@ export function ReferralGuardrailScreen({ navigation, route }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Text style={styles.backArrow}>‹</Text>
+            <ChevronLeft size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Referral required</Text>
           <View style={{ width: 36 }} />
@@ -58,7 +59,7 @@ export function ReferralGuardrailScreen({ navigation, route }: Props) {
         {/* Icon + heading */}
         <View style={styles.iconSection}>
           <View style={styles.iconCircle}>
-            <Text style={styles.iconText}>⚠</Text>
+            <AlertTriangle size={32} color="#C81E1E" />
           </View>
           <Text style={styles.headingTitle}>Refer to a health facility now</Text>
           <Text style={styles.headingBody}>
@@ -88,7 +89,7 @@ export function ReferralGuardrailScreen({ navigation, route }: Props) {
 
         {/* Follow-up note */}
         <View style={styles.followCard}>
-          <Text style={styles.followIcon}>🛡</Text>
+          <Shield size={16} color="#C81E1E" />
           <Text style={styles.followText}>
             Issuing creates a referral record and a follow-up flag so this child isn't lost after referral.
           </Text>
@@ -104,7 +105,8 @@ export function ReferralGuardrailScreen({ navigation, route }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Call facility"
         >
-          <Text style={styles.callBtnText}>📞 Call</Text>
+          <Phone size={16} color="#08283B" />
+          <Text style={styles.callBtnText}>Call</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.issueBtn}
@@ -171,10 +173,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-  },
-  iconText: {
-    fontSize: 38,
-    color: '#C81E1E',
   },
   headingTitle: {
     fontSize: 20,
@@ -266,10 +264,6 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 14,
   },
-  followIcon: {
-    fontSize: 18,
-    marginTop: 1,
-  },
   followText: {
     fontSize: 12.5,
     color: '#08283B',
@@ -293,7 +287,10 @@ const styles = StyleSheet.create({
     borderColor: '#C81E1E',
     borderRadius: 12,
     paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: '#FFFFFF',
   },
   callBtnText: {
