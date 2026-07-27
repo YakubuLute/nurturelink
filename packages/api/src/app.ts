@@ -7,6 +7,8 @@ import rateLimit from 'express-rate-limit';
 import { authRouter } from './routes/auth';
 import { clientsRouter } from './routes/clients';
 import { visitsRouter } from './routes/visits';
+import { plansRouter } from './routes/plans';
+import { referralsRouter } from './routes/referrals';
 import { syncRouter } from './routes/sync';
 import { referenceRouter } from './routes/reference';
 import { exportRouter } from './routes/export';
@@ -34,6 +36,8 @@ export function createApp(): Application {
   app.use('/auth', authRouter);
   app.use('/clients', clientsRouter);
   app.use('/visits', visitsRouter);
+  app.use('/plans', plansRouter);
+  app.use('/referrals', referralsRouter);
   app.use('/sync', syncRouter);
   app.use('/reference', referenceRouter);
   app.use('/export', exportRouter);
