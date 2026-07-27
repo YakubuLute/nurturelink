@@ -12,9 +12,9 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
@@ -154,7 +154,7 @@ export function SupervisorScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       {/* ── Header ── */}
-      <SafeAreaView style={styles.headerSafe}>
+      <SafeAreaView style={styles.headerSafe} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}

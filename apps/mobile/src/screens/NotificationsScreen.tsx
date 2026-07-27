@@ -5,8 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, AppNotification, NotifKind } from '../store';
@@ -84,7 +84,7 @@ export function NotificationsScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       {/* ── Header ── */}
-      <SafeAreaView style={styles.headerSafe}>
+      <SafeAreaView style={styles.headerSafe} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}

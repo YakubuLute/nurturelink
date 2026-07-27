@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   Switch,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, UiLang } from '../store';
@@ -41,7 +41,7 @@ export function SettingsScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       {/* ── Header ── */}
-      <SafeAreaView style={styles.headerSafe}>
+      <SafeAreaView style={styles.headerSafe} edges={['top']}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity
