@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Home, Shield, RefreshCw, User } from 'lucide-react-native';
 
 interface Props {
   active: 'home' | 'referrals' | 'sync' | 'profile';
@@ -8,109 +9,6 @@ interface Props {
   onSync: () => void;
   onProfile: () => void;
   referralBadge?: number;
-}
-
-// Minimalist icon drawn with View shapes
-function HomeIcon({ active }: { active: boolean }) {
-  const c = active ? '#08283B' : '#9CA3AF';
-  return (
-    <View style={{ width: 22, height: 20, alignItems: 'center', justifyContent: 'flex-end' }}>
-      {/* Roof triangle */}
-      <View
-        style={{
-          width: 0,
-          height: 0,
-          borderLeftWidth: 11,
-          borderRightWidth: 11,
-          borderBottomWidth: 9,
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderBottomColor: c,
-          marginBottom: 0,
-        }}
-      />
-      {/* Body rectangle */}
-      <View
-        style={{
-          width: 14,
-          height: 9,
-          backgroundColor: c,
-          borderBottomLeftRadius: 2,
-          borderBottomRightRadius: 2,
-        }}
-      />
-    </View>
-  );
-}
-
-function ReferralsIcon({ active }: { active: boolean }) {
-  const c = active ? '#08283B' : '#9CA3AF';
-  return (
-    <View style={{ width: 18, height: 20, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Shield shape: rounded top, pointed bottom */}
-      <View
-        style={{
-          width: 16,
-          height: 12,
-          backgroundColor: c,
-          borderRadius: 4,
-          borderTopLeftRadius: 4,
-          borderTopRightRadius: 4,
-        }}
-      />
-      {/* Shield point */}
-      <View
-        style={{
-          width: 0,
-          height: 0,
-          borderLeftWidth: 8,
-          borderRightWidth: 8,
-          borderTopWidth: 7,
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderTopColor: c,
-          marginTop: -1,
-        }}
-      />
-    </View>
-  );
-}
-
-function SyncIcon({ active }: { active: boolean }) {
-  const c = active ? '#08283B' : '#9CA3AF';
-  return (
-    <View style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: 17, color: c, lineHeight: 20 }}>↺</Text>
-    </View>
-  );
-}
-
-function ProfileIcon({ active }: { active: boolean }) {
-  const c = active ? '#08283B' : '#9CA3AF';
-  return (
-    <View style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Head circle */}
-      <View
-        style={{
-          width: 9,
-          height: 9,
-          borderRadius: 5,
-          backgroundColor: c,
-          marginBottom: 1,
-        }}
-      />
-      {/* Shoulders arc */}
-      <View
-        style={{
-          width: 16,
-          height: 7,
-          borderTopLeftRadius: 8,
-          borderTopRightRadius: 8,
-          backgroundColor: c,
-        }}
-      />
-    </View>
-  );
 }
 
 export function BottomTabBar({ active, onHome, onReferrals, onSync, onProfile, referralBadge }: Props) {
@@ -123,25 +21,25 @@ export function BottomTabBar({ active, onHome, onReferrals, onSync, onProfile, r
     {
       key: 'home',
       label: 'Home',
-      icon: <HomeIcon active={active === 'home'} />,
+      icon: <Home size={22} color={active === 'home' ? '#08283B' : '#9CA3AF'} />,
       onPress: onHome,
     },
     {
       key: 'referrals',
       label: 'Referrals',
-      icon: <ReferralsIcon active={active === 'referrals'} />,
+      icon: <Shield size={22} color={active === 'referrals' ? '#08283B' : '#9CA3AF'} />,
       onPress: onReferrals,
     },
     {
       key: 'sync',
       label: 'Sync',
-      icon: <SyncIcon active={active === 'sync'} />,
+      icon: <RefreshCw size={22} color={active === 'sync' ? '#08283B' : '#9CA3AF'} />,
       onPress: onSync,
     },
     {
       key: 'profile',
       label: 'Profile',
-      icon: <ProfileIcon active={active === 'profile'} />,
+      icon: <User size={22} color={active === 'profile' ? '#08283B' : '#9CA3AF'} />,
       onPress: onProfile,
     },
   ];
