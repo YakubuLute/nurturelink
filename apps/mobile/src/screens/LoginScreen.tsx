@@ -1,114 +1,96 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Eye, EyeOff, Phone, Lock, WifiOff } from 'lucide-react-native';
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
 import { useAppStore } from '../store';
 import { storeTokens, storeSession } from '../auth/session';
 import type { Role } from '../store';
-import { Delete, Users } from 'lucide-react-native';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
-// Demo phone numbers — seeded into the DB for pilot testing.
-// Using any PIN works offline; real PIN 1234 works with the live server.
-const DEMO_PHONES: Record<Role, string> = {
-  cho: '+233244000001',
-  sup: '+233244000002',
-};
-
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-// ─── PIN keypad layout ────────────────────────────────────────────────────────
-
-const KEYPAD_ROWS: (string | null)[][] = [
-  ['1', '2', '3'],
-  ['4', '5', '6'],
-  ['7', '8', '9'],
-  [null, '0', 'DEL'],
-];
-
-// ─── User profiles shown per role ────────────────────────────────────────────
-
-const USER_PROFILES: Record<Role, { name: string; subtitle: string }> = {
-  cho: { name: 'Yakubu Lute', subtitle: 'Community Health Officer · Kukuo CHPS' },
-  sup: { name: 'Yakubu Lute', subtitle: 'Supervisor · Tamale Metro District' },
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
+function mapServerRole(serverRole: string): Role {
+  if (serverRole === 'supervisor') return 'sup';
+  return 'cho';
+}
 
 export function LoginScreen({ navigation }: Props) {
   const login = useAppStore((s) => s.login);
 
-  const [role, setRole] = useState<Role>('cho');
-  const [pin, setPin] = useState<string>('');
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  /** Try server login; on failure fall back to offline demo mode. */
-  async function attemptLogin(enteredPin: string): Promise<void> {
-    const phone = DEMO_PHONES[role];
+  async function handleLogin() {
+    if (!phone.trim() || !password.trim()) {
+      setError('Phone number and password are required.');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, pin: enteredPin }),
+        body: JSON.stringify({ phone: phone.trim(), password }),
       });
+
       if (res.ok) {
-        const { accessToken, refreshToken } = (await res.json()) as {
+        const data = await res.json() as {
           accessToken: string;
           refreshToken: string;
+          user: { id: string; name: string; role: string; phone?: string };
         };
-        await storeTokens(accessToken, refreshToken);
-        console.log('[Login] Authenticated with server');
+        await storeTokens(data.accessToken, data.refreshToken);
+        const role = mapServerRole(data.user.role);
+        login({
+          id: data.user.id,
+          name: data.user.name,
+          phone: phone.trim(),
+          role,
+        });
+        navigation.replace(role === 'sup' ? 'Supervisor' : 'Home');
+      } else if (res.status === 401) {
+        setError('Incorrect phone number or password.');
+      } else if (res.status === 403) {
+        setError('Account not verified. Check your SMS for a verification code.');
       } else {
-        // Wrong credentials or server error — fall back to offline demo
-        await storeSession(role);
-        console.log(`[Login] Server returned ${res.status} — offline demo mode`);
+        setError('Login failed. Please try again.');
       }
     } catch {
-      // Network unavailable — offline demo mode
-      await storeSession(role);
-      console.log('[Login] Server unreachable — offline demo mode');
+      // Network unavailable — offer offline mode
+      setError('No connection. Tap "Work offline" to continue without syncing.');
+    } finally {
+      setLoading(false);
     }
   }
 
-  function handleKey(key: string | null) {
-    if (key === null) return;
-
-    if (key === 'DEL') {
-      setPin((p) => p.slice(0, -1));
-      setLoginError(null);
-      return;
-    }
-
-    if (pin.length >= 4) return;
-
-    const next = pin + key;
-    setPin(next);
-
-    if (next.length === 4) {
-      setTimeout(async () => {
-        await attemptLogin(next).catch(() => storeSession(role).catch(() => {}));
-        login(role);
-        if (role === 'sup') {
-          navigation.replace('Supervisor');
-        } else {
-          navigation.replace('Home');
-        }
-      }, 260);
+  async function handleOffline() {
+    setError(null);
+    setLoading(true);
+    try {
+      await storeSession('cho');
+      login({ id: 'offline', name: 'Offline User', phone: '', role: 'cho' });
+      navigation.replace('Home');
+    } finally {
+      setLoading(false);
     }
   }
-
-  const profile = USER_PROFILES[role];
-  const avatarBg = role === 'cho' ? '#92C9F9' : '#FFEFE6';
-  const avatarInitials = 'YL';
 
   return (
     <View style={styles.root}>
@@ -117,7 +99,7 @@ export function LoginScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Logo row ── */}
+        {/* Logo */}
         <View style={styles.logoRow}>
           <View style={styles.logoBox}>
             <LogoMark size={22} onDark={false} />
@@ -125,109 +107,112 @@ export function LoginScreen({ navigation }: Props) {
           <Text style={styles.logoLabel}>NurtureLink</Text>
         </View>
 
-        {/* ── Heading ── */}
+        {/* Heading */}
         <Text style={styles.heading}>Welcome back</Text>
-        <Text style={styles.headingSub}>Enter your PIN to open your caseload</Text>
+        <Text style={styles.headingSub}>Sign in to access your caseload</Text>
 
-        {/* ── Role switcher ── */}
-        <View style={styles.roleSwitcher}>
-          <Pressable
-            style={[styles.roleBtn, role === 'cho' && styles.roleBtnActive]}
-            onPress={() => { setRole('cho'); setPin(''); }}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: role === 'cho' }}
-          >
-            <Text style={[styles.roleBtnText, role === 'cho' && styles.roleBtnTextActive]}>
-              Health worker
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.roleBtn, role === 'sup' && styles.roleBtnActive]}
-            onPress={() => { setRole('sup'); setPin(''); }}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: role === 'sup' }}
-          >
-            <Text style={[styles.roleBtnText, role === 'sup' && styles.roleBtnTextActive]}>
-              Supervisor
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* ── Shared device info ── */}
-        <View style={styles.sharedRow}>
-          <Users size={16} color="#8D9CA5" />
-          <Text style={styles.sharedText}>
-            Shared device · 3 worker profiles · drafts stay locked to you
-          </Text>
-        </View>
-
-        {/* ── Selected user card ── */}
-        <View style={styles.userCard}>
-          <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-            <Text style={styles.avatarText}>{avatarInitials}</Text>
-          </View>
-          <View style={styles.userCardText}>
-            <Text style={styles.userName}>{profile.name}</Text>
-            <Text style={styles.userRole}>{profile.subtitle}</Text>
-          </View>
-        </View>
-
-        {/* ── PIN dots ── */}
-        <View style={styles.pinRow}>
-          {[0, 1, 2, 3].map((i) => (
-            <View
-              key={i}
-              style={[
-                styles.pinDot,
-                i < pin.length ? styles.pinDotFilled : styles.pinDotEmpty,
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* ── Spacer ── */}
-        <View style={{ flex: 1 }} />
-
-        {/* ── Keypad ── */}
-        <View style={styles.keypad}>
-          {KEYPAD_ROWS.map((row, rowIdx) => (
-            <View key={rowIdx} style={styles.keypadRow}>
-              {row.map((key, colIdx) => {
-                const isBlank = key === null;
-                const isDelete = key === 'DEL';
-                const isDigit = key !== null && key !== 'DEL';
-
-                return (
-                  <Pressable
-                    key={colIdx}
-                    style={({ pressed }) => [
-                      styles.keyBtn,
-                      isDigit && styles.keyBtnDigit,
-                      pressed && isDigit && styles.keyBtnPressed,
-                    ]}
-                    onPress={() => !isBlank && handleKey(key)}
-                    disabled={isBlank}
-                    accessibilityLabel={isDelete ? 'Delete' : key ?? undefined}
-                    accessibilityRole="button"
-                  >
-                    {isBlank ? null : isDelete ? (
-                      <Delete size={22} color="#08283B" />
-                    ) : (
-                      <Text style={styles.keyText}>{key}</Text>
-                    )}
-                  </Pressable>
-                );
-              })}
+        {/* Form */}
+        <View style={styles.form}>
+          {/* Phone */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Phone number</Text>
+            <View style={styles.inputRow}>
+              <Phone size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={(v) => { setPhone(v); setError(null); }}
+                placeholder="+233 244 000 000"
+                placeholderTextColor="#5A6F7C"
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
             </View>
-          ))}
+          </View>
+
+          {/* Password */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Password</Text>
+            <View style={styles.inputRow}>
+              <Lock size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.inputFlex]}
+                value={password}
+                onChangeText={(v) => { setPassword(v); setError(null); }}
+                placeholder="Your password"
+                placeholderTextColor="#5A6F7C"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+              />
+              <Pressable
+                onPress={() => setShowPassword((v) => !v)}
+                style={styles.eyeBtn}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword
+                  ? <EyeOff size={18} color="#8D9CA5" />
+                  : <Eye size={18} color="#8D9CA5" />}
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Forgot password */}
+          <Pressable
+            onPress={() => navigation.navigate('ForgotPassword')}
+            style={styles.forgotRow}
+            accessibilityRole="link"
+          >
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </Pressable>
+
+          {/* Error */}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          {/* Login button */}
+          <Pressable
+            style={({ pressed }) => [styles.loginBtn, pressed && styles.loginBtnPressed]}
+            onPress={handleLogin}
+            disabled={loading}
+            accessibilityRole="button"
+          >
+            {loading
+              ? <ActivityIndicator color="#FDFDFD" size="small" />
+              : <Text style={styles.loginBtnText}>Sign in</Text>}
+          </Pressable>
+
+          {/* Offline mode */}
+          <Pressable
+            style={styles.offlineBtn}
+            onPress={handleOffline}
+            disabled={loading}
+            accessibilityRole="button"
+          >
+            <WifiOff size={15} color="#8D9CA5" />
+            <Text style={styles.offlineBtnText}>Work offline</Text>
+          </Pressable>
         </View>
 
-        {/* ── Demo hint ── */}
-        <Text style={styles.demoHint}>Any 4 digits · syncs when server is available</Text>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Don't have an account?</Text>
+          <Pressable
+            onPress={() => navigation.navigate('SignUp')}
+            accessibilityRole="link"
+          >
+            <Text style={styles.footerLink}> Create account</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
 }
+
+const BRAND = '#FF5A00';
 
 const styles = StyleSheet.create({
   root: {
@@ -236,17 +221,16 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
-    paddingTop: 34,
+    paddingTop: 48,
     paddingHorizontal: 28,
-    paddingBottom: 24,
+    paddingBottom: 32,
   },
 
-  // Logo row
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 28,
+    marginBottom: 36,
   },
   logoBox: {
     width: 38,
@@ -255,7 +239,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDFDFD',
     alignItems: 'center',
     justifyContent: 'center',
-    // iOS shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -269,9 +252,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
 
-  // Heading
   heading: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 6,
@@ -279,142 +261,115 @@ const styles = StyleSheet.create({
   headingSub: {
     fontSize: 14,
     color: '#8D9CA5',
-    marginBottom: 24,
+    marginBottom: 32,
   },
 
-  // Role switcher
-  roleSwitcher: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 11,
-    padding: 4,
+  form: {
+    gap: 0,
+  },
+
+  fieldGroup: {
     marginBottom: 16,
   },
-  roleBtn: {
-    flex: 1,
-    paddingVertical: 9,
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C2D0D9',
+    marginBottom: 8,
+  },
+  inputRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 9,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    paddingHorizontal: 14,
+    height: 52,
   },
-  roleBtnActive: {
-    backgroundColor: '#FDFDFD',
+  inputIcon: {
+    marginRight: 10,
   },
-  roleBtnText: {
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: '#FDFDFD',
+    padding: 0,
+  },
+  inputFlex: {
+    flex: 1,
+  },
+  eyeBtn: {
+    padding: 4,
+    marginLeft: 6,
+  },
+
+  forgotRow: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+    marginTop: 4,
+  },
+  forgotText: {
+    fontSize: 13,
+    color: BRAND,
+    fontWeight: '500',
+  },
+
+  errorText: {
+    fontSize: 13,
+    color: '#FC8181',
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+
+  loginBtn: {
+    height: 52,
+    backgroundColor: BRAND,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  loginBtnPressed: {
+    opacity: 0.85,
+  },
+  loginBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FDFDFD',
+    letterSpacing: 0.2,
+  },
+
+  offlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  offlineBtnText: {
     fontSize: 14,
     color: '#8D9CA5',
     fontWeight: '500',
   },
-  roleBtnTextActive: {
-    color: '#08283B',
-    fontWeight: '600',
-  },
 
-  // Shared device row
-  sharedRow: {
+  footer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 16,
-  },
-  sharedText: {
-    fontSize: 11.5,
-    color: '#5A6F7C',
-    flexShrink: 1,
-    lineHeight: 16,
-  },
-
-  // User card
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    gap: 12,
-    marginBottom: 28,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 'auto',
+    paddingTop: 32,
   },
-  avatarText: {
+  footerText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#08283B',
-  },
-  userCardText: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FDFDFD',
-    marginBottom: 2,
-  },
-  userRole: {
-    fontSize: 12,
     color: '#8D9CA5',
   },
-
-  // PIN dots
-  pinRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginBottom: 24,
-  },
-  pinDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  pinDotFilled: {
-    backgroundColor: '#FF5A00',
-  },
-  pinDotEmpty: {
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'transparent',
-  },
-
-  // Keypad
-  keypad: {
-    gap: 10,
-    marginTop: 8,
-  },
-  keypadRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  keyBtn: {
-    flex: 1,
-    height: 62,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  keyBtnDigit: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
-  },
-  keyBtnPressed: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
-  },
-  keyText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FDFDFD',
-  },
-
-  // Demo hint
-  demoHint: {
-    marginTop: 18,
-    fontSize: 12,
-    color: '#5A6F7C',
-    textAlign: 'center',
+  footerLink: {
+    fontSize: 14,
+    color: BRAND,
+    fontWeight: '600',
   },
 });

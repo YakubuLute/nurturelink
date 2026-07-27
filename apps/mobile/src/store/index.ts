@@ -320,12 +320,20 @@ export const PLANS: Record<string, PlanData> = {
 
 // ─── Store state shape ────────────────────────────────────────────────────────
 
+export interface CurrentUser {
+  id: string;
+  name: string;
+  phone: string;
+  role: Role;
+}
+
 interface StoreState {
   // Auth
   role: Role;
   isLoggedIn: boolean;
   sessionExpired: boolean;
   uiLang: UiLang;
+  currentUser: CurrentUser | null;
 
   // Data
   clients: DemoClient[];
@@ -361,7 +369,7 @@ interface StoreState {
   regForm: RegForm;
 
   // Actions — auth
-  login: (role: Role) => void;
+  login: (user: CurrentUser) => void;
   logout: () => void;
   setSessionExpired: (v: boolean) => void;
   setUiLang: (lang: UiLang) => void;
@@ -419,6 +427,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
   isLoggedIn: false,
   sessionExpired: false,
   uiLang: 'en',
+  currentUser: null,
 
   clients: SEED_CLIENTS,
   referrals: SEED_REFERRALS,
@@ -451,10 +460,10 @@ export const useAppStore = create<StoreState>((set, get) => ({
   regForm: emptyRegForm,
 
   // ── Auth ──
-  login: (role) => set({ isLoggedIn: true, role, sessionExpired: false }),
+  login: (user) => set({ isLoggedIn: true, role: user.role, currentUser: user, sessionExpired: false }),
   logout: () => {
     clearSession().catch(() => {});
-    set({ isLoggedIn: false, sessionExpired: false });
+    set({ isLoggedIn: false, currentUser: null, sessionExpired: false });
   },
   setSessionExpired: (v) => set({ sessionExpired: v }),
   setUiLang: (lang) => set({ uiLang: lang }),
