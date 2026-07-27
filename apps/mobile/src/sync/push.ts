@@ -1,22 +1,36 @@
 import { drain, acknowledge } from './outbox';
-import { getToken, clearSession } from '../auth/session';
+import { getToken, getRefreshToken, storeTokens, clearSession } from '../auth/session';
+import { useAppStore } from '../store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
-/**
- * Push all queued outbox mutations to the server.
- *
- * - 401: clears the stored session (forces re-login on next sync attempt).
- *   Does not crash — the app is fully offline-capable.
- * - 5xx / network error: throws so the orchestrator can log and back off.
- */
-export async function pushMutations(): Promise<void> {
-  const mutations = await drain();
-  if (mutations.length === 0) return;
+/** Attempt to exchange the stored refresh token for a new access token. */
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = await getRefreshToken();
+  if (!refreshToken) return null;
 
-  const token = await getToken();
+  try {
+    const res = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) return null;
+    const { accessToken } = (await res.json()) as { accessToken: string };
+    // Persist the new access token (keep the same refresh token)
+    await storeTokens(accessToken, refreshToken);
+    return accessToken;
+  } catch {
+    return null;
+  }
+}
 
-  const res = await fetch(`${API_URL}/sync/push`, {
+/** Fire the push request with the given token. */
+async function doPush(
+  mutations: Awaited<ReturnType<typeof drain>>,
+  token: string | null,
+): Promise<Response> {
+  return fetch(`${API_URL}/sync/push`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -24,13 +38,39 @@ export async function pushMutations(): Promise<void> {
     },
     body: JSON.stringify({ mutations }),
   });
+}
+
+/**
+ * Push all queued outbox mutations to the server.
+ *
+ * - 401 (first attempt): tries to refresh the access token and retries once.
+ * - 401 (after refresh): clears session and surfaces re-login prompt via Zustand.
+ * - 5xx / network error: throws so the orchestrator can log and back off.
+ */
+export async function pushMutations(): Promise<void> {
+  const mutations = await drain();
+  if (mutations.length === 0) return;
+
+  const token = await getToken();
+  let res = await doPush(mutations, token);
 
   if (res.status === 401) {
-    // Session expired — clear the token and bail out gracefully.
-    // The next login will store a fresh token.
-    await clearSession().catch(() => {});
-    console.warn('[Push] 401 Unauthorized — session cleared, re-login required');
-    return;
+    const newToken = await refreshAccessToken();
+    if (!newToken) {
+      // Refresh failed — force re-login via Zustand flag
+      await clearSession().catch(() => {});
+      useAppStore.getState().setSessionExpired(true);
+      console.warn('[Push] 401 + refresh failed — session cleared, re-login required');
+      return;
+    }
+    // Retry once with the fresh access token
+    res = await doPush(mutations, newToken);
+    if (res.status === 401) {
+      await clearSession().catch(() => {});
+      useAppStore.getState().setSessionExpired(true);
+      console.warn('[Push] 401 on retry — session cleared, re-login required');
+      return;
+    }
   }
 
   if (!res.ok) {

@@ -11,8 +11,17 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
 import { useAppStore } from '../store';
-import { storeSession } from '../auth/session';
+import { storeTokens, storeSession } from '../auth/session';
 import type { Role } from '../store';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
+
+// Demo phone numbers — seeded into the DB for pilot testing.
+// Using any PIN works offline; real PIN 1234 works with the live server.
+const DEMO_PHONES: Record<Role, string> = {
+  cho: '+233244000001',
+  sup: '+233244000002',
+};
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -39,12 +48,42 @@ export function LoginScreen({ navigation }: Props) {
 
   const [role, setRole] = useState<Role>('cho');
   const [pin, setPin] = useState<string>('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  /** Try server login; on failure fall back to offline demo mode. */
+  async function attemptLogin(enteredPin: string): Promise<void> {
+    const phone = DEMO_PHONES[role];
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, pin: enteredPin }),
+      });
+      if (res.ok) {
+        const { accessToken, refreshToken } = (await res.json()) as {
+          accessToken: string;
+          refreshToken: string;
+        };
+        await storeTokens(accessToken, refreshToken);
+        console.log('[Login] Authenticated with server');
+      } else {
+        // Wrong credentials or server error — fall back to offline demo
+        await storeSession(role);
+        console.log(`[Login] Server returned ${res.status} — offline demo mode`);
+      }
+    } catch {
+      // Network unavailable — offline demo mode
+      await storeSession(role);
+      console.log('[Login] Server unreachable — offline demo mode');
+    }
+  }
 
   function handleKey(key: string | null) {
     if (key === null) return;
 
     if (key === '⌫') {
       setPin((p) => p.slice(0, -1));
+      setLoginError(null);
       return;
     }
 
@@ -55,8 +94,7 @@ export function LoginScreen({ navigation }: Props) {
 
     if (next.length === 4) {
       setTimeout(async () => {
-        // Store demo token so sync layer has a non-empty Authorization header
-        await storeSession(role).catch(() => { /* non-fatal */ });
+        await attemptLogin(next).catch(() => storeSession(role).catch(() => {}));
         login(role);
         if (role === 'sup') {
           navigation.replace('Supervisor');
@@ -189,7 +227,7 @@ export function LoginScreen({ navigation }: Props) {
         </View>
 
         {/* ── Demo hint ── */}
-        <Text style={styles.demoHint}>Demo PIN — enter any 4 digits</Text>
+        <Text style={styles.demoHint}>Any 4 digits · syncs when server is available</Text>
       </ScrollView>
     </View>
   );

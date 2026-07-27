@@ -1,36 +1,42 @@
-/**
- * Session helpers — persist the JWT produced by POST /auth/login in SecureStore.
- *
- * In the demo build we mint a signed-looking placeholder token so the sync layer
- * has a non-empty Authorization header to send. The API will reject it with 401,
- * which the sync layer treats as a soft failure (no crash, just skipped).
- *
- * In a production build replace storeSession() with a real login API call and
- * store the token the server returns.
- */
-
 import * as SecureStore from 'expo-secure-store';
 
-const TOKEN_KEY = 'nl_access_token';
+const ACCESS_TOKEN_KEY = 'nl_access_token';
+const REFRESH_TOKEN_KEY = 'nl_refresh_token';
 const SECURE_OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
 
+/** Store both tokens after a successful login. */
+export async function storeTokens(accessToken: string, refreshToken: string): Promise<void> {
+  await Promise.all([
+    SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken, SECURE_OPTIONS),
+    SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken, SECURE_OPTIONS),
+  ]);
+}
+
 /**
- * Store a session token after login.
- * In demo mode this mints a placeholder; swap for the real server token in prod.
+ * Store a demo placeholder token (offline / fallback mode).
+ * The sync layer will get a 401 from the server and skip gracefully.
  */
-export async function storeSession(role: string, token?: string): Promise<void> {
-  const value = token ?? `demo.${role}.${Date.now()}`;
-  await SecureStore.setItemAsync(TOKEN_KEY, value, SECURE_OPTIONS);
+export async function storeSession(role: string): Promise<void> {
+  const demo = `demo.${role}.${Date.now()}`;
+  await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, demo, SECURE_OPTIONS);
 }
 
-/** Remove the token on logout or forced sign-out (e.g. 401 from server). */
+/** Remove both tokens on logout or forced sign-out. */
 export async function clearSession(): Promise<void> {
-  await SecureStore.deleteItemAsync(TOKEN_KEY);
+  await Promise.all([
+    SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
+    SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+  ]);
 }
 
-/** Read the current token (null if not logged in). */
+/** Read the current access token (null if not logged in). */
 export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY);
+  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+}
+
+/** Read the current refresh token (null if not logged in). */
+export async function getRefreshToken(): Promise<string | null> {
+  return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
 }

@@ -322,6 +322,7 @@ interface StoreState {
   // Auth
   role: Role;
   isLoggedIn: boolean;
+  sessionExpired: boolean;
   uiLang: UiLang;
 
   // Data
@@ -360,6 +361,7 @@ interface StoreState {
   // Actions — auth
   login: (role: Role) => void;
   logout: () => void;
+  setSessionExpired: (v: boolean) => void;
   setUiLang: (lang: UiLang) => void;
 
   // Actions — clients
@@ -413,6 +415,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
   // Initial state
   role: 'cho',
   isLoggedIn: false,
+  sessionExpired: false,
   uiLang: 'en',
 
   clients: SEED_CLIENTS,
@@ -446,11 +449,12 @@ export const useAppStore = create<StoreState>((set, get) => ({
   regForm: emptyRegForm,
 
   // ── Auth ──
-  login: (role) => set({ isLoggedIn: true, role }),
+  login: (role) => set({ isLoggedIn: true, role, sessionExpired: false }),
   logout: () => {
     clearSession().catch(() => {});
-    set({ isLoggedIn: false });
+    set({ isLoggedIn: false, sessionExpired: false });
   },
+  setSessionExpired: (v) => set({ sessionExpired: v }),
   setUiLang: (lang) => set({ uiLang: lang }),
 
   // ── Clients ──
