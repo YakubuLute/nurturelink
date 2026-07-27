@@ -10,6 +10,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, PLANS } from '../store';
+import { ChevronLeft, Check, Volume2, Bluetooth, MessageCircle, Square, Mic } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Voice'>;
 
@@ -64,7 +65,7 @@ function DeliveryCard({
   badgeBg,
 }: {
   iconBg: string;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   sub: string;
   badge?: string;
@@ -74,7 +75,7 @@ function DeliveryCard({
   return (
     <View style={styles.deliveryCard}>
       <View style={[styles.deliveryIconBox, { backgroundColor: iconBg }]}>
-        <Text style={{ fontSize: 20 }}>{icon}</Text>
+        {icon}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1, marginBottom: 2 }}>{title}</Text>
@@ -190,7 +191,7 @@ export function VoiceScreen({ navigation, route }: Props) {
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityLabel="Go back">
-          <Text style={{ color: '#fff', fontSize: 20 }}>‹</Text>
+          <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={{ flex: 1, marginTop: 4 }}>
           <Text style={styles.headerTitle}>Voice note</Text>
@@ -222,9 +223,10 @@ export function VoiceScreen({ navigation, route }: Props) {
       >
         {/* Plan approved badge */}
         <View style={[styles.approvedBadge]}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: C.success }}>
-            ✓ Plan approved by you
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Check size={13} color={C.success} strokeWidth={3} />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: C.success }}>Plan approved by you</Text>
+          </View>
         </View>
 
         {/* ── Audio player card ── */}
@@ -304,13 +306,13 @@ export function VoiceScreen({ navigation, route }: Props) {
 
         <DeliveryCard
           iconBg={C.lb50}
-          icon="🔊"
+          icon={<Volume2 size={20} color={C.lb700} />}
           title="Play aloud now"
           sub="During counselling — no phone needed"
         />
         <DeliveryCard
           iconBg="#F6F5FF"
-          icon="📶"
+          icon={<Bluetooth size={20} color="#6C2BD9" />}
           title="Bluetooth to feature phone"
           sub="Works fully offline · for basic phones"
           badge="OFFLINE"
@@ -320,7 +322,7 @@ export function VoiceScreen({ navigation, route }: Props) {
         {offline ? (
           <DeliveryCard
             iconBg={C.successBg}
-            icon="💬"
+            icon={<MessageCircle size={20} color={C.success} />}
             title="Send via WhatsApp"
             sub="Needs a connection — will send when online"
             badge="QUEUED"
@@ -330,7 +332,7 @@ export function VoiceScreen({ navigation, route }: Props) {
         ) : (
           <DeliveryCard
             iconBg={C.successBg}
-            icon="💬"
+            icon={<MessageCircle size={20} color={C.success} />}
             title="Share via WhatsApp"
             sub=""
             badge="ONLINE"
@@ -347,7 +349,9 @@ export function VoiceScreen({ navigation, route }: Props) {
             onPress={handleRecordToggle}
             accessibilityLabel={recording ? 'Stop recording' : 'Start recording'}
           >
-            <Text style={{ color: '#fff', fontSize: 22 }}>{recording ? '■' : '●'}</Text>
+            {recording
+              ? <Square size={22} color="#FFFFFF" />
+              : <Mic size={22} color="#FFFFFF" />}
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

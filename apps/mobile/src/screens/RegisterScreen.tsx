@@ -13,7 +13,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Check, WifiOff } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -141,7 +141,7 @@ function ConsentRow({
       activeOpacity={0.8}
     >
       <View style={[consent.box, checked ? consent.boxChecked : consent.boxUnchecked]}>
-        {checked && <Text style={consent.tick}>✓</Text>}
+        {checked && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
       </View>
       <View style={consent.body}>
         <Text style={consent.title}>Caregiver consent given</Text>
@@ -177,7 +177,6 @@ const consent = StyleSheet.create({
   },
   boxChecked: { backgroundColor: '#FFFFFF', borderColor: '#FF5A00' },
   boxUnchecked: { backgroundColor: '#FFFFFF', borderColor: '#D1D5DB' },
-  tick: { fontSize: 14, fontWeight: '700', color: '#FF5A00', lineHeight: 18 },
   body: { flex: 1 },
   title: { fontSize: 13.5, fontWeight: '700', color: '#08283B', marginBottom: 4 },
   desc: { fontSize: 12, color: '#6B7280', lineHeight: 17 },
@@ -289,7 +288,7 @@ export function RegisterScreen({ navigation }: Props) {
 
         {/* Offline note */}
         <View style={styles.offlineNote}>
-          <Text style={styles.offlineIcon}>⊘</Text>
+          <WifiOff size={16} color="#427CAF" />
           <Text style={styles.offlineText}>
             Saved on device now · encrypted · syncs later
           </Text>
@@ -397,7 +396,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginBottom: 16,
   },
-  offlineIcon: { fontSize: 15, color: '#8C6900' },
   offlineText: { fontSize: 12.5, color: '#8C6900', fontWeight: '500', flex: 1 },
 
   // Save button

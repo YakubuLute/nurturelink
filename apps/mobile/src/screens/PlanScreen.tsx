@@ -15,6 +15,7 @@ import {
   PlanFood,
   priorityStyle,
 } from '../store';
+import { ChevronLeft, X, RefreshCw, Check, Shield, Info } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Plan'>;
 
@@ -143,7 +144,7 @@ function FoodCard({
         onPress={onRemove}
         accessibilityLabel={`Remove ${food.name}`}
       >
-        <Text style={{ fontSize: 15, color: C.fg4 }}>✕</Text>
+        <X size={18} color={C.fg4} />
       </TouchableOpacity>
     </View>
   );
@@ -178,7 +179,7 @@ export function PlanScreen({ navigation, route }: Props) {
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityLabel="Go back">
-          <Text style={{ color: '#fff', fontSize: 20 }}>‹</Text>
+          <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={{ marginTop: 4 }}>
           <Text style={styles.headerTitle}>Feeding plan</Text>
@@ -222,7 +223,10 @@ export function PlanScreen({ navigation, route }: Props) {
             onPress={() => store.regeneratePlan()}
             accessibilityLabel="Regenerate plan"
           >
-            <Text style={{ fontSize: 12.5, fontWeight: '600', color: C.lb700 }}>↺ Regenerate</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <RefreshCw size={13} color={C.lb700} />
+              <Text style={{ fontSize: 12.5, fontWeight: '600', color: C.lb700 }}>Regenerate</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -267,13 +271,13 @@ export function PlanScreen({ navigation, route }: Props) {
 
         {/* ── Why this plan ── */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 10 }}>
-          <Text style={{ fontSize: 13 }}>ℹ</Text>
+          <Info size={14} color={C.fg3} />
           <Text style={styles.sectionTitle}>Why this plan</Text>
         </View>
         <View style={[styles.rationaleCard]}>
           {basePlan.rationale.map((item, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 10, marginBottom: i < basePlan.rationale.length - 1 ? 10 : 0 }}>
-              <Text style={{ fontSize: 14, color: C.lb700, marginTop: 1 }}>✓</Text>
+              <Check size={14} color={C.lb700} strokeWidth={3} />
               <Text style={{ flex: 1, fontSize: 12.5, color: C.fg1, lineHeight: 18 }}>{item}</Text>
             </View>
           ))}
@@ -284,7 +288,7 @@ export function PlanScreen({ navigation, route }: Props) {
       <View style={styles.actionBar}>
         {/* Responsible AI note */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
-          <Text style={{ fontSize: 13, color: C.warningDark }}>🛡</Text>
+          <Shield size={14} color={C.warningDark} />
           <Text style={{ flex: 1, fontSize: 11.5, color: C.warningDark, lineHeight: 17 }}>
             You remain responsible for this advice — edit it, then approve before sending.
           </Text>
@@ -294,9 +298,10 @@ export function PlanScreen({ navigation, route }: Props) {
           onPress={() => navigation.navigate('Voice', { clientId })}
           accessibilityLabel="Approve and create voice note"
         >
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
-            ✓ Approve & create voice note
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Check size={16} color="#FFFFFF" strokeWidth={3} />
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Approve & create voice note</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

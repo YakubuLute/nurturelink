@@ -19,6 +19,7 @@ import {
   formatMetric,
   metricLabel,
 } from '../store';
+import { ChevronLeft, TrendingUp, TrendingDown, Minus, Check, AlertTriangle, BarChart2, ClipboardList } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -226,9 +227,9 @@ export function ClientScreen({ navigation, route }: Props) {
     if (first !== null && last !== null) {
       const diff = last - first;
       const sign = diff >= 0 ? '+' : '';
-      if (client.metric === 'hb')     trendDelta = `${client.trendArrow === 'down' ? '↓' : client.trendArrow === 'up' ? '↑' : '→'} ${sign}${diff.toFixed(1)} g/dL`;
-      else if (client.metric === 'weight') trendDelta = `${client.trendArrow === 'down' ? '↓' : client.trendArrow === 'up' ? '↑' : '→'} ${sign}${diff.toFixed(1)} kg`;
-      else trendDelta = `${client.trendArrow === 'down' ? '↓' : client.trendArrow === 'up' ? '↑' : '→'} ${sign}${Math.round(diff)} mm`;
+      if (client.metric === 'hb')          trendDelta = `${sign}${diff.toFixed(1)} g/dL`;
+      else if (client.metric === 'weight') trendDelta = `${sign}${diff.toFixed(1)} kg`;
+      else                                 trendDelta = `${sign}${Math.round(diff)} mm`;
     }
   }
 
@@ -238,11 +239,11 @@ export function ClientScreen({ navigation, route }: Props) {
   let flagBg = C.successBg;
   let flagBorder = C.successBorder;
   let flagTextColor = C.success;
-  let flagIcon = '✓';
+  let flagWarn = false;
   if (client.priority === 'urgent') {
-    flagBg = C.errorBg; flagBorder = C.errorBorder; flagTextColor = C.error; flagIcon = '⚠';
+    flagBg = C.errorBg; flagBorder = C.errorBorder; flagTextColor = C.error; flagWarn = true;
   } else if (client.priority === 'high') {
-    flagBg = C.highPriorityBg; flagBorder = '#FFCAA8'; flagTextColor = C.highPriority; flagIcon = '⚠';
+    flagBg = C.highPriorityBg; flagBorder = '#FFCAA8'; flagTextColor = C.highPriority; flagWarn = true;
   }
 
   const subLine = client.type === 'pregnant'
@@ -262,7 +263,7 @@ export function ClientScreen({ navigation, route }: Props) {
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} accessibilityLabel="Go back">
-          <Text style={{ color: '#fff', fontSize: 20 }}>‹</Text>
+          <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerLabel}>Client record</Text>
 
@@ -306,7 +307,11 @@ export function ClientScreen({ navigation, route }: Props) {
         {/* Risk flag banner */}
         <View style={[styles.card, { backgroundColor: flagBg, borderColor: flagBorder, marginBottom: 12 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-            <Text style={{ fontSize: 16, color: flagTextColor, marginTop: 1 }}>{flagIcon}</Text>
+            <View style={{ marginTop: 1 }}>
+              {flagWarn
+                ? <AlertTriangle size={16} color={flagTextColor} />
+                : <Check size={16} color={flagTextColor} />}
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '700', color: flagTextColor, marginBottom: 3 }}>
                 {client.flag}
@@ -320,7 +325,7 @@ export function ClientScreen({ navigation, route }: Props) {
         <View style={[styles.card, { marginBottom: 12 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-              <Text style={{ fontSize: 13 }}>📊</Text>
+              <BarChart2 size={14} color={C.fg3} />
               <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Why NurtureLink ranked this client</Text>
             </View>
             <View style={{ backgroundColor: pStyle.bg, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 }}>
@@ -347,7 +352,14 @@ export function ClientScreen({ navigation, route }: Props) {
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ fontSize: 26, fontWeight: '700', color: C.fg1, lineHeight: 30 }}>{currentValue}</Text>
               {trendDelta ? (
-                <Text style={{ fontSize: 13, color: client.trendColor, fontWeight: '600' }}>{trendDelta}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  {client.trendArrow === 'up'
+                    ? <TrendingUp size={13} color={client.trendColor} />
+                    : client.trendArrow === 'down'
+                    ? <TrendingDown size={13} color={client.trendColor} />
+                    : <Minus size={13} color={client.trendColor} />}
+                  <Text style={{ fontSize: 13, color: client.trendColor, fontWeight: '600' }}>{trendDelta}</Text>
+                </View>
               ) : null}
             </View>
           </View>
@@ -366,7 +378,7 @@ export function ClientScreen({ navigation, route }: Props) {
         <Text style={styles.sectionHeader}>Visit history</Text>
         {visits.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 36 }}>
-            <Text style={{ fontSize: 32, marginBottom: 12 }}>📋</Text>
+            <ClipboardList size={32} color={C.fg4} style={{ marginBottom: 12 }} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg2, marginBottom: 6 }}>No visits yet</Text>
             <Text style={{ fontSize: 13, color: C.fg3, textAlign: 'center', lineHeight: 20 }}>
               Record a visit to start tracking nutrition trends for this client.
@@ -398,9 +410,12 @@ export function ClientScreen({ navigation, route }: Props) {
                     paddingHorizontal: 8,
                     paddingVertical: 2,
                   }}>
-                    <Text style={{ fontSize: 10.5, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
-                      {v.synced ? 'Synced ✓' : 'Draft — offline'}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                      {v.synced && <Check size={10} color={C.success} strokeWidth={3} />}
+                      <Text style={{ fontSize: 10.5, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
+                        {v.synced ? 'Synced' : 'Draft — offline'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -429,7 +444,7 @@ export function ClientScreen({ navigation, route }: Props) {
             accessibilityLabel={client.severe ? 'Referral required' : 'View plan'}
           >
             <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>
-              {client.severe ? 'Referral required' : visits.length > 0 ? 'View plan →' : 'Generate plan →'}
+              {client.severe ? 'Referral required' : visits.length > 0 ? 'View plan' : 'Generate plan'}
             </Text>
           </TouchableOpacity>
         )}
