@@ -11,6 +11,7 @@
 
 // Type-only imports are erased at runtime — safe regardless of native availability.
 import type { DB, Scalar } from '@op-engineering/op-sqlite';
+import { TurboModuleRegistry } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { CREATE_TABLES } from './schema';
 
@@ -21,21 +22,17 @@ const KEY_ALIAS = 'nl_db_key';
 
 // ─── Native module availability check ────────────────────────────────────────
 
-/** True when op-sqlite's native TurboModule is registered in the current binary. */
-function isNativeAvailable(): boolean {
-  try {
-    // Attempt a lazy require — will throw if the TurboModule isn't compiled in.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require('@op-engineering/op-sqlite');
-    return true;
-  } catch {
-    return false;
-  }
-}
-
+/**
+ * Use TurboModuleRegistry.get() — returns null instead of throwing when the
+ * native module isn't compiled into the binary (e.g. Expo Go).
+ * Never use require() for this check: Metro's "Base module not found" error
+ * is not a catchable JS exception in Hermes.
+ */
 let _nativeAvailable: boolean | null = null;
 function nativeAvailable(): boolean {
-  if (_nativeAvailable === null) _nativeAvailable = isNativeAvailable();
+  if (_nativeAvailable === null) {
+    _nativeAvailable = TurboModuleRegistry.get('OPSQLite') !== null;
+  }
   return _nativeAvailable;
 }
 
