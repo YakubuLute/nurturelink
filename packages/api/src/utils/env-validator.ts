@@ -80,17 +80,15 @@ export function validateEnv(envFilePath?: string): EnvValidationResult {
     }
   }
 
-  // Combine loaded .env values with process.env
-  const combinedEnv: Record<string, string> = {
-    ...rawEnv,
-  };
-
-  // Add process.env entries that are set
+  // Combine: process.env as base, file values take precedence
+  const combinedEnv: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined) {
       combinedEnv[key] = value;
     }
   }
+  // File values override process.env so tests can supply explicit values
+  Object.assign(combinedEnv, rawEnv);
 
   const warnings: string[] = [];
 

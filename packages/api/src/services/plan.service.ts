@@ -1,8 +1,6 @@
 import { CreatePlanInput, Plan, PlanBlockedResponse } from '@nurturelink/shared';
 import { PlanRepository } from '../repositories/plan.repository';
 
-const repo = new PlanRepository();
-
 function serializePlan(row: {
   id: string;
   clientId: string;
@@ -44,15 +42,17 @@ export type CreatePlanResult =
   | { blocked: false; plan: Plan };
 
 export class PlanService {
+  private repo = new PlanRepository();
+
   /**
    * Create a plan. Enforces the safety guardrail: if a 'refer' severity flag
    * exists for the visit, returns a blocked result instead of creating a plan.
    */
   async create(input: CreatePlanInput): Promise<CreatePlanResult> {
-    const flag = await repo.findFlagByVisitId(input.visitId);
+    const flag = await this.repo.findFlagByVisitId(input.visitId);
 
     if (flag && flag.severity === 'refer') {
-      const existingReferral = await repo.findReferralByVisitId(input.visitId);
+      const existingReferral = await this.repo.findReferralByVisitId(input.visitId);
       return {
         blocked: true,
         body: {
@@ -64,17 +64,17 @@ export class PlanService {
       };
     }
 
-    const row = await repo.upsertPlan(input);
+    const row = await this.repo.upsertPlan(input);
     return { blocked: false, plan: serializePlan(row) };
   }
 
   async listByClient(clientId: string): Promise<Plan[]> {
-    const rows = await repo.findPlansByClient(clientId);
+    const rows = await this.repo.findPlansByClient(clientId);
     return rows.map(serializePlan);
   }
 
   async findById(id: string): Promise<Plan | null> {
-    const row = await repo.findPlanById(id);
+    const row = await this.repo.findPlanById(id);
     return row ? serializePlan(row) : null;
   }
 }
