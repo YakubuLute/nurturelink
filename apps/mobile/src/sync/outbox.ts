@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { SyncMutation, SyncOperation } from '@nurturelink/shared';
+import { SyncMutation, SyncOperation, SyncEntityType } from '@nurturelink/shared';
 import { execute, query } from '../db';
 
 interface OutboxRow {
@@ -18,7 +18,7 @@ interface OutboxRow {
  * to guarantee eventual delivery via sync.
  */
 export async function enqueue(
-  entityType: string,
+  entityType: SyncEntityType,
   entityId: string,
   operation: SyncOperation,
   payload: Record<string, unknown>,
@@ -39,7 +39,7 @@ export async function drain(): Promise<SyncMutation[]> {
   const rows = await query<OutboxRow>('SELECT * FROM outbox ORDER BY id ASC');
   return rows.map((row) => ({
     idempotencyKey: row.idempotency_key,
-    entityType: row.entity_type,
+    entityType: row.entity_type as SyncEntityType,
     entityId: row.entity_id,
     operation: row.operation as SyncOperation,
     payload: JSON.parse(row.payload) as Record<string, unknown>,
