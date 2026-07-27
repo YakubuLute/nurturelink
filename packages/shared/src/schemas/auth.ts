@@ -9,12 +9,39 @@ export const UserRoleSchema = z.enum([
 ]);
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
-// PIN is a 4-digit code sent as a string; hashed server-side with bcrypt.
 export const LoginSchema = z.object({
   phone: z.string().min(10),
-  pin: z.string().length(4).regex(/^\d{4}$/, 'PIN must be 4 digits'),
+  password: z.string().min(8),
 });
 export type LoginInput = z.infer<typeof LoginSchema>;
+
+export const RegisterSchema = z.object({
+  name: z.string().min(2),
+  phone: z.string().min(10),
+  password: z.string().min(8),
+  role: z.enum(['CHO', 'supervisor']),
+  facilityId: z.string().uuid().optional(),
+});
+export type RegisterInput = z.infer<typeof RegisterSchema>;
+
+export const ForgotPasswordSchema = z.object({
+  phone: z.string().min(10),
+});
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
+
+export const VerifyOtpSchema = z.object({
+  phone: z.string().min(10),
+  code: z.string().length(6).regex(/^\d{6}$/, 'Code must be 6 digits'),
+  mode: z.enum(['registration', 'password-reset']),
+});
+export type VerifyOtpInput = z.infer<typeof VerifyOtpSchema>;
+
+export const ResetPasswordSchema = z.object({
+  phone: z.string().min(10),
+  code: z.string().length(6),
+  password: z.string().min(8),
+});
+export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 
 export const AuthUserSchema = z.object({
   id: z.string().uuid(),
