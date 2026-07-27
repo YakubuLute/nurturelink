@@ -5,12 +5,13 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, DemoReferral, initials, avatarStyle } from '../store';
 import { BottomTabBar } from '../components/BottomTabBar';
+import { ChevronLeft, Check, Phone, Shield, Clock } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralsList'>;
 
@@ -64,13 +65,13 @@ function ReferralCard({
       {/* Due / seen strip */}
       {isIssued && referral.due && (
         <View style={styles.stripIssued}>
-          <Text style={styles.stripIcon}>🕐</Text>
+          <Clock size={14} color="#B48700" />
           <Text style={styles.stripTextIssued}>Due {referral.due}</Text>
         </View>
       )}
       {isSeen && referral.seenAt && (
         <View style={styles.stripSeen}>
-          <Text style={styles.stripIcon}>✓</Text>
+          <Check size={14} color="#057A55" strokeWidth={3} />
           <Text style={styles.stripTextSeen}>Seen at facility {referral.seenAt}</Text>
         </View>
       )}
@@ -85,7 +86,8 @@ function ReferralCard({
               accessibilityRole="button"
               accessibilityLabel="Call client"
             >
-              <Text style={styles.callBtnText}>📞 Call</Text>
+              <Phone size={14} color="#08283B" />
+              <Text style={styles.callBtnText}>Call</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.confirmBtn}
@@ -111,7 +113,7 @@ export function ReferralsListScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       {/* ── Header ── */}
-      <SafeAreaView style={styles.headerSafe}>
+      <SafeAreaView style={styles.headerSafe} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -119,7 +121,7 @@ export function ReferralsListScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Text style={styles.backArrow}>‹</Text>
+            <ChevronLeft size={24} color="#FDFDFD" />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Referrals</Text>
@@ -164,7 +166,9 @@ export function ReferralsListScreen({ navigation }: Props) {
         ) : (
           /* Empty state */
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🛡</Text>
+            <View style={styles.emptyIcon}>
+              <Shield size={48} color="#9CA3AF" />
+            </View>
             <Text style={styles.emptyTitle}>No open referrals</Text>
             <Text style={styles.emptyBody}>
               Severe cases referred to a health facility will appear here for follow-up.
@@ -352,9 +356,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     marginBottom: 12,
   },
-  stripIcon: {
-    fontSize: 14,
-  },
   stripTextIssued: {
     fontSize: 12,
     color: '#8C6900',
@@ -387,6 +388,9 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     paddingVertical: 8,
     paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   callBtnText: {
     fontSize: 12.5,
@@ -412,7 +416,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyIcon: {
-    fontSize: 48,
     marginBottom: 16,
   },
   emptyTitle: {

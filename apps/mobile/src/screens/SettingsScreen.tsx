@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   Switch,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, UiLang } from '../store';
 import { BottomTabBar } from '../components/BottomTabBar';
+import { ChevronLeft, BarChart2, User, BatteryMedium, HardDrive, Zap, TrendingUp, LayoutGrid, ChevronRight } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -27,6 +28,7 @@ export function SettingsScreen({ navigation }: Props) {
     toggleAdaptive,
     setUiLang,
     logout,
+    currentUser,
   } = useAppStore();
 
   const issuedCount = referrals.filter((r) => r.status === 'issued').length;
@@ -40,7 +42,7 @@ export function SettingsScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       {/* ── Header ── */}
-      <SafeAreaView style={styles.headerSafe}>
+      <SafeAreaView style={styles.headerSafe} edges={['top']}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity
@@ -49,18 +51,22 @@ export function SettingsScreen({ navigation }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Text style={styles.backArrow}>‹</Text>
+              <ChevronLeft size={24} color="#FDFDFD" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Profile & device</Text>
             <View style={{ width: 36 }} />
           </View>
           <View style={styles.profileRow}>
             <View style={styles.profileAvatar}>
-              <Text style={styles.profileAvatarText}>YL</Text>
+              <Text style={styles.profileAvatarText}>
+                {(currentUser?.name ?? 'U').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+              </Text>
             </View>
             <View>
-              <Text style={styles.profileName}>Yakubu Lute</Text>
-              <Text style={styles.profileRole}>Community Health Officer · Kukuo</Text>
+              <Text style={styles.profileName}>{currentUser?.name ?? 'Health Worker'}</Text>
+              <Text style={styles.profileRole}>
+                {currentUser?.role === 'sup' ? 'Supervisor' : 'Community Health Officer'}
+              </Text>
             </View>
           </View>
         </View>
@@ -77,7 +83,7 @@ export function SettingsScreen({ navigation }: Props) {
         <View style={styles.card}>
           {/* Profiles row */}
           <View style={styles.settingRow}>
-            <Text style={styles.settingIcon}>👤</Text>
+            <User size={20} color="#374151" />
             <View style={styles.settingBody}>
               <Text style={styles.settingTitle}>3 worker profiles</Text>
               <Text style={styles.settingDesc}>Shared compound handset · each logs in with a PIN</Text>
@@ -87,7 +93,7 @@ export function SettingsScreen({ navigation }: Props) {
 
           {/* Battery row */}
           <View style={styles.settingRow}>
-            <Text style={styles.settingIcon}>🔋</Text>
+            <BatteryMedium size={20} color="#374151" />
             <View style={styles.settingBody}>
               <Text style={styles.settingTitle}>Battery {battery}%</Text>
               <Text style={styles.settingDesc}>Heavy syncs pause below 30% unless on power</Text>
@@ -97,7 +103,7 @@ export function SettingsScreen({ navigation }: Props) {
 
           {/* Storage row */}
           <View style={styles.settingRow}>
-            <Text style={styles.settingIcon}>💾</Text>
+            <HardDrive size={20} color="#374151" />
             <View style={styles.settingBody}>
               <Text style={styles.settingTitle}>Storage · {storageUsed} MB of 250 MB</Text>
               <View style={styles.storageBar}>
@@ -113,7 +119,7 @@ export function SettingsScreen({ navigation }: Props) {
         <View style={styles.card}>
           {/* Adaptive sync toggle */}
           <View style={styles.settingRowSpaced}>
-            <Text style={styles.settingIcon}>⚡</Text>
+            <Zap size={20} color="#374151" />
             <View style={styles.settingBody}>
               <Text style={styles.settingTitle}>Battery-aware sync</Text>
               <Text style={styles.settingDesc}>Large downloads only on power or Wi-Fi</Text>
@@ -130,7 +136,7 @@ export function SettingsScreen({ navigation }: Props) {
 
           {/* Telemetry row */}
           <View style={styles.settingRow}>
-            <Text style={styles.settingIcon}>📊</Text>
+            <BarChart2 size={20} color="#374151" />
             <View style={styles.settingBody}>
               <Text style={styles.settingTitle}>Telemetry queue · {telemetryCount} events</Text>
               <Text style={styles.settingDesc}>Anonymised usage, PII stripped, sent with sync</Text>
@@ -145,12 +151,12 @@ export function SettingsScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Monthly tally"
           >
-            <Text style={styles.settingIcon}>📈</Text>
+            <TrendingUp size={20} color="#374151" />
             <View style={styles.settingBody}>
               <Text style={styles.settingTitle}>Monthly tally · DHIMS2</Text>
               <Text style={styles.settingDesc}>Auto-generated CHPS report</Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <ChevronRight size={18} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
 
@@ -194,12 +200,12 @@ export function SettingsScreen({ navigation }: Props) {
           accessibilityRole="button"
           accessibilityLabel="District overview"
         >
-          <Text style={styles.settingIcon}>⊞</Text>
+          <LayoutGrid size={20} color="#374151" />
           <View style={styles.settingBody}>
             <Text style={styles.settingTitle}>District overview</Text>
             <Text style={styles.settingDesc}>Sagnarigu district · 6 CHPS zones</Text>
           </View>
-          <Text style={styles.chevron}>›</Text>
+          <ChevronRight size={18} color="#9CA3AF" />
         </TouchableOpacity>
 
         {/* Sign out */}
@@ -335,12 +341,6 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     gap: 12,
   },
-  settingIcon: {
-    fontSize: 18,
-    marginTop: 1,
-    width: 24,
-    textAlign: 'center',
-  },
   settingBody: {
     flex: 1,
     gap: 3,
@@ -354,11 +354,6 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: '#6B7280',
     lineHeight: 16,
-  },
-  chevron: {
-    fontSize: 20,
-    color: '#9CA3AF',
-    fontWeight: '300',
   },
 
   // Storage bar

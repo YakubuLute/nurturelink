@@ -1,9 +1,14 @@
+import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
 const REFRESH_TOKEN_TTL_DAYS = 7;
+
+function sha256(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 export class AuthRepository {
   async findByPhone(phone: string) {
@@ -12,15 +17,26 @@ export class AuthRepository {
 
   async createRefreshToken(userId: string): Promise<string> {
     const token = uuidv4();
+    const tokenHash = sha256(token);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_TTL_DAYS);
-    // TODO: Store in a refresh_tokens table (add to schema.prisma)
-    // For MVP: use a signed JWT as the refresh token
+
+    await prisma.refreshToken.create({
+      data: { userId, tokenHash, expiresAt },
+    });
+
     return token;
   }
 
-  async findRefreshToken(_token: string) {
-    // TODO: Query refresh_tokens table
-    return null as unknown as { userId: string; expiresAt: Date; user: { role: string; facilityId: string | null } };
+  async findRefreshToken(token: string) {
+    const tokenHash = sha256(token);
+    return prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      select: {
+        userId: true,
+        expiresAt: true,
+        user: { select: { role: true, facilityId: true } },
+      },
+    });
   }
 }

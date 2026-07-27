@@ -1,4 +1,5 @@
-import * as FileSystem from 'expo-file-system';
+// expo-file-system v19 (SDK 54) moved documentDirectory to the legacy sub-path.
+import * as FileSystem from 'expo-file-system/legacy';
 
 /**
  * Assembles a sequence of pre-recorded audio clips into a single plan audio file.

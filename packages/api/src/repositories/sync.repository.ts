@@ -1,46 +1,74 @@
 import { PrismaClient } from '@prisma/client';
-import { SyncMutation } from '@nurturelink/shared';
+import {
+  SyncMutation,
+  CreateHouseholdSchema,
+  CreateClientSchema,
+  CreateVisitSchema,
+  CreateFlagSchema,
+  CreatePlanSchema,
+  CreateReferralSchema,
+} from '@nurturelink/shared';
 import { AuthUser } from '../middleware/authenticate';
+import { ClientRepository } from './client.repository';
+import { VisitRepository } from './visit.repository';
+import { PlanRepository } from './plan.repository';
+import { ReferralRepository } from './referral.repository';
 
 const prisma = new PrismaClient();
+const clientRepo = new ClientRepository();
+const visitRepo = new VisitRepository();
+const planRepo = new PlanRepository();
+const referralRepo = new ReferralRepository();
 
 export class SyncRepository {
   async upsert(mutation: SyncMutation, _actor: AuthUser): Promise<void> {
     const { entityType, entityId, operation, payload } = mutation;
 
     switch (entityType) {
-      case 'clients':
+      case 'households': {
+        const data = CreateHouseholdSchema.parse({ ...payload, id: entityId });
+        await clientRepo.upsertHousehold(data);
+        break;
+      }
+
+      case 'clients': {
         if (operation === 'delete') {
           await prisma.client.update({
             where: { id: entityId },
             data: { deletedAt: new Date(), syncedAt: new Date() },
           });
         } else {
-          await prisma.client.upsert({
-            where: { id: entityId },
-            update: { ...payload as object, syncedAt: new Date() },
-            create: { ...(payload as object), syncedAt: new Date() },
-          });
+          const data = CreateClientSchema.parse({ ...payload, id: entityId });
+          await clientRepo.upsertClient(data);
         }
         break;
+      }
 
-      case 'visits':
+      case 'visits': {
         if (operation !== 'delete') {
-          await prisma.visit.upsert({
-            where: { id: entityId },
-            update: { ...payload as object, syncedAt: new Date() },
-            create: { ...(payload as object), syncedAt: new Date() },
-          });
+          const data = CreateVisitSchema.parse({ ...payload, id: entityId });
+          await visitRepo.upsertVisit(data);
         }
         break;
+      }
 
-      case 'referrals':
-        await prisma.referral.upsert({
-          where: { id: entityId },
-          update: { ...payload as object, syncedAt: new Date() },
-          create: { ...(payload as object), syncedAt: new Date() },
-        });
+      case 'flags': {
+        const data = CreateFlagSchema.parse({ ...payload, id: entityId });
+        await visitRepo.upsertFlag(data);
         break;
+      }
+
+      case 'plans': {
+        const data = CreatePlanSchema.parse({ ...payload, id: entityId });
+        await planRepo.upsertPlan(data);
+        break;
+      }
+
+      case 'referrals': {
+        const data = CreateReferralSchema.parse({ ...payload, id: entityId });
+        await referralRepo.upsertReferral(data);
+        break;
+      }
 
       default:
         throw new Error(`Unknown entity type: ${entityType}`);
@@ -51,32 +79,79 @@ export class SyncRepository {
     since: string,
     tables: string[],
     facilityId: string | null,
-  ): Promise<Record<string, unknown[]>> {
+  ): Promise<{
+    clients?: Record<string, unknown>[];
+    households?: Record<string, unknown>[];
+    visits?: Record<string, unknown>[];
+    flags?: Record<string, unknown>[];
+    plans?: Record<string, unknown>[];
+    referrals?: Record<string, unknown>[];
+  }> {
     const sinceDate = new Date(since);
-    const rows: Record<string, unknown[]> = {};
+    const facilityFilter = facilityId ?? undefined;
+    const rows: ReturnType<SyncRepository['pullSince']> extends Promise<infer R> ? R : never = {};
+
+    if (tables.includes('households')) {
+      rows.households = (
+        await prisma.household.findMany({
+          where: { updatedAt: { gt: sinceDate }, facilityId: facilityFilter },
+        })
+      ) as Record<string, unknown>[];
+    }
 
     if (tables.includes('clients')) {
-      rows['clients'] = await prisma.client.findMany({
-        where: {
-          updatedAt: { gt: sinceDate },
-          household: { facilityId: facilityId ?? undefined },
-        },
-      });
+      rows.clients = (
+        await prisma.client.findMany({
+          where: {
+            updatedAt: { gt: sinceDate },
+            household: { facilityId: facilityFilter },
+          },
+        })
+      ) as Record<string, unknown>[];
     }
 
     if (tables.includes('visits')) {
-      rows['visits'] = await prisma.visit.findMany({
-        where: {
-          updatedAt: { gt: sinceDate },
-          client: { household: { facilityId: facilityId ?? undefined } },
-        },
-      });
+      rows.visits = (
+        await prisma.visit.findMany({
+          where: {
+            updatedAt: { gt: sinceDate },
+            client: { household: { facilityId: facilityFilter } },
+          },
+        })
+      ) as Record<string, unknown>[];
+    }
+
+    if (tables.includes('flags')) {
+      rows.flags = (
+        await prisma.flag.findMany({
+          where: {
+            computedAt: { gt: sinceDate },
+            client: { household: { facilityId: facilityFilter } },
+          },
+        })
+      ) as Record<string, unknown>[];
+    }
+
+    if (tables.includes('plans')) {
+      rows.plans = (
+        await prisma.plan.findMany({
+          where: {
+            createdAt: { gt: sinceDate },
+            client: { household: { facilityId: facilityFilter } },
+          },
+        })
+      ) as Record<string, unknown>[];
     }
 
     if (tables.includes('referrals')) {
-      rows['referrals'] = await prisma.referral.findMany({
-        where: { updatedAt: { gt: sinceDate } },
-      });
+      rows.referrals = (
+        await prisma.referral.findMany({
+          where: {
+            updatedAt: { gt: sinceDate },
+            client: { household: { facilityId: facilityFilter } },
+          },
+        })
+      ) as Record<string, unknown>[];
     }
 
     return rows;

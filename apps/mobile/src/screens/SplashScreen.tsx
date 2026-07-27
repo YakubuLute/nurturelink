@@ -4,16 +4,35 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
+import { getDb } from '../db';
+import { useAppStore } from '../store';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export function SplashScreen({ navigation }: Props) {
+  const loadBundle = useAppStore((s) => s.loadBundle);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('Login');
-    }, 1900);
-    return () => clearTimeout(timer);
-  }, [navigation]);
+    let cancelled = false;
+
+    async function init() {
+      try {
+        await getDb();          // initialise SQLCipher DB (idempotent)
+        await loadBundle();     // load reference data; no-op if tables empty
+      } catch (e) {
+        // DB init failure is non-fatal for the demo — proceed to login
+        console.warn('[SplashScreen] DB init error:', e);
+      }
+    }
+
+    // Ensure splash is shown for at least 1.2 s even on fast devices
+    const minDelay = new Promise<void>((r) => setTimeout(r, 1200));
+    Promise.all([init(), minDelay]).then(() => {
+      if (!cancelled) navigation.replace('Login');
+    });
+
+    return () => { cancelled = true; };
+  }, [navigation, loadBundle]);
 
   return (
     <View style={styles.root}>

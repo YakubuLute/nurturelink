@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, IRouter } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
 import { ReferenceService } from '../services/reference.service';
 
 const referenceService = new ReferenceService();
-export const referenceRouter = Router();
+export const referenceRouter: IRouter = Router();
 
 // GET /reference/manifest — current bundle versions
 referenceRouter.get('/manifest', authenticate, async (_req, res, next) => {
@@ -16,13 +16,11 @@ referenceRouter.get('/manifest', authenticate, async (_req, res, next) => {
   }
 });
 
-// GET /reference/:bundle/:version — download a bundle (gzipped JSON)
-referenceRouter.get('/:bundle/:version', authenticate, async (req, res, next) => {
+// GET /reference/:versionTag — download a bundle by version tag (gzipped JSON)
+referenceRouter.get('/:versionTag', authenticate, async (req, res, next) => {
   try {
-    const params = z
-      .object({ bundle: z.string(), version: z.string() })
-      .parse(req.params);
-    const bundle = await referenceService.getBundle(params.bundle, params.version);
+    const { versionTag } = z.object({ versionTag: z.string() }).parse(req.params);
+    const bundle = await referenceService.getBundle(versionTag);
     res.set('Content-Type', 'application/json');
     res.set('Content-Encoding', 'gzip');
     res.send(bundle);

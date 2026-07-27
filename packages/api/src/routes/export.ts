@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, IRouter } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 import { ExportService } from '../services/export.service';
 
 const exportService = new ExportService();
-export const exportRouter = Router();
+export const exportRouter: IRouter = Router();
 
 // POST /export/dhims2 — generate DHIMS2-compatible tally export
 exportRouter.post(

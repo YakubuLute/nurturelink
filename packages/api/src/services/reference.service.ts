@@ -10,17 +10,19 @@ export class ReferenceService {
     const bundles = await this.repo.getActiveBundles();
     return {
       bundles: bundles.map((b) => ({
-        name: b.versionTag.split('-')[0],
-        currentVersion: b.versionTag,
+        versionTag: b.versionTag,
+        description: b.description ?? null,
         checksum: b.checksum,
-        updatedAt: b.publishedAt.toISOString(),
+        publishedAt: b.publishedAt.toISOString(),
+        tablesIncluded: b.tablesIncluded as string[],
+        active: b.active,
       })),
     };
   }
 
-  async getBundle(name: string, version: string): Promise<Buffer> {
-    const bundle = await this.repo.findBundle(version);
+  async getBundle(versionTag: string): Promise<Buffer> {
+    const bundle = await this.repo.findBundle(versionTag);
     if (!bundle) throw Object.assign(new Error('Bundle not found'), { status: 404 });
-    return this.builder.buildGzipped(name, version);
+    return this.builder.buildGzipped(versionTag);
   }
 }

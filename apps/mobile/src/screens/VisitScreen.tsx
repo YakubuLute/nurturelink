@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
+import { ChevronLeft, Check, AlertTriangle } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Visit'>;
 
@@ -114,7 +115,7 @@ export function VisitScreen({ navigation, route }: Props) {
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={toClient} style={styles.backBtn} accessibilityLabel="Go back">
-          <Text style={{ color: '#fff', fontSize: 20 }}>‹</Text>
+          <ChevronLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={{ marginTop: 4 }}>
           <Text style={styles.headerTitle}>New visit</Text>
@@ -207,7 +208,7 @@ export function VisitScreen({ navigation, route }: Props) {
                     { backgroundColor: sel ? g.color : '#ECECEB' },
                   ]}
                 >
-                  {sel && <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>✓</Text>}
+                  {sel && <Check size={13} color="#FFFFFF" strokeWidth={3} />}
                 </View>
                 <Text style={{ fontSize: 12.5, color: sel ? C.fg1 : C.fg2, fontWeight: sel ? '600' : '400', flexShrink: 1 }}>
                   {g.label}
@@ -255,7 +256,7 @@ export function VisitScreen({ navigation, route }: Props) {
                   },
                 ]}
               >
-                {sel && <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>✓</Text>}
+                {sel && <Check size={13} color="#FFFFFF" strokeWidth={3} />}
               </View>
               <Text style={{ flex: 1, fontSize: 13, color: sel ? C.errorDark : C.fg2, lineHeight: 19 }}>
                 {d.label}
@@ -267,7 +268,7 @@ export function VisitScreen({ navigation, route }: Props) {
         {/* Danger warning banner */}
         {hasDanger && (
           <View style={[styles.dangerBanner]}>
-            <Text style={{ fontSize: 14, marginRight: 8 }}>⚠</Text>
+            <AlertTriangle size={16} color={C.errorDark} style={{ marginRight: 8 }} />
             <Text style={{ fontSize: 12.5, color: C.errorDark, flex: 1, lineHeight: 18 }}>
               Saving will route to referral — counselling is bypassed
             </Text>
@@ -283,7 +284,7 @@ export function VisitScreen({ navigation, route }: Props) {
           accessibilityLabel={hasDanger ? 'Save and refer' : 'Save visit'}
         >
           <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
-            {hasDanger ? 'Save & refer →' : 'Save visit'}
+            {hasDanger ? 'Save & refer' : 'Save visit'}
           </Text>
         </TouchableOpacity>
       </View>

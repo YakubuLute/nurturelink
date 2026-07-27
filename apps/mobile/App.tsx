@@ -1,3 +1,4 @@
+import { registerRootComponent } from 'expo';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -5,6 +6,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SplashScreen } from './src/screens/SplashScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { SignUpScreen } from './src/screens/SignUpScreen';
+import { ForgotPasswordScreen } from './src/screens/ForgotPasswordScreen';
+import { VerifyAccountScreen } from './src/screens/VerifyAccountScreen';
+import { ResetPasswordScreen } from './src/screens/ResetPasswordScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { ClientScreen } from './src/screens/ClientScreen';
@@ -20,7 +25,13 @@ import { SupervisorScreen } from './src/screens/SupervisorScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
+  // Auth
   Login: undefined;
+  SignUp: undefined;
+  ForgotPassword: undefined;
+  VerifyAccount: { mode: 'registration' | 'password-reset'; phone: string };
+  ResetPassword: { phone: string; code: string };
+  // App
   Home: undefined;
   Register: undefined;
   Client: { clientId: string };
@@ -37,7 +48,7 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export default function App() {
+function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
@@ -47,7 +58,13 @@ export default function App() {
           screenOptions={{ headerShown: false }}
         >
           <Stack.Screen name="Splash" component={SplashScreen} />
+          {/* Auth flow */}
           <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="VerifyAccount" component={VerifyAccountScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          {/* App */}
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="Client" component={ClientScreen} />
@@ -65,3 +82,5 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+registerRootComponent(App);

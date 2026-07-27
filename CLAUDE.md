@@ -133,6 +133,30 @@ No side effects, no network calls, no randomness. Given the same inputs and bund
 
 Define all entity schemas in `packages/shared`. Import them in both `apps/mobile` and `packages/api`. Never duplicate type definitions.
 
+### Icons — non-negotiable
+
+All icons in the mobile app **must** use `lucide-react-native`. No exceptions.
+
+```typescript
+// ✅ Correct
+import { ChevronLeft, Bell, AlertTriangle } from 'lucide-react-native';
+<ChevronLeft size={24} color="#08283B" />
+
+// ❌ Forbidden — never do any of these
+<Text>‹</Text>          // Unicode character as icon
+<Text>🔔</Text>         // Emoji as icon
+<Text>⚠</Text>          // Symbol as icon
+// Custom View-drawn icon shapes (border trick triangles, etc.)
+// @expo/vector-icons or any other icon library
+```
+
+**Rules:**
+- Import named icon components directly from `lucide-react-native`
+- Always pass `size` (number, default 24) and `color` (hex string)
+- No emoji characters anywhere in UI components — not even for "convenience"
+- No ad-hoc icon implementations (border-trick shapes, Unicode symbols, image files used as icons)
+- No other icon library (`@expo/vector-icons`, `react-native-vector-icons`, `phosphor-react-native`, etc.)
+
 ---
 
 ## Architecture Invariants — Never Break These

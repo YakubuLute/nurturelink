@@ -1,4 +1,5 @@
-import { FoodCandidate, ReferenceBundle, AffordabilityTier } from './types';
+import { AffordabilityTier } from '@nurturelink/shared';
+import { FoodCandidate, ReferenceBundle } from './types';
 
 const TIER_RANK: Record<AffordabilityTier, number> = {
   staple_cheap: 0,

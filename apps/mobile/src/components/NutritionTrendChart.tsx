@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Visit } from '@nurturelink/shared';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 
 interface Props {
   visits: Visit[];
@@ -36,7 +37,8 @@ export function NutritionTrendChart({ visits, clientType }: Props) {
   }
 
   const trend = values[values.length - 1] - values[values.length - 2];
-  const trendLabel = trend > 0 ? '↑ Improving' : trend < 0 ? '↓ Declining' : '→ Stable';
+  const trendDir: 'up' | 'down' | 'flat' = trend > 0 ? 'up' : trend < 0 ? 'down' : 'flat';
+  const trendText = trend > 0 ? 'Improving' : trend < 0 ? 'Declining' : 'Stable';
   const trendColor = trend > 0 ? '#1a7c4e' : trend < 0 ? '#c0392b' : '#888';
 
   return (
@@ -50,9 +52,18 @@ export function NutritionTrendChart({ visits, clientType }: Props) {
           </View>
         ))}
       </View>
-      <Text style={[styles.trend, { color: trendColor }]}>
-        {trendLabel} ({Math.abs(trend).toFixed(1)})
-      </Text>
+      <View style={styles.trendRow}>
+        {trendDir === 'up' ? (
+          <TrendingUp size={16} color={trendColor} />
+        ) : trendDir === 'down' ? (
+          <TrendingDown size={16} color={trendColor} />
+        ) : (
+          <Minus size={16} color={trendColor} />
+        )}
+        <Text style={[styles.trend, { color: trendColor }]}>
+          {trendText} ({Math.abs(trend).toFixed(1)})
+        </Text>
+      </View>
       {/* TODO: replace with react-native-chart-kit LineChart */}
     </View>
   );
@@ -65,6 +76,7 @@ const styles = StyleSheet.create({
   valueItem: { alignItems: 'center' },
   valueText: { fontSize: 18, fontWeight: '700', color: '#111' },
   visitLabel: { fontSize: 11, color: '#888', marginTop: 2 },
+  trendRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   trend: { fontSize: 15, fontWeight: '600' },
   placeholder: { backgroundColor: '#fff', borderRadius: 8, padding: 16, alignItems: 'center' },
   placeholderText: { color: '#888', fontSize: 14, textAlign: 'center' },
