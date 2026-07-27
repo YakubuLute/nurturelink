@@ -28,6 +28,7 @@ export function SettingsScreen({ navigation }: Props) {
     toggleAdaptive,
     setUiLang,
     logout,
+    currentUser,
   } = useAppStore();
 
   const issuedCount = referrals.filter((r) => r.status === 'issued').length;
@@ -57,11 +58,15 @@ export function SettingsScreen({ navigation }: Props) {
           </View>
           <View style={styles.profileRow}>
             <View style={styles.profileAvatar}>
-              <Text style={styles.profileAvatarText}>YL</Text>
+              <Text style={styles.profileAvatarText}>
+                {(currentUser?.name ?? 'U').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+              </Text>
             </View>
             <View>
-              <Text style={styles.profileName}>Yakubu Lute</Text>
-              <Text style={styles.profileRole}>Community Health Officer · Kukuo</Text>
+              <Text style={styles.profileName}>{currentUser?.name ?? 'Health Worker'}</Text>
+              <Text style={styles.profileRole}>
+                {currentUser?.role === 'sup' ? 'Supervisor' : 'Community Health Officer'}
+              </Text>
             </View>
           </View>
         </View>

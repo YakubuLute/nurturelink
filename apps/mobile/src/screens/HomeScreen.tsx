@@ -172,6 +172,7 @@ export function HomeScreen({ navigation }: Props) {
     pendingRecords,
     uiLang,
     sync,
+    currentUser,
   } = useAppStore();
 
   const [query, setQuery] = useState('');
@@ -223,7 +224,7 @@ export function HomeScreen({ navigation }: Props) {
         <View style={styles.greetingRow}>
           <View style={styles.greetingLeft}>
             <Text style={styles.greetingTime}>{greeting(uiLang)}</Text>
-            <Text style={styles.greetingName}>Yakubu Lute</Text>
+            <Text style={styles.greetingName}>{currentUser?.name ?? 'Health Worker'}</Text>
             <Text style={styles.greetingDate}>{dateStr} · Kukuo CHPS zone</Text>
           </View>
           <View style={styles.greetingActions}>

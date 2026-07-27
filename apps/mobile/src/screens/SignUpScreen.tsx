@@ -1,0 +1,459 @@
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ChevronLeft, User, Phone, Lock, Eye, EyeOff, Briefcase } from 'lucide-react-native';
+
+import { RootStackParamList } from '../../App';
+import { LogoMark } from '../assets/LogoMark';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
+type AppRole = 'CHO' | 'supervisor';
+
+const ROLES: { value: AppRole; label: string; sub: string }[] = [
+  { value: 'CHO', label: 'Community Health Officer', sub: 'Records visits and manages caseload' },
+  { value: 'supervisor', label: 'Supervisor', sub: 'Oversees CHOs across the district' },
+];
+
+export function SignUpScreen({ navigation }: Props) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [role, setRole] = useState<AppRole>('CHO');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function validate(): string | null {
+    if (!name.trim() || name.trim().length < 2) return 'Full name is required.';
+    if (!phone.trim() || phone.trim().length < 10) return 'Enter a valid phone number.';
+    if (password.length < 8) return 'Password must be at least 8 characters.';
+    if (password !== confirmPassword) return 'Passwords do not match.';
+    return null;
+  }
+
+  async function handleSignUp() {
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          password,
+          role,
+        }),
+      });
+
+      if (res.status === 201 || res.status === 200) {
+        navigation.replace('VerifyAccount', {
+          mode: 'registration',
+          phone: phone.trim(),
+        });
+      } else if (res.status === 409) {
+        setError('An account with this phone number already exists.');
+      } else {
+        const body = await res.json().catch(() => ({})) as { message?: string };
+        setError(body.message ?? 'Registration failed. Please try again.');
+      }
+    } catch {
+      setError('No connection. Please check your network and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <View style={styles.root}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <ChevronLeft size={24} color="#FDFDFD" />
+          </Pressable>
+          <View style={styles.logoBox}>
+            <LogoMark size={18} onDark={false} />
+          </View>
+        </View>
+
+        {/* Heading */}
+        <Text style={styles.heading}>Create account</Text>
+        <Text style={styles.headingSub}>Register to manage your caseload offline</Text>
+
+        {/* Form */}
+        <View style={styles.form}>
+          {/* Full name */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Full name</Text>
+            <View style={styles.inputRow}>
+              <User size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={(v) => { setName(v); setError(null); }}
+                placeholder="Yakubu Lute"
+                placeholderTextColor="#5A6F7C"
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          {/* Phone */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Phone number</Text>
+            <View style={styles.inputRow}>
+              <Phone size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={(v) => { setPhone(v); setError(null); }}
+                placeholder="+233 244 000 000"
+                placeholderTextColor="#5A6F7C"
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          {/* Password */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Password</Text>
+            <View style={styles.inputRow}>
+              <Lock size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.inputFlex]}
+                value={password}
+                onChangeText={(v) => { setPassword(v); setError(null); }}
+                placeholder="Min. 8 characters"
+                placeholderTextColor="#5A6F7C"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+              <Pressable
+                onPress={() => setShowPassword((v) => !v)}
+                style={styles.eyeBtn}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword
+                  ? <EyeOff size={18} color="#8D9CA5" />
+                  : <Eye size={18} color="#8D9CA5" />}
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Confirm password */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Confirm password</Text>
+            <View style={styles.inputRow}>
+              <Lock size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.inputFlex]}
+                value={confirmPassword}
+                onChangeText={(v) => { setConfirmPassword(v); setError(null); }}
+                placeholder="Repeat your password"
+                placeholderTextColor="#5A6F7C"
+                secureTextEntry={!showConfirm}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handleSignUp}
+              />
+              <Pressable
+                onPress={() => setShowConfirm((v) => !v)}
+                style={styles.eyeBtn}
+                accessibilityLabel={showConfirm ? 'Hide password' : 'Show password'}
+              >
+                {showConfirm
+                  ? <EyeOff size={18} color="#8D9CA5" />
+                  : <Eye size={18} color="#8D9CA5" />}
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Role */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.roleLabelRow}>
+              <Briefcase size={15} color="#8D9CA5" />
+              <Text style={styles.fieldLabel}>Role</Text>
+            </View>
+            <View style={styles.roleOptions}>
+              {ROLES.map((r) => (
+                <Pressable
+                  key={r.value}
+                  style={[styles.roleOption, role === r.value && styles.roleOptionActive]}
+                  onPress={() => setRole(r.value)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: role === r.value }}
+                >
+                  <View style={[styles.radioCircle, role === r.value && styles.radioCircleFilled]}>
+                    {role === r.value && <View style={styles.radioDot} />}
+                  </View>
+                  <View style={styles.roleTextGroup}>
+                    <Text style={[styles.roleLabel, role === r.value && styles.roleLabelActive]}>
+                      {r.label}
+                    </Text>
+                    <Text style={styles.roleSub}>{r.sub}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {/* Error */}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          {/* Submit */}
+          <Pressable
+            style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed]}
+            onPress={handleSignUp}
+            disabled={loading}
+            accessibilityRole="button"
+          >
+            {loading
+              ? <ActivityIndicator color="#FDFDFD" size="small" />
+              : <Text style={styles.submitBtnText}>Create account</Text>}
+          </Pressable>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Already have an account?</Text>
+          <Pressable
+            onPress={() => navigation.navigate('Login')}
+            accessibilityRole="link"
+          >
+            <Text style={styles.footerLink}> Sign in</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const BRAND = '#FF5A00';
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#08283B',
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingTop: 52,
+    paddingHorizontal: 28,
+    paddingBottom: 32,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 28,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#FDFDFD',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  heading: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FDFDFD',
+    marginBottom: 6,
+  },
+  headingSub: {
+    fontSize: 14,
+    color: '#8D9CA5',
+    marginBottom: 28,
+  },
+
+  form: {
+    gap: 0,
+  },
+
+  fieldGroup: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C2D0D9',
+    marginBottom: 8,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: '#FDFDFD',
+    padding: 0,
+  },
+  inputFlex: {
+    flex: 1,
+  },
+  eyeBtn: {
+    padding: 4,
+    marginLeft: 6,
+  },
+
+  roleLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+
+  roleOptions: {
+    gap: 8,
+  },
+  roleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  roleOptionActive: {
+    borderColor: BRAND,
+    backgroundColor: 'rgba(255,90,0,0.08)',
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#5A6F7C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioCircleFilled: {
+    borderColor: BRAND,
+  },
+  radioDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: BRAND,
+  },
+  roleTextGroup: {
+    flex: 1,
+  },
+  roleLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8D9CA5',
+    marginBottom: 2,
+  },
+  roleLabelActive: {
+    color: '#FDFDFD',
+  },
+  roleSub: {
+    fontSize: 12,
+    color: '#5A6F7C',
+    lineHeight: 16,
+  },
+
+  errorText: {
+    fontSize: 13,
+    color: '#FC8181',
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+
+  submitBtn: {
+    height: 52,
+    backgroundColor: BRAND,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  submitBtnPressed: {
+    opacity: 0.85,
+  },
+  submitBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FDFDFD',
+    letterSpacing: 0.2,
+  },
+
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 'auto',
+    paddingTop: 24,
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#8D9CA5',
+  },
+  footerLink: {
+    fontSize: 14,
+    color: BRAND,
+    fontWeight: '600',
+  },
+});
