@@ -8,6 +8,8 @@
 import { create } from 'zustand';
 import { loadReferenceBundle } from '../db/bundle-loader';
 import { clearSession } from '../auth/session';
+import { persistClient, persistVisit, persistReferral, uuidv4 } from '../db/persist';
+import { syncNow } from '../sync/orchestrator';
 import type { ReferenceBundle } from '../engine/types';
 
 // ─── Domain types (local, demo-optimised) ────────────────────────────────────
@@ -502,25 +504,53 @@ export const useAppStore = create<StoreState>((set, get) => ({
 
     const patch: Partial<DemoClient> = { visits: [...client.visits, newVisit] };
 
+    let severity: 'ok' | 'watch' | 'refer' = 'ok';
+    const flagReasons: Array<{ code: string; value?: number }> = [];
+
     if (severe) {
+      severity = 'refer';
       patch.severe = true;
       patch.priority = 'urgent';
       patch.flag = 'Danger sign — referral needed';
-      patch.flagDetail =
-        visitForm.danger.length > 0
-          ? 'Danger sign recorded at this visit'
-          : muac > 0 && muac < 115
-          ? `MUAC ${Math.round(muac)} mm — below the 115 mm threshold`
-          : 'Hb below the severe-anaemia threshold (7 g/dL)';
+      if (visitForm.danger.length > 0) {
+        patch.flagDetail = 'Danger sign recorded at this visit';
+        flagReasons.push({ code: 'DANGER_SIGNS' });
+      } else if (muac > 0 && muac < 115) {
+        patch.flagDetail = `MUAC ${Math.round(muac)} mm — below the 115 mm threshold`;
+        flagReasons.push({ code: 'SEVERE_MUAC', value: muac });
+      } else {
+        patch.flagDetail = 'Hb below the severe-anaemia threshold (7 g/dL)';
+        flagReasons.push({ code: 'SEVERE_ANAEMIA', value: hb ?? undefined });
+      }
       patch.trendColor = '#C81E1E';
       patch.trendArrow = 'down';
       patch.trendNote = 'Danger sign — needs clinical care';
-    } else if (client.priority === 'new') {
-      patch.priority = 'stable';
+    } else {
+      if (muac > 0 && muac < 125) { severity = 'watch'; flagReasons.push({ code: 'SEVERE_MUAC', value: muac }); }
+      if (hb !== null && hb > 0 && hb < 11) { severity = 'watch'; flagReasons.push({ code: 'FALLING_HB', value: hb }); }
+      if (client.priority === 'new') patch.priority = 'stable';
     }
 
     get().patchClient(clientId, patch);
     set((s) => ({ telemetryCount: s.telemetryCount + 1, pendingRecords: s.pendingRecords + 1 }));
+
+    // Persist visit + flag to SQLite + outbox (fire-and-forget)
+    const visitId = uuidv4();
+    const flagId = uuidv4();
+    persistVisit(
+      {
+        visitId,
+        clientId,
+        visitedAt: new Date().toISOString(),
+        weightKg: parseFloat(visitForm.weight) || null,
+        hbGDl: visitForm.hb ? parseFloat(visitForm.hb) : null,
+        muacMm: muac || null,
+        dietRecall: visitForm.diet,
+        dangerSigns: visitForm.danger,
+        notes: null,
+      },
+      { flagId, clientId, visitId, severity, reasons: flagReasons },
+    ).catch((e) => console.warn('[Store] persistVisit error:', e));
 
     return severe ? 'referral' : 'plan';
   },
@@ -530,7 +560,8 @@ export const useAppStore = create<StoreState>((set, get) => ({
   saveClient: () => {
     const { regForm } = get();
     if (!regForm.name.trim() || !regForm.consent) return null;
-    const id = 'c' + Date.now();
+    const id = uuidv4();
+    const now = new Date().toISOString();
     const nc: DemoClient = {
       id,
       name: regForm.name.trim(),
@@ -551,6 +582,17 @@ export const useAppStore = create<StoreState>((set, get) => ({
     };
     get().addClient(nc);
     set({ regForm: emptyRegForm });
+
+    // Persist to SQLite + outbox (fire-and-forget)
+    persistClient({
+      clientId: id,
+      name: nc.name,
+      type: nc.type,
+      community: nc.community,
+      dob: regForm.dob || null,
+      consentAt: now,
+    }).catch((e) => console.warn('[Store] persistClient error:', e));
+
     return nc;
   },
 
@@ -586,8 +628,9 @@ export const useAppStore = create<StoreState>((set, get) => ({
   issueReferral: (clientId) => {
     const client = get().clients.find((c) => c.id === clientId);
     if (!client) return;
+    const referralId = uuidv4();
     const ref: DemoReferral = {
-      id: 'r' + Date.now(),
+      id: referralId,
       clientId,
       name: client.name,
       type: client.type,
@@ -599,6 +642,18 @@ export const useAppStore = create<StoreState>((set, get) => ({
     };
     get().patchClient(clientId, { referred: true });
     set((s) => ({ referrals: [...s.referrals, ref], telemetryCount: s.telemetryCount + 1 }));
+
+    // Persist + emergency sync (fire-and-forget)
+    const visitId = uuidv4(); // placeholder — real flow uses the actual visit UUID
+    persistReferral({
+      referralId,
+      clientId,
+      visitId,
+      reason: client.flagDetail,
+      flagCodes: client.severe ? ['DANGER_SIGNS'] : [],
+    })
+      .then(() => syncNow('referral_emergency'))
+      .catch((e) => console.warn('[Store] issueReferral persist error:', e));
   },
   confirmReferralSeen: (clientId) =>
     set((s) => ({
