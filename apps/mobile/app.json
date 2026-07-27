@@ -37,6 +37,10 @@
         }
       ]
     ],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "extra": {
       "eas": {
         "projectId": "TODO: add EAS project ID after eas init"
