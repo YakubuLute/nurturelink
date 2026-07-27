@@ -5,6 +5,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 
 import { authRouter } from './routes/auth';
+import { aiRouter } from './routes/ai';
 import { clientsRouter } from './routes/clients';
 import { visitsRouter } from './routes/visits';
 import { plansRouter } from './routes/plans';
@@ -34,6 +35,7 @@ export function createApp(): Application {
 
   // ── Routes ──────────────────────────────────────────────────────────────────
   app.use('/auth', authRouter);
+  app.use('/ai', aiRouter);
   app.use('/clients', clientsRouter);
   app.use('/visits', visitsRouter);
   app.use('/plans', plansRouter);
