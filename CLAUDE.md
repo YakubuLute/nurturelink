@@ -133,6 +133,63 @@ No side effects, no network calls, no randomness. Given the same inputs and bund
 
 Define all entity schemas in `packages/shared`. Import them in both `apps/mobile` and `packages/api`. Never duplicate type definitions.
 
+### Native UI Components — always prefer over custom text inputs
+
+Use the platform's own widgets wherever they exist. Never use a `TextInput` to collect data that has a dedicated native control.
+
+| Use case | Component | Notes |
+|---|---|---|
+| Date / time entry | `@react-native-community/datetimepicker` | Renders native calendar on Android/iOS; `<input type="date">` on web |
+| Toggle / on-off | `Switch` (React Native built-in) | Use for boolean settings, not custom `View` toggles |
+| Scroll lists | `FlatList` / `SectionList` | Never render a long list inside a `ScrollView` |
+| Alerts / confirmations | `Alert` (React Native built-in) | Never build a custom modal for simple yes/no prompts |
+| Loading indicator | `ActivityIndicator` (React Native built-in) | |
+
+**Date picker implementation pattern:**
+
+```typescript
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Platform, Pressable } from 'react-native';
+import { CalendarDays } from 'lucide-react-native';
+
+// Android: tap button → native dialog (auto-dismisses)
+// iOS:     inline spinner always visible below the field
+// Web:     renders as <input type="date"> automatically
+
+const [showPicker, setShowPicker] = useState(false);
+const dateValue = isoString ? new Date(isoString) : null;
+
+// Pressable trigger (Android / web only — iOS shows inline)
+{Platform.OS !== 'ios' && (
+  <Pressable style={styles.dateBtn} onPress={() => setShowPicker(true)}>
+    <CalendarDays size={18} color="#9CA3AF" />
+    <Text>{dateValue ? formatDate(dateValue) : 'Select date'}</Text>
+  </Pressable>
+)}
+
+// Picker (always visible on iOS; toggle on Android/web)
+{(showPicker || Platform.OS === 'ios') && (
+  <DateTimePicker
+    value={dateValue ?? new Date()}
+    mode="date"
+    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+    maximumDate={new Date()}
+    onChange={(_, date) => {
+      setShowPicker(false);
+      if (date) onChange(date.toISOString().slice(0, 10)); // store as YYYY-MM-DD
+    }}
+  />
+)}
+```
+
+**Rules:**
+- Never use `TextInput` with `keyboardType="numeric"` for dates — use `DateTimePicker`
+- Always store dates as ISO strings (`YYYY-MM-DD`) internally, format for display only
+- Pass `maximumDate={new Date()}` for past dates (DOB), omit for future dates (EDD)
+- For EDD / future dates, do **not** set `maximumDate`
+
+---
+
 ### Icons — non-negotiable
 
 All icons in the mobile app **must** use `lucide-react-native`. No exceptions.

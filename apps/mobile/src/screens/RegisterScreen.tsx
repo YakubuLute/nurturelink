@@ -1,23 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   StyleSheet,
   Alert,
+  Platform,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
-import { ChevronLeft, Check, WifiOff, Baby, User } from 'lucide-react-native';
+import { ChevronLeft, Check, WifiOff, Baby, User, CalendarDays } from 'lucide-react-native';
 import { syncNow } from '../sync/orchestrator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
 const COMMUNITIES = ['Kukuo', 'Sagnarigu', 'Gizaa', 'Voggu'] as const;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDisplayDate(iso: string): string {
+  // iso is YYYY-MM-DD
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
 
 // ─── Client type selector ─────────────────────────────────────────────────────
 
@@ -118,6 +129,126 @@ const cs = StyleSheet.create({
   textInactive: { color: '#08283B' },
 });
 
+// ─── Native date picker ───────────────────────────────────────────────────────
+
+function DateField({
+  label,
+  value,
+  onChange,
+  isFuture,
+}: {
+  label: string;
+  value: string;          // YYYY-MM-DD or ''
+  onChange: (iso: string) => void;
+  isFuture?: boolean;     // true for EDD (no maximumDate cap)
+}) {
+  const [showPicker, setShowPicker] = useState(false);
+  const dateObj = value ? new Date(value) : null;
+
+  function handleChange(_: DateTimePickerEvent, selected?: Date) {
+    // Android dismisses automatically; iOS keeps the picker open
+    if (Platform.OS === 'android') setShowPicker(false);
+    if (selected) onChange(selected.toISOString().slice(0, 10));
+  }
+
+  const pickerValue = dateObj ?? (isFuture ? new Date() : new Date(2000, 0, 1));
+  const maxDate = isFuture ? undefined : new Date();
+
+  return (
+    <View>
+      {/* Trigger button — shown on Android and web (iOS shows inline) */}
+      {Platform.OS !== 'ios' && (
+        <Pressable
+          style={[dp.btn, showPicker && dp.btnOpen]}
+          onPress={() => setShowPicker((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+        >
+          <CalendarDays size={18} color={dateObj ? '#08283B' : '#9CA3AF'} />
+          <Text style={[dp.btnText, !dateObj && dp.btnPlaceholder]}>
+            {dateObj ? formatDisplayDate(value) : `Select ${label.toLowerCase()}`}
+          </Text>
+        </Pressable>
+      )}
+
+      {/* iOS: always-visible inline spinner */}
+      {Platform.OS === 'ios' && (
+        <>
+          <Pressable
+            style={[dp.btn, dp.btnOpen]}
+            onPress={() => setShowPicker((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+          >
+            <CalendarDays size={18} color={dateObj ? '#08283B' : '#9CA3AF'} />
+            <Text style={[dp.btnText, !dateObj && dp.btnPlaceholder]}>
+              {dateObj ? formatDisplayDate(value) : `Select ${label.toLowerCase()}`}
+            </Text>
+          </Pressable>
+          {showPicker && (
+            <DateTimePicker
+              value={pickerValue}
+              mode="date"
+              display="spinner"
+              maximumDate={maxDate}
+              onChange={handleChange}
+              style={{ marginTop: 4 }}
+            />
+          )}
+        </>
+      )}
+
+      {/* Android: dialog opened by button press */}
+      {Platform.OS === 'android' && showPicker && (
+        <DateTimePicker
+          value={pickerValue}
+          mode="date"
+          display="default"
+          maximumDate={maxDate}
+          onChange={handleChange}
+        />
+      )}
+
+      {/* Web: DateTimePicker renders as <input type="date"> automatically */}
+      {Platform.OS === 'web' && (
+        <DateTimePicker
+          value={pickerValue}
+          mode="date"
+          display="default"
+          maximumDate={maxDate}
+          onChange={handleChange}
+        />
+      )}
+    </View>
+  );
+}
+
+const dp = StyleSheet.create({
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FDFDFD',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  btnOpen: {
+    borderColor: '#08283B',
+  },
+  btnText: {
+    fontSize: 15,
+    color: '#08283B',
+    flex: 1,
+  },
+  btnPlaceholder: {
+    color: '#9CA3AF',
+  },
+});
+
 // ─── Consent checkbox ─────────────────────────────────────────────────────────
 
 function ConsentRow({
@@ -174,7 +305,7 @@ const consent = StyleSheet.create({
     flexShrink: 0,
     marginTop: 1,
   },
-  boxChecked: { backgroundColor: '#FFFFFF', borderColor: '#FF5A00' },
+  boxChecked: { backgroundColor: '#FF5A00', borderColor: '#FF5A00' },
   boxUnchecked: { backgroundColor: '#FFFFFF', borderColor: '#D1D5DB' },
   body: { flex: 1 },
   title: { fontSize: 13.5, fontWeight: '700', color: '#08283B', marginBottom: 4 },
@@ -192,8 +323,7 @@ export function RegisterScreen({ navigation }: Props) {
   const namePlaceholder =
     regForm.type === 'child' ? "Child's full name" : "Mother's full name";
 
-  const dobLabel = regForm.type === 'child' ? 'Date of birth' : 'Expected delivery date (EDD)';
-  const dobPlaceholder = 'DD/MM/YYYY';
+  const dobLabel = regForm.type === 'child' ? 'Date of birth' : 'Expected delivery date';
 
   function handleSave() {
     const newClient = saveClient();
@@ -201,8 +331,6 @@ export function RegisterScreen({ navigation }: Props) {
       Alert.alert('Incomplete form', 'Please enter a name and confirm consent.');
       return;
     }
-    // Fire-and-forget: push the new client record to the server immediately
-    // when online. If offline it stays in the SQLite outbox and syncs later.
     syncNow('foreground').catch(() => {});
     navigation.navigate('Client', { clientId: newClient.id });
   }
@@ -264,18 +392,14 @@ export function RegisterScreen({ navigation }: Props) {
           />
         </View>
 
-        {/* Date of birth / EDD */}
+        {/* Date of birth / EDD — native date picker */}
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>{dobLabel}</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder={dobPlaceholder}
-            placeholderTextColor="#9CA3AF"
+          <DateField
+            label={dobLabel}
             value={regForm.dob}
-            onChangeText={(v) => setRegField('dob', v)}
-            keyboardType="numeric"
-            returnKeyType="done"
-            accessibilityLabel={dobLabel}
+            onChange={(iso) => setRegField('dob', iso)}
+            isFuture={regForm.type === 'pregnant'}
           />
         </View>
 
@@ -327,7 +451,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F4F5',
   },
 
-  // Header
   header: {
     backgroundColor: '#08283B',
     flexDirection: 'row',
@@ -343,12 +466,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backBtnPlaceholder: { width: 36 },
-  backArrow: {
-    fontSize: 22,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    lineHeight: 28,
-  },
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
@@ -357,14 +474,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Scroll
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 24,
   },
 
-  // Field groups
   fieldGroup: { marginBottom: 22 },
   fieldLabel: {
     fontSize: 12,
@@ -383,9 +498,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: 15,
     color: '#08283B',
+    height: 52,
   },
 
-  // Offline note
   offlineNote: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -400,7 +515,6 @@ const styles = StyleSheet.create({
   },
   offlineText: { fontSize: 12.5, color: '#8C6900', fontWeight: '500', flex: 1 },
 
-  // Save button
   saveWrap: {
     backgroundColor: '#FDFDFD',
     borderTopWidth: 1,
