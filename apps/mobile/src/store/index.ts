@@ -365,6 +365,9 @@ interface StoreState {
   sync: () => void;
   toggleOffline: () => void;
   toggleAdaptive: () => void;
+
+  // Demo
+  seedDemoData: () => void;
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -758,22 +761,204 @@ export const useAppStore = create<StoreState>((set, get) => ({
     const { syncing } = get();
     if (syncing) return;
     set({ syncing: true });
-    setTimeout(() => {
-      set((s) => ({
-        syncing: false,
-        offline: false,
-        lastSyncAt: new Date().toISOString(),
-        telemetryCount: 0,
-        pendingRecords: 0,
-        clients: s.clients.map((c) => ({
-          ...c,
-          visits: c.visits.map((v) => ({ ...v, synced: true })),
-        })),
-      }));
-    }, 1900);
+    syncNow('foreground')
+      .catch((err) => console.error('[Store] Sync error', err))
+      .finally(() => {
+        set({ syncing: false, lastSyncAt: new Date().toISOString() });
+      });
   },
   toggleOffline: () => set((s) => ({ offline: !s.offline })),
   toggleAdaptive: () => set((s) => ({ adaptiveSync: !s.adaptiveSync })),
+
+  seedDemoData: () => {
+    const demoUser: CurrentUser = {
+      id: 'demo-cho-001',
+      firstName: 'Abubakari',
+      lastName: 'Sulemana',
+      otherNames: null,
+      phone: '+233244000001',
+      role: 'cho',
+      facilityName: 'Kukuo CHPS Compound',
+      facilityDistrict: 'Sagnarigu Municipal',
+      facilityRegion: 'Northern Region',
+    };
+
+    // Client IDs match RANK_SIGNALS keys in ClientScreen for explainable ranking demo
+    const demoClients: DemoClient[] = [
+      {
+        id: 'amina',
+        name: 'Amina Yakubu',
+        type: 'pregnant',
+        age: 24,
+        community: 'Kukuo',
+        caregiver: 'Amina Yakubu',
+        priority: 'urgent',
+        metric: 'hb',
+        severe: false,
+        referred: false,
+        flag: 'Haemoglobin falling — anaemia risk',
+        flagDetail: 'Hb dropped from 11.2 to 9.6 g/dL across 3 visits',
+        trendNote: 'Declining Hb — risk of moderate anaemia',
+        trendArrow: 'down',
+        trendColor: '#C81E1E',
+        lifestage: 'pregnant',
+        visits: [
+          { date: '3rd Jun, 2026',  weight: 64.5, hb: 11.2, muac: 242, diet: ['grains','legumes','vita','veg'],        danger: [], synced: true,  owner: 'You' },
+          { date: '28th Jun, 2026', weight: 66.1, hb: 10.4, muac: 238, diet: ['grains','legumes'],                     danger: [], synced: true,  owner: 'You' },
+          { date: '18th Jul, 2026', weight: 68.3, hb: 9.6,  muac: 235, diet: ['grains'],                              danger: [], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'rahim',
+        name: 'Rahimatu Issah',
+        type: 'child',
+        age: '18 mo',
+        community: 'Choggu',
+        caregiver: 'Issah Fuseini',
+        priority: 'high',
+        metric: 'weight',
+        severe: false,
+        referred: false,
+        flag: 'Slow weight gain — nutrition gap',
+        flagDetail: 'No weight gain in 2 consecutive months. Diet restricted to 2 food groups.',
+        trendNote: 'Flat weight trend — expected growth not achieved',
+        trendArrow: 'flat',
+        trendColor: '#B54000',
+        visits: [
+          { date: '20th May, 2026', weight: 9.8, hb: null, muac: 126, diet: ['grains','breast'],         danger: [], synced: true,  owner: 'You' },
+          { date: '19th Jun, 2026', weight: 9.8, hb: null, muac: 122, diet: ['grains'],                  danger: [], synced: true,  owner: 'You' },
+          { date: '17th Jul, 2026', weight: 9.9, hb: null, muac: 124, diet: ['grains','breast'],         danger: [], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'latif',
+        name: 'Abdul Latif Mahama',
+        type: 'child',
+        age: '11 mo',
+        community: 'Katariga',
+        caregiver: 'Fatimatu Mahama',
+        priority: 'urgent',
+        metric: 'muac',
+        severe: true,
+        referred: true,
+        flag: 'Danger sign — referral needed',
+        flagDetail: 'MUAC 108 mm — below severe-wasting threshold (115 mm)',
+        trendNote: 'Danger-zone measurement — needs urgent clinical care',
+        trendArrow: 'down',
+        trendColor: '#C81E1E',
+        visits: [
+          { date: '1st Jul, 2026',  weight: 6.4, hb: null, muac: 115, diet: ['grains','breast'],   danger: [],         synced: true,  owner: 'You' },
+          { date: '22nd Jul, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'],            danger: ['oedema'], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'zeinab',
+        name: 'Zeinab Alhassan',
+        type: 'pregnant',
+        age: 27,
+        community: 'Lamashegu',
+        caregiver: 'Zeinab Alhassan',
+        priority: 'stable',
+        metric: 'hb',
+        severe: false,
+        referred: false,
+        flag: 'Stable · Hb within normal range',
+        flagDetail: 'Hb stable at 11.8–11.9 g/dL. Good diet diversity across 5 food groups.',
+        trendNote: 'Hb holding steady — continue iron/folate supplementation',
+        trendArrow: 'up',
+        trendColor: '#057A55',
+        lifestage: 'pregnant',
+        visits: [
+          { date: '10th Jun, 2026', weight: 71.2, hb: 11.8, muac: 256, diet: ['grains','legumes','dairy','flesh','vita','veg'], danger: [], synced: true,  owner: 'You' },
+          { date: '8th Jul, 2026',  weight: 73.6, hb: 11.9, muac: 258, diet: ['grains','legumes','eggs','vita','veg'],          danger: [], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'sadia',
+        name: 'Sadia Mohammed',
+        type: 'child',
+        age: '36 mo',
+        community: 'Voggu',
+        caregiver: 'Mohammed Alhassan',
+        priority: 'stable',
+        metric: 'weight',
+        severe: false,
+        referred: false,
+        flag: 'Good progress · diet improving',
+        flagDetail: 'Weight gaining consistently. Diet improved from 3 to 5 food groups.',
+        trendNote: 'Positive weight trajectory',
+        trendArrow: 'up',
+        trendColor: '#057A55',
+        visits: [
+          { date: '5th May, 2026',  weight: 10.2, hb: null, muac: 148, diet: ['grains','legumes','vita'],               danger: [], synced: true,  owner: 'You' },
+          { date: '2nd Jun, 2026',  weight: 10.6, hb: null, muac: 151, diet: ['grains','legumes','vita','veg'],          danger: [], synced: true,  owner: 'You' },
+          { date: '30th Jun, 2026', weight: 10.9, hb: null, muac: 153, diet: ['grains','legumes','flesh','vita','veg'], danger: [], synced: false, owner: 'You' },
+        ],
+      },
+    ];
+
+    const demoReferrals: DemoReferral[] = [
+      {
+        id: 'ref-latif-001',
+        clientId: 'latif',
+        name: 'Abdul Latif Mahama',
+        type: 'child',
+        reason: 'MUAC 108 mm — below severe-wasting threshold (115 mm). Bilateral oedema present.',
+        facility: 'Tamale West Hospital',
+        status: 'issued',
+        at: '22nd Jul, 2026',
+        due: '25th Jul, 2026',
+      },
+    ];
+
+    const demoNotifications: AppNotification[] = [
+      {
+        id: 'notif-latif',
+        kind: 'risk',
+        title: 'Urgent: Abdul Latif Mahama',
+        body: 'MUAC 108 mm recorded — referral issued to Tamale West Hospital.',
+        time: '22nd Jul, 14:22',
+        read: false,
+        group: 'today',
+        target: 'latif',
+      },
+      {
+        id: 'notif-amina',
+        kind: 'risk',
+        title: 'Amina Yakubu — Hb declining',
+        body: 'Hb dropped to 9.6 g/dL. Follow-up recommended within 7 days.',
+        time: '18th Jul, 10:05',
+        read: false,
+        group: 'today',
+        target: 'amina',
+      },
+      {
+        id: 'notif-bundle',
+        kind: 'bundle',
+        title: 'Reference bundle updated',
+        body: 'Seasonal food data v2.1 downloaded. Rainy-season foods now available.',
+        time: '15th Jul, 08:30',
+        read: true,
+        group: 'earlier',
+        target: '',
+      },
+    ];
+
+    set({
+      isLoggedIn: true,
+      role: 'cho',
+      currentUser: demoUser,
+      sessionExpired: false,
+      clients: demoClients,
+      referrals: demoReferrals,
+      notifications: demoNotifications,
+      offline: true,
+      syncing: false,
+      lastSyncAt: null,
+      pendingRecords: 3, // 3 unsynced visits across the caseload
+      dataLoading: false,
+    });
+  },
 }));
 
 // ─── Selector helpers ─────────────────────────────────────────────────────────
