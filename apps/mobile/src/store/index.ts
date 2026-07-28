@@ -112,211 +112,88 @@ export interface RegForm {
   consent: boolean;
 }
 
-// ─── Seed data ───────────────────────────────────────────────────────────────
+// Plans are generated per-client by the AI layer and stored in state.
+// The PlanScreen falls back to a generic template if no plan is available.
+export const PLANS: Record<string, PlanData> = {};
 
-const SEED_CLIENTS: DemoClient[] = [
-  {
-    id: 'amina',
-    name: 'Amina Mahama',
-    type: 'pregnant',
-    age: 26,
-    community: 'Kukuo',
-    caregiver: 'Amina',
-    priority: 'high',
-    metric: 'hb',
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
+
+// ─── Server response types (used in loadUserData) ─────────────────────────────
+
+interface ServerClient {
+  id: string;
+  householdId: string;
+  type: 'pregnant' | 'child';
+  name: string;
+  dob: string | null;
+  eddGestation: string | null;
+  sex: 'M' | 'F' | 'unknown' | null;
+  consentAt: string;
+  active: boolean;
+  updatedAt: string;
+  community: string;
+}
+
+interface ServerReferral {
+  id: string;
+  clientId: string;
+  visitId: string;
+  reason: string;
+  flagCodes: string[];
+  facilityTo: string | null;
+  status: string;
+  issuedAt: string;
+  updatedAt: string;
+}
+
+function ageFromDob(dob: string | null, type: 'pregnant' | 'child'): string | number {
+  if (!dob) return type === 'pregnant' ? '—' : 'new';
+  const months = Math.round((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+  if (type === 'child') {
+    if (months < 24) return `${months} mo`;
+    return Math.floor(months / 12);
+  }
+  return Math.round(months / 12);
+}
+
+function serverClientToDemoClient(c: ServerClient): DemoClient {
+  return {
+    id: c.id,
+    name: c.name,
+    type: c.type,
+    age: ageFromDob(c.dob, c.type),
+    community: c.community,
+    caregiver: c.name,
+    priority: 'new',
+    metric: c.type === 'pregnant' ? 'hb' : 'muac',
     severe: false,
     referred: false,
-    flag: 'Falling haemoglobin',
-    flagDetail: 'Hb 11.2 → 9.6 g/dL over 3 visits · mild anaemia',
-    trendNote: 'Falling — approaching anaemia threshold (11.0 g/dL)',
-    trendArrow: 'down',
-    trendColor: '#C81E1E',
-    visits: [
-      { date: '12th Sep, 2026', weight: 58.4, hb: 11.2, muac: 242, diet: ['grains', 'legumes', 'veg'], danger: [], synced: true, owner: 'You' },
-      { date: '10th Oct, 2026', weight: 59.1, hb: 10.4, muac: 238, diet: ['grains', 'legumes'], danger: [], synced: true, owner: 'You' },
-      { date: '7th Nov, 2026',  weight: 59.8, hb: 9.6,  muac: 235, diet: ['grains', 'legumes'], danger: [], synced: false, owner: 'You' },
-    ],
-  },
-  {
-    id: 'rahim',
-    name: 'Baby Rahim',
-    type: 'child',
-    age: '14 mo',
-    community: 'Sagnarigu',
-    caregiver: 'Fuseina A.',
-    priority: 'high',
-    metric: 'weight',
-    severe: false,
-    referred: false,
-    flag: 'Flat weight-for-age',
-    flagDetail: 'No weight gain in 2 months · only 2 food groups',
-    trendNote: 'Weight has plateaued — growth faltering',
+    flag: 'New client · awaiting first visit',
+    flagDetail: '',
+    trendNote: '',
     trendArrow: 'flat',
-    trendColor: '#B48700',
-    visits: [
-      { date: '15th Sep, 2026', weight: 8.1, hb: null, muac: 132, diet: ['grains', 'legumes', 'vita'], danger: [], synced: true, owner: 'You' },
-      { date: '13th Oct, 2026', weight: 8.2, hb: null, muac: 129, diet: ['grains', 'legumes'], danger: [], synced: true, owner: 'You' },
-      { date: '9th Nov, 2026',  weight: 8.2, hb: null, muac: 128, diet: ['grains', 'legumes'], danger: [], synced: false, owner: 'You' },
-    ],
-  },
-  {
-    id: 'latif',
-    name: 'Baby Latif',
-    type: 'child',
-    age: '9 mo',
-    community: 'Gizaa',
-    caregiver: 'Memuna I.',
-    priority: 'urgent',
-    metric: 'muac',
-    severe: true,
-    referred: true,
-    flag: 'Severe wasting risk',
-    flagDetail: 'MUAC 108 mm — below the 115 mm red-zone threshold',
-    trendNote: 'MUAC in the red zone — danger sign',
-    trendArrow: 'down',
-    trendColor: '#C81E1E',
-    visits: [
-      { date: '18th Oct, 2026', weight: 6.4, hb: null, muac: 118, diet: ['grains', 'legumes'], danger: [], synced: true, owner: 'You' },
-      { date: '12th Nov, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'], danger: [], synced: false, owner: 'You' },
-    ],
-  },
-  {
-    id: 'zeinab',
-    name: 'Zeinab Osman',
-    type: 'pregnant',
-    age: 31,
-    community: 'Kukuo',
-    caregiver: 'Zeinab',
-    priority: 'stable',
-    metric: 'hb',
-    severe: false,
-    referred: false,
-    flag: 'On track · Hb stable',
-    flagDetail: 'Hb steady at 11.8 g/dL',
-    trendNote: 'Stable and healthy',
-    trendArrow: 'up',
-    trendColor: '#057A55',
-    visits: [
-      { date: '14th Sep, 2026', weight: 62.1, hb: 11.6, muac: 258, diet: ['grains', 'legumes', 'flesh', 'veg'], danger: [], synced: true, owner: 'You' },
-      { date: '12th Nov, 2026', weight: 63.4, hb: 11.8, muac: 260, diet: ['grains', 'legumes', 'flesh', 'vita', 'veg'], danger: [], synced: true, owner: 'You' },
-    ],
-  },
-  {
-    id: 'sadia',
-    name: 'Baby Sadia',
-    type: 'child',
-    age: '20 mo',
-    community: 'Sagnarigu',
-    caregiver: 'Ayishetu M.',
-    priority: 'stable',
-    metric: 'weight',
-    severe: false,
-    referred: false,
-    flag: 'Diet improving',
-    flagDetail: 'Diet diversity up from 3 to 5 groups',
-    trendNote: 'Gaining well',
-    trendArrow: 'up',
-    trendColor: '#057A55',
-    visits: [
-      { date: '16th Sep, 2026', weight: 10.2, hb: null, muac: 145, diet: ['grains', 'legumes', 'vita'], danger: [], synced: true, owner: 'You' },
-      { date: '10th Nov, 2026', weight: 10.9, hb: null, muac: 148, diet: ['grains', 'legumes', 'flesh', 'vita', 'veg'], danger: [], synced: true, owner: 'You' },
-    ],
-  },
-];
+    trendColor: '#427CAF',
+    visits: [],
+  };
+}
 
-const SEED_REFERRALS: DemoReferral[] = [
-  {
-    id: 'r1',
-    clientId: 'latif',
-    name: 'Baby Latif',
-    type: 'child',
-    reason: 'MUAC 108 mm — below the 115 mm severe-wasting threshold',
-    facility: 'Tamale West Hospital',
-    status: 'issued',
-    at: '12th Nov, 2026',
-    due: '15th Nov, 2026',
-  },
-  {
-    id: 'r0',
-    clientId: 'fatima',
-    name: 'Baby Fatima',
-    type: 'child',
-    reason: 'Bilateral oedema (danger sign) recorded at visit',
-    facility: 'Tamale West Hospital',
-    status: 'seen',
-    at: '2nd Nov, 2026',
-    seenAt: '5th Nov, 2026',
-  },
-];
-
-const SEED_NOTIFICATIONS: AppNotification[] = [
-  { id: 'n1', kind: 'referral', title: 'Follow-up due: Baby Latif', body: 'Confirm the referral was seen at Tamale West Hospital.', time: '20 min ago', read: false, group: 'today', target: 'referrals' },
-  { id: 'n2', kind: 'risk', title: 'Priority raised: Amina Mahama', body: 'Haemoglobin fell to 9.6 g/dL — counselling recommended.', time: '2 h ago', read: false, group: 'today', target: 'client:amina' },
-  { id: 'n3', kind: 'sync', title: '3 records pending sync', body: "They'll upload automatically when you're back online.", time: '3 h ago', read: false, group: 'today', target: 'sync' },
-  { id: 'n4', kind: 'bundle', title: 'New seasonal bundle available', body: 'v1.4 · November foods for Kukuo zone. Syncs on Wi-Fi.', time: 'Yesterday', read: true, group: 'earlier', target: '' },
-  { id: 'n5', kind: 'voice', title: 'Dagbani voice pack updated', body: 'Refreshed counselling phrases were added.', time: '2 days ago', read: true, group: 'earlier', target: '' },
-];
-
-export const PLANS: Record<string, PlanData> = {
-  amina: {
-    seasonNote: 'In season · November · Kukuo zone',
-    targetNote: "Amina's haemoglobin has fallen to 9.6 g/dL. This plan closes an iron & folate gap using foods available and affordable in her locality this month.",
-    foods: [
-      { name: 'Moringa leaves',     local: 'Zogale',       group: 'vita',    tier: 'Free / garden', why: 'Rich in iron & folate; grows around the compound.' },
-      { name: 'Cowpea (beans)',     local: 'Tuya',         group: 'legumes', tier: 'Low cost',       why: 'Iron & protein; stores well through the dry season.' },
-      { name: 'Groundnut paste',    local: 'Sinkpaŋ zim',  group: 'legumes', tier: 'Low cost',       why: 'Energy, protein & folate; add to soups and koko.' },
-      { name: 'Orange sweet potato',local: 'Wulijɛɣu',    group: 'vita',    tier: 'Market',         why: 'Vitamin A & energy; in season and cheap now.' },
-      { name: 'Dawadawa',           local: 'Dawadawa',     group: 'legumes', tier: 'Low cost',       why: 'Iron-rich condiment used in most local dishes.' },
-    ],
-    alternates: [
-      { name: 'Boiled egg',   local: 'Gala',   group: 'eggs', tier: 'Market',        why: 'Extra protein & iron when affordable this week.' },
-      { name: 'Baobab fruit', local: 'Tuisim', group: 'veg',  tier: 'Free / garden', why: 'Vitamin C to boost iron absorption from greens.' },
-    ],
-    adequacy: [
-      { label: 'Iron',      pct: 94 },
-      { label: 'Folate',    pct: 88 },
-      { label: 'Vitamin C', pct: 76 },
-      { label: 'Energy',    pct: 82 },
-      { label: 'Protein',   pct: 90 },
-    ],
-    rationale: [
-      'Hb of 9.6 g/dL is mild anaemia, above the severe threshold — so nutrition counselling is appropriate rather than referral.',
-      'Every food is locally available and affordable in Kukuo this month; none rely on the market price of meat.',
-      'Pairing zogale and beans with an orange fruit or sweet potato improves how much iron the body absorbs.',
-    ],
-    voiceEn:  'Good morning, Amina. Your blood level has dropped a little this month, so it is important to eat iron-rich foods often. Cook zogale leaves, beans and groundnut most days, and add orange sweet potato for strength. All of these foods are in the market now and cost very little. Please come to the clinic for your next check-up.',
-    voiceDag: 'Dasiba, Amina. A ʒim maa siɣindi bɛla goli ŋɔ, dinzuɣu di simdi ni a dirila bindira din mali ʒim yɛlni. Dim zogale, tuya ni sinkpaŋ dabsili kam, ka pahi wulijɛɣu ni a mali yaa. Bindira ŋɔ zaa bela daa ni pumpɔŋɔ ka bi mali daa. Labmi na ti nya alaafee kariti.',
-  },
-  rahim: {
-    seasonNote: 'In season · November · Sagnarigu',
-    targetNote: "Rahim's weight has been flat for two months on only 2 food groups. This plan adds energy, protein and diet diversity from foods available now.",
-    foods: [
-      { name: 'Enriched koko',    local: 'Koko + sinkpaŋ', group: 'grains',  tier: 'Low cost',       why: 'Millet porridge with groundnut paste for extra energy.' },
-      { name: 'Egg',              local: 'Gala',            group: 'eggs',    tier: 'Market',         why: 'Complete protein; one a day supports steady growth.' },
-      { name: 'Mashed cowpea',    local: 'Tuya',            group: 'legumes', tier: 'Low cost',       why: 'Protein & iron, softened for a young child.' },
-      { name: 'Moringa leaves',   local: 'Zogale',          group: 'vita',    tier: 'Free / garden',  why: 'Adds vitamins A & C and a whole new food group.' },
-      { name: 'Small dried fish', local: 'Amani',           group: 'flesh',   tier: 'Low cost',       why: 'Protein, iron & zinc; ground into powder over food.' },
-    ],
-    alternates: [
-      { name: 'Ripe pawpaw',    local: 'Boɣu', group: 'vita',    tier: 'Market',   why: 'Soft vitamin-A fruit babies accept easily.' },
-      { name: 'Bambara beans',  local: 'Suya', group: 'legumes', tier: 'Low cost', why: 'Another protein source to rotate through the week.' },
-    ],
-    adequacy: [
-      { label: 'Energy',         pct: 86 },
-      { label: 'Protein',        pct: 92 },
-      { label: 'Iron',           pct: 80 },
-      { label: 'Vitamin A',      pct: 88 },
-      { label: 'Diet diversity', pct: 70 },
-    ],
-    rationale: [
-      'No weight gain over two months with a diet of only 2 food groups is growth faltering, not a severe case — nutrition support is the right response.',
-      'The plan lifts Rahim from 2 to 5 food groups, crossing the WHO minimum diet-diversity mark.',
-      'All items are low cost and available in Sagnarigu now; dried-fish powder and egg add protein without the price of fresh meat.',
-    ],
-    voiceEn:  "Good morning. Rahim's weight has stayed the same for two months, so he needs more variety in his meals. Give him enriched koko with groundnut paste, mashed beans, egg and zogale every day, and a little dried-fish powder over his food. These foods are available now and low cost. Please bring him back next month so we can weigh him again.",
-    voiceDag: 'Dasiba. Rahim tibigginsim maa bi paɣi chira ayi ŋɔ, dinzuɣu o bɔri bindira balibu balibu. Tim o koko din mali sinkpaŋ, tuya din nyɔɣisi, gala ni zogale dabsili kam, ka pahi amani zim o bindirigu zuɣu. Bindira ŋɔ bela daa ni ka bi mali daa. Labmi na ti mali o kariti biɛɣu.',
-  },
-};
+function serverReferralToDemoReferral(
+  r: ServerReferral,
+  clientMap: Map<string, DemoClient>,
+): DemoReferral {
+  const client = clientMap.get(r.clientId);
+  const isActive = r.status === 'issued' || r.status === 'in_transit';
+  return {
+    id: r.id,
+    clientId: r.clientId,
+    name: client?.name ?? 'Unknown client',
+    type: client?.type ?? 'child',
+    reason: r.reason,
+    facility: r.facilityTo ?? 'Referral facility',
+    status: isActive ? 'issued' : 'seen',
+    at: new Date(r.issuedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+  };
+}
 
 // ─── Store state shape ────────────────────────────────────────────────────────
 
@@ -339,9 +216,12 @@ interface StoreState {
   clients: DemoClient[];
   referrals: DemoReferral[];
   notifications: AppNotification[];
+  dataLoading: boolean;
 
   // Plan edits (removed / added alternates per client)
   planEdits: Record<string, { removed: string[]; added: string[] }>;
+  // AI-generated plans per client (keyed by clientId)
+  plans: Record<string, PlanData>;
 
   // Voice / audio
   voiceLang: UiLang;
@@ -373,6 +253,7 @@ interface StoreState {
   logout: () => void;
   setSessionExpired: (v: boolean) => void;
   setUiLang: (lang: UiLang) => void;
+  loadUserData: (accessToken: string) => Promise<void>;
 
   // Actions — clients
   addClient: (c: DemoClient) => void;
@@ -429,11 +310,13 @@ export const useAppStore = create<StoreState>((set, get) => ({
   uiLang: 'en',
   currentUser: null,
 
-  clients: SEED_CLIENTS,
-  referrals: SEED_REFERRALS,
-  notifications: SEED_NOTIFICATIONS,
+  clients: [],
+  referrals: [],
+  notifications: [],
+  dataLoading: false,
 
   planEdits: {},
+  plans: {},
 
   voiceLang: 'en',
   audioPlaying: false,
@@ -463,10 +346,53 @@ export const useAppStore = create<StoreState>((set, get) => ({
   login: (user) => set({ isLoggedIn: true, role: user.role, currentUser: user, sessionExpired: false }),
   logout: () => {
     clearSession().catch(() => {});
-    set({ isLoggedIn: false, currentUser: null, sessionExpired: false });
+    set({ isLoggedIn: false, currentUser: null, clients: [], referrals: [], notifications: [], sessionExpired: false });
   },
   setSessionExpired: (v) => set({ sessionExpired: v }),
   setUiLang: (lang) => set({ uiLang: lang }),
+
+  loadUserData: async (accessToken: string) => {
+    set({ dataLoading: true });
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    try {
+      const [clientsRes, referralsRes] = await Promise.all([
+        fetch(`${API_URL}/clients`, { headers }),
+        fetch(`${API_URL}/referrals`, { headers }),
+      ]);
+
+      const clientsJson = clientsRes.ok ? await clientsRes.json() : { clients: [] };
+      const referralsJson = referralsRes.ok ? await referralsRes.json() : { referrals: [] };
+
+      const serverClients: ServerClient[] = clientsJson.clients ?? [];
+      const serverReferrals: ServerReferral[] = referralsJson.referrals ?? [];
+
+      const clientMap = new Map<string, DemoClient>();
+      const demoClients: DemoClient[] = serverClients.map((c) => {
+        const dc = serverClientToDemoClient(c);
+        clientMap.set(c.id, dc);
+        return dc;
+      });
+
+      // Mark clients that have an active referral
+      const referredIds = new Set(
+        serverReferrals
+          .filter((r) => r.status === 'issued' || r.status === 'in_transit')
+          .map((r) => r.clientId),
+      );
+      for (const dc of demoClients) {
+        if (referredIds.has(dc.id)) dc.referred = true;
+      }
+
+      const demoReferrals: DemoReferral[] = serverReferrals.map((r) =>
+        serverReferralToDemoReferral(r, clientMap),
+      );
+
+      set({ clients: demoClients, referrals: demoReferrals, dataLoading: false, offline: false, pendingRecords: 0 });
+    } catch (e) {
+      console.warn('[Store] loadUserData error:', e);
+      set({ dataLoading: false });
+    }
+  },
 
   // ── Clients ──
   addClient: (c) => set((s) => ({ clients: [...s.clients, c] })),
@@ -612,9 +538,9 @@ export const useAppStore = create<StoreState>((set, get) => ({
       return { planEdits: { ...s.planEdits, [clientId]: { ...e, removed: [...e.removed, name] } } };
     }),
   addPlanAlternate: (clientId) => {
-    const { planEdits } = get();
+    const { planEdits, plans } = get();
     const e = planEdits[clientId] ?? { removed: [], added: [] };
-    const plan = PLANS[clientId];
+    const plan = plans[clientId] ?? PLANS[clientId];
     if (!plan) return null;
     const next = plan.alternates.find((a) => !e.added.includes(a.name));
     if (!next) return null;

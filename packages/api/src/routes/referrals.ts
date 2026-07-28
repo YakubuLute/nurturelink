@@ -22,7 +22,7 @@ referralsRouter.get('/', authenticate, async (req, res, next) => {
   try {
     const { facilityId } = req.user;
     if (!facilityId) {
-      res.status(400).json({ error: 'User is not assigned to a facility' });
+      res.json({ referrals: [], cursor: null, hasMore: false });
       return;
     }
     const result = await svc.listByFacility(facilityId);

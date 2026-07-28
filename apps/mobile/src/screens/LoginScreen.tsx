@@ -28,6 +28,7 @@ function mapServerRole(serverRole: string): Role {
 
 export function LoginScreen({ navigation }: Props) {
   const login = useAppStore((s) => s.login);
+  const loadUserData = useAppStore((s) => s.loadUserData);
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -68,6 +69,10 @@ export function LoginScreen({ navigation }: Props) {
           phone: phone.trim(),
           role,
         });
+        // Fire-and-forget: load real data in the background; UI navigates immediately
+        loadUserData(data.accessToken).catch((e) =>
+          console.warn('[Login] loadUserData failed (non-fatal):', e),
+        );
         navigation.replace(role === 'sup' ? 'Supervisor' : 'Home');
       } else if (res.status === 401) {
         setError('Incorrect phone number or password.');

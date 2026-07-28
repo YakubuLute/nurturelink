@@ -58,6 +58,7 @@ export class ClientRepository {
         household: { facilityId },
         deletedAt: null,
       },
+      include: { household: true },
       orderBy: { updatedAt: 'desc' },
     });
   }

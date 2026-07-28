@@ -173,6 +173,7 @@ export function HomeScreen({ navigation }: Props) {
     uiLang,
     sync,
     currentUser,
+    dataLoading,
   } = useAppStore();
 
   const [query, setQuery] = useState('');
@@ -285,7 +286,12 @@ export function HomeScreen({ navigation }: Props) {
         </View>
 
         {/* ── Content ── */}
-        {isSearching ? (
+        {dataLoading ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="large" color="#427CAF" />
+            <Text style={[styles.emptyStateSub, { marginTop: 12 }]}>Loading your caseload…</Text>
+          </View>
+        ) : isSearching ? (
           /* Search results */
           searchResults.length > 0 ? (
             <View>
@@ -306,6 +312,11 @@ export function HomeScreen({ navigation }: Props) {
               <Text style={styles.emptyStateSub}>Try a different name or community</Text>
             </View>
           )
+        ) : clients.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>No clients yet</Text>
+            <Text style={styles.emptyStateSub}>Tap + to register your first client</Text>
+          </View>
         ) : (
           <>
             {/* ── Priority follow-up ── */}
