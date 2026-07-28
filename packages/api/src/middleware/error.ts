@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 
 export function errorMiddleware(
-  err: Error,
+  err: Error & { status?: number },
   _req: Request,
   res: Response,
   _next: NextFunction,
@@ -12,6 +12,17 @@ export function errorMiddleware(
     return;
   }
 
+  const status = err.status ?? 500;
+  if (status < 500) {
+    // Client error (401, 403, 409, etc.) — no need to log stack
+    res.status(status).json({ error: err.message });
+    return;
+  }
+
   console.error('[API Error]', err);
-  res.status(500).json({ error: 'Internal server error' });
+  const isDev = process.env.NODE_ENV !== 'production';
+  res.status(500).json({
+    error: 'Internal server error',
+    ...(isDev ? { detail: err.message } : {}),
+  });
 }

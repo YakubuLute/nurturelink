@@ -12,7 +12,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
-import { ChevronLeft, Check, WifiOff } from 'lucide-react-native';
+import { ChevronLeft, Check, WifiOff, Baby, User } from 'lucide-react-native';
+import { syncNow } from '../sync/orchestrator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -36,7 +37,7 @@ function TypeSelector({
         accessibilityLabel="Child"
         accessibilityState={{ selected: value === 'child' }}
       >
-        <Text style={[ts.icon, value === 'child' ? ts.textActive : ts.textInactive]}>👶</Text>
+        <Baby size={18} color={value === 'child' ? '#FFFFFF' : '#08283B'} />
         <Text style={[ts.label, value === 'child' ? ts.textActive : ts.textInactive]}>Child</Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -46,7 +47,7 @@ function TypeSelector({
         accessibilityLabel="Pregnant woman"
         accessibilityState={{ selected: value === 'pregnant' }}
       >
-        <Text style={[ts.icon, value === 'pregnant' ? ts.textActive : ts.textInactive]}>🤰</Text>
+        <User size={18} color={value === 'pregnant' ? '#FFFFFF' : '#08283B'} />
         <Text style={[ts.label, value === 'pregnant' ? ts.textActive : ts.textInactive]}>
           Pregnant woman
         </Text>
@@ -70,7 +71,6 @@ const ts = StyleSheet.create({
   },
   btnActive: { backgroundColor: '#08283B', borderColor: '#08283B' },
   btnInactive: { backgroundColor: '#FDFDFD', borderColor: '#D1D5DB' },
-  icon: { fontSize: 18 },
   label: { fontSize: 14, fontWeight: '600' },
   textActive: { color: '#FFFFFF' },
   textInactive: { color: '#08283B' },
@@ -201,6 +201,9 @@ export function RegisterScreen({ navigation }: Props) {
       Alert.alert('Incomplete form', 'Please enter a name and confirm consent.');
       return;
     }
+    // Fire-and-forget: push the new client record to the server immediately
+    // when online. If offline it stays in the SQLite outbox and syncs later.
+    syncNow('foreground').catch(() => {});
     navigation.navigate('Client', { clientId: newClient.id });
   }
 
