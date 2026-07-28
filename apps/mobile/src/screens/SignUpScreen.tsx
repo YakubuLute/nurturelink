@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ChevronLeft, User, Phone, Lock, Eye, EyeOff, Briefcase } from 'lucide-react-native';
+import { ChevronLeft, User, Phone, Lock, Eye, EyeOff, Briefcase, Building2 } from 'lucide-react-native';
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
@@ -18,6 +18,13 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 type AppRole = 'CHO' | 'supervisor';
+
+interface Facility {
+  id: string;
+  name: string;
+  district: string;
+  region: string;
+}
 
 const ROLES: { value: AppRole; label: string; sub: string }[] = [
   { value: 'CHO', label: 'Community Health Officer', sub: 'Records visits and manages caseload' },
@@ -32,8 +39,23 @@ export function SignUpScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [role, setRole] = useState<AppRole>('CHO');
+  const [facilityId, setFacilityId] = useState<string | null>(null);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [facilitiesLoading, setFacilitiesLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/facilities`)
+      .then((r) => r.json())
+      .then((data: { facilities: Facility[] }) => {
+        setFacilities(data.facilities ?? []);
+      })
+      .catch(() => {
+        // Non-fatal — user can still register without a facility
+      })
+      .finally(() => setFacilitiesLoading(false));
+  }, []);
 
   function validate(): string | null {
     if (!name.trim() || name.trim().length < 2) return 'Full name is required.';
@@ -61,6 +83,7 @@ export function SignUpScreen({ navigation }: Props) {
           phone: phone.trim(),
           password,
           role,
+          ...(facilityId ? { facilityId } : {}),
         }),
       });
 
@@ -206,15 +229,15 @@ export function SignUpScreen({ navigation }: Props) {
 
           {/* Role */}
           <View style={styles.fieldGroup}>
-            <View style={styles.roleLabelRow}>
+            <View style={styles.iconLabelRow}>
               <Briefcase size={15} color="#8D9CA5" />
               <Text style={styles.fieldLabel}>Role</Text>
             </View>
-            <View style={styles.roleOptions}>
+            <View style={styles.optionList}>
               {ROLES.map((r) => (
                 <Pressable
                   key={r.value}
-                  style={[styles.roleOption, role === r.value && styles.roleOptionActive]}
+                  style={[styles.optionRow, role === r.value && styles.optionRowActive]}
                   onPress={() => setRole(r.value)}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: role === r.value }}
@@ -222,15 +245,53 @@ export function SignUpScreen({ navigation }: Props) {
                   <View style={[styles.radioCircle, role === r.value && styles.radioCircleFilled]}>
                     {role === r.value && <View style={styles.radioDot} />}
                   </View>
-                  <View style={styles.roleTextGroup}>
-                    <Text style={[styles.roleLabel, role === r.value && styles.roleLabelActive]}>
+                  <View style={styles.optionText}>
+                    <Text style={[styles.optionLabel, role === r.value && styles.optionLabelActive]}>
                       {r.label}
                     </Text>
-                    <Text style={styles.roleSub}>{r.sub}</Text>
+                    <Text style={styles.optionSub}>{r.sub}</Text>
                   </View>
                 </Pressable>
               ))}
             </View>
+          </View>
+
+          {/* Facility */}
+          <View style={styles.fieldGroup}>
+            <View style={styles.iconLabelRow}>
+              <Building2 size={15} color="#8D9CA5" />
+              <Text style={styles.fieldLabel}>CHPS facility <Text style={styles.optionalTag}>(optional)</Text></Text>
+            </View>
+            {facilitiesLoading ? (
+              <View style={styles.facilitiesLoading}>
+                <ActivityIndicator size="small" color="#8D9CA5" />
+                <Text style={styles.facilitiesLoadingText}>Loading facilities…</Text>
+              </View>
+            ) : facilities.length === 0 ? (
+              <Text style={styles.facilitiesEmpty}>No facilities available. You can update this later.</Text>
+            ) : (
+              <View style={styles.optionList}>
+                {facilities.map((f) => (
+                  <Pressable
+                    key={f.id}
+                    style={[styles.optionRow, facilityId === f.id && styles.optionRowActive]}
+                    onPress={() => setFacilityId((prev) => prev === f.id ? null : f.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: facilityId === f.id }}
+                  >
+                    <View style={[styles.radioCircle, facilityId === f.id && styles.radioCircleFilled]}>
+                      {facilityId === f.id && <View style={styles.radioDot} />}
+                    </View>
+                    <View style={styles.optionText}>
+                      <Text style={[styles.optionLabel, facilityId === f.id && styles.optionLabelActive]}>
+                        {f.name}
+                      </Text>
+                      <Text style={styles.optionSub}>{f.district} · {f.region}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Error */}
@@ -326,6 +387,10 @@ const styles = StyleSheet.create({
     color: '#C2D0D9',
     marginBottom: 8,
   },
+  optionalTag: {
+    fontWeight: '400',
+    color: '#5A6F7C',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,17 +418,17 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
 
-  roleLabelRow: {
+  iconLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginBottom: 8,
   },
 
-  roleOptions: {
+  optionList: {
     gap: 8,
   },
-  roleOption: {
+  optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -374,7 +439,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
-  roleOptionActive: {
+  optionRowActive: {
     borderColor: BRAND,
     backgroundColor: 'rgba(255,90,0,0.08)',
   },
@@ -396,22 +461,38 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: BRAND,
   },
-  roleTextGroup: {
+  optionText: {
     flex: 1,
   },
-  roleLabel: {
+  optionLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#8D9CA5',
     marginBottom: 2,
   },
-  roleLabelActive: {
+  optionLabelActive: {
     color: '#FDFDFD',
   },
-  roleSub: {
+  optionSub: {
     fontSize: 12,
     color: '#5A6F7C',
     lineHeight: 16,
+  },
+
+  facilitiesLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+  },
+  facilitiesLoadingText: {
+    fontSize: 13,
+    color: '#5A6F7C',
+  },
+  facilitiesEmpty: {
+    fontSize: 13,
+    color: '#5A6F7C',
+    paddingVertical: 8,
   },
 
   errorText: {

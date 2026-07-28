@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { authRouter } from './routes/auth';
 import { aiRouter } from './routes/ai';
 import { clientsRouter } from './routes/clients';
+import { facilitiesRouter } from './routes/facilities';
 import { visitsRouter } from './routes/visits';
 import { plansRouter } from './routes/plans';
 import { referralsRouter } from './routes/referrals';
@@ -42,6 +43,7 @@ export function createApp(): Application {
 
   // ── Routes ──────────────────────────────────────────────────────────────────
   app.use('/auth', authRouter);
+  app.use('/facilities', facilitiesRouter);
   app.use('/ai', aiRouter);
   app.use('/clients', clientsRouter);
   app.use('/visits', visitsRouter);
