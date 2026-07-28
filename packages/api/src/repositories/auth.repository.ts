@@ -12,7 +12,10 @@ function sha256(token: string): string {
 
 export class AuthRepository {
   async findByPhone(phone: string) {
-    return prisma.user.findUnique({ where: { phone } });
+    return prisma.user.findUnique({
+      where: { phone },
+      include: { facility: { select: { name: true } } },
+    });
   }
 
   async createUser(data: {

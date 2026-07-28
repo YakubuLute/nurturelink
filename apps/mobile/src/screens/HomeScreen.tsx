@@ -226,7 +226,7 @@ export function HomeScreen({ navigation }: Props) {
           <View style={styles.greetingLeft}>
             <Text style={styles.greetingTime}>{greeting(uiLang)}</Text>
             <Text style={styles.greetingName}>{currentUser?.name ?? 'Health Worker'}</Text>
-            <Text style={styles.greetingDate}>{dateStr} · Kukuo CHPS zone</Text>
+            <Text style={styles.greetingDate}>{dateStr}{currentUser?.facilityName ? ` · ${currentUser.facilityName}` : ''}</Text>
           </View>
           <View style={styles.greetingActions}>
             <TouchableOpacity

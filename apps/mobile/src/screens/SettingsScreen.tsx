@@ -66,6 +66,7 @@ export function SettingsScreen({ navigation }: Props) {
               <Text style={styles.profileName}>{currentUser?.name ?? 'Health Worker'}</Text>
               <Text style={styles.profileRole}>
                 {currentUser?.role === 'sup' ? 'Supervisor' : 'Community Health Officer'}
+                {currentUser?.facilityName ? ` · ${currentUser.facilityName}` : ''}
               </Text>
             </View>
           </View>

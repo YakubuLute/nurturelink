@@ -55,7 +55,7 @@ export function LoginScreen({ navigation }: Props) {
         const data = await res.json() as {
           accessToken: string;
           refreshToken: string;
-          user: { id: string; name: string; role: string; phone?: string };
+          user: { id: string; name: string; role: string; phone?: string; facilityName?: string | null };
         };
         // Token storage is best-effort — on web expo-secure-store falls back to
         // localStorage but may throw; a failure here must not block login.
@@ -68,6 +68,7 @@ export function LoginScreen({ navigation }: Props) {
           name: data.user.name,
           phone: phone.trim(),
           role,
+          facilityName: data.user.facilityName ?? null,
         });
         // Fire-and-forget: load real data in the background; UI navigates immediately
         loadUserData(data.accessToken).catch((e) =>
@@ -94,7 +95,7 @@ export function LoginScreen({ navigation }: Props) {
     setLoading(true);
     try {
       await storeSession('cho');
-      login({ id: 'offline', name: 'Offline User', phone: '', role: 'cho' });
+      login({ id: 'offline', name: 'Offline User', phone: '', role: 'cho', facilityName: null });
       navigation.replace('Home');
     } finally {
       setLoading(false);

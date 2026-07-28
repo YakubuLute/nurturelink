@@ -202,6 +202,7 @@ export interface CurrentUser {
   name: string;
   phone: string;
   role: Role;
+  facilityName: string | null;
 }
 
 interface StoreState {
