@@ -328,7 +328,7 @@ const emptyRegForm: RegForm = {
   type: 'child',
   name: '',
   sex: '',
-  community: 'Kukuo',
+  community: '',
   dob: '',
   consent: false,
   phone: '',
