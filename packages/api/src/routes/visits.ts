@@ -23,7 +23,7 @@ visitsRouter.post('/', authenticate, async (req, res, next) => {
 // GET /visits/client/:clientId — full visit history for a client
 visitsRouter.get('/client/:clientId', authenticate, async (req, res, next) => {
   try {
-    const visits = await svc.listByClient(req.params.clientId);
+    const visits = await svc.listByClient(String(req.params.clientId));
     res.json({ visits });
   } catch (err) {
     next(err);

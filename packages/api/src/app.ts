@@ -27,7 +27,8 @@ export function createApp(): Application {
   // ── Security & parsing ──────────────────────────────────────────────────────
   app.use(helmet());
   app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));
-  app.use(compression());
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.use(compression() as any);
   app.use(express.json({ limit: '2mb' }));
 
   // ── Rate limiting ───────────────────────────────────────────────────────────

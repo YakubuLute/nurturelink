@@ -36,7 +36,7 @@ referralsRouter.get('/', authenticate, async (req, res, next) => {
 referralsRouter.patch('/:id/status', authenticate, async (req, res, next) => {
   try {
     const body = UpdateReferralStatusSchema.parse(req.body);
-    const referral = await svc.updateStatus(req.params.id, body);
+    const referral = await svc.updateStatus(String(req.params.id), body);
     res.json(referral);
   } catch (err) {
     next(err);
@@ -46,7 +46,7 @@ referralsRouter.patch('/:id/status', authenticate, async (req, res, next) => {
 // GET /referrals/:id — single referral
 referralsRouter.get('/:id', authenticate, async (req, res, next) => {
   try {
-    const referral = await svc.findById(req.params.id);
+    const referral = await svc.findById(String(req.params.id));
     if (!referral) {
       res.status(404).json({ error: 'Referral not found' });
       return;
