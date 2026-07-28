@@ -20,7 +20,7 @@ import {
   priorityStyle,
   displayName,
 } from '../store';
-import { Bell, WifiOff, Check, Search, X, Plus } from 'lucide-react-native';
+import { Bell, WifiOff, Check, Search, X, Plus, TrendingUp, ChevronRight } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 

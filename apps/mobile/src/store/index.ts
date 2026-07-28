@@ -64,6 +64,10 @@ export interface DemoReferral {
   at: string;
   seenAt?: string;
   due?: string;
+  // G7: enriched confirmation data
+  confirmSource?: string;
+  outcome?: string;
+  nextFollowUp?: string;
 }
 
 export interface AppNotification {
@@ -280,6 +284,7 @@ interface StoreState {
   // Device / sync
   offline: boolean;
   syncing: boolean;
+  lastSyncAt: string | null;     // ISO string of most recent completed sync
   adaptiveSync: boolean;
   battery: number;
   storageUsed: number;
@@ -327,7 +332,7 @@ interface StoreState {
 
   // Actions — referrals
   issueReferral: (clientId: string) => void;
-  confirmReferralSeen: (clientId: string) => void;
+  confirmReferralSeen: (clientId: string, details?: { seenAt: string; confirmSource: string; outcome: string; nextFollowUp?: string }) => void;
 
   // Actions — notifications
   markAllRead: () => void;
@@ -399,6 +404,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
 
   offline: true,
   syncing: false,
+  lastSyncAt: null,
   adaptiveSync: true,
   battery: 62,
   storageUsed: 148,
@@ -677,10 +683,19 @@ export const useAppStore = create<StoreState>((set, get) => ({
       .then(() => syncNow('referral_emergency'))
       .catch((e) => console.warn('[Store] issueReferral persist error:', e));
   },
-  confirmReferralSeen: (clientId) =>
+  confirmReferralSeen: (clientId, details) =>
     set((s) => ({
       referrals: s.referrals.map((r) =>
-        r.clientId === clientId ? { ...r, status: 'seen', seenAt: '12th Nov, 2026' } : r,
+        r.clientId === clientId
+          ? {
+              ...r,
+              status: 'seen',
+              seenAt: details?.seenAt ?? new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+              confirmSource: details?.confirmSource,
+              outcome: details?.outcome,
+              nextFollowUp: details?.nextFollowUp,
+            }
+          : r,
       ),
     })),
 
@@ -701,6 +716,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
       set((s) => ({
         syncing: false,
         offline: false,
+        lastSyncAt: new Date().toISOString(),
         telemetryCount: 0,
         pendingRecords: 0,
         clients: s.clients.map((c) => ({
