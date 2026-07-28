@@ -97,11 +97,29 @@ export interface PlanFood {
 }
 
 export interface VisitForm {
+  // Always present
   weight: string;
   hb: string;
   muac: string;
   diet: string[];
   danger: string[];
+  // Children only (all ages)
+  heightCm: string;
+  oedema: string;               // 'yes' | 'no' | ''
+  // Pregnant only
+  bpSystolic: string;
+  bpDiastolic: string;
+  ancVisited: string;           // 'yes' | 'no' | ''
+  supplementGiven: string;      // 'yes' | 'no' | ''
+  // Child 0–5 mo
+  exclusiveBreastfeeding: string; // 'yes' | 'no' | ''
+  feedingDifficulty: string;    // 'yes' | 'no' | ''
+  // Child 6–23 mo
+  mealFreqPerDay: string;
+  feedingTexture: string;       // 'smooth' | 'mashed' | 'lumpy' | 'family' | ''
+  feedingDuringIllness: string; // 'yes' | 'no' | ''
+  // Child 6–59 mo (Vitamin A)
+  vitaminAGiven: string;        // 'yes' | 'no' | ''
 }
 
 export interface RegForm {
@@ -323,7 +341,14 @@ interface StoreState {
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
-const emptyVisitForm: VisitForm = { weight: '', hb: '', muac: '', diet: [], danger: [] };
+const emptyVisitForm: VisitForm = {
+  weight: '', hb: '', muac: '', diet: [], danger: [],
+  heightCm: '', oedema: '',
+  bpSystolic: '', bpDiastolic: '', ancVisited: '', supplementGiven: '',
+  exclusiveBreastfeeding: '', feedingDifficulty: '',
+  mealFreqPerDay: '', feedingTexture: '', feedingDuringIllness: '',
+  vitaminAGiven: '',
+};
 const emptyRegForm: RegForm = {
   type: 'child',
   name: '',
@@ -513,6 +538,14 @@ export const useAppStore = create<StoreState>((set, get) => ({
     // Persist visit + flag to SQLite + outbox (fire-and-forget)
     const visitId = uuidv4();
     const flagId = uuidv4();
+    // Serialize type-specific clinical fields into notes JSON
+    const clinicalExtras: Record<string, string> = {};
+    for (const k of ['heightCm','oedema','bpSystolic','bpDiastolic','ancVisited',
+      'supplementGiven','exclusiveBreastfeeding','feedingDifficulty','mealFreqPerDay',
+      'feedingTexture','feedingDuringIllness','vitaminAGiven'] as const) {
+      const v = visitForm[k as keyof VisitForm] as string;
+      if (v) clinicalExtras[k] = v;
+    }
     persistVisit(
       {
         visitId,
@@ -523,7 +556,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         muacMm: muac || null,
         dietRecall: visitForm.diet,
         dangerSigns: visitForm.danger,
-        notes: null,
+        notes: Object.keys(clinicalExtras).length > 0 ? JSON.stringify(clinicalExtras) : null,
       },
       { flagId, clientId, visitId, severity, reasons: flagReasons },
     ).catch((e) => console.warn('[Store] persistVisit error:', e));
