@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS households (
   community TEXT NOT NULL,
   geo TEXT,
   notes TEXT,
+  phone TEXT,
+  landmark TEXT,
   updated_at TEXT NOT NULL,
   deleted_at TEXT,
   synced_at TEXT
@@ -32,6 +34,13 @@ CREATE TABLE IF NOT EXISTS clients (
   dob TEXT,
   edd_gestation TEXT,
   sex TEXT,
+  anc_folder_number TEXT,
+  cwc_card_number TEXT,
+  caregiver_name TEXT,
+  caregiver_relationship TEXT,
+  gravida TEXT,
+  parity TEXT,
+  lmp TEXT,
   consent_at TEXT NOT NULL,
   active INTEGER NOT NULL DEFAULT 1,
   updated_at TEXT NOT NULL,
@@ -179,4 +188,15 @@ CREATE INDEX IF NOT EXISTS idx_flags_client ON flags(client_id);
 CREATE INDEX IF NOT EXISTS idx_plans_client ON plans(client_id);
 CREATE INDEX IF NOT EXISTS idx_clients_active ON clients(active);
 CREATE INDEX IF NOT EXISTS idx_seasonal_zone_month ON seasonal_availability(agro_zone_id, month);
+
+-- ── Schema migrations — safe to run on existing DBs (errors are caught in initDb) ──
+ALTER TABLE households ADD COLUMN phone TEXT;
+ALTER TABLE households ADD COLUMN landmark TEXT;
+ALTER TABLE clients ADD COLUMN anc_folder_number TEXT;
+ALTER TABLE clients ADD COLUMN cwc_card_number TEXT;
+ALTER TABLE clients ADD COLUMN caregiver_name TEXT;
+ALTER TABLE clients ADD COLUMN caregiver_relationship TEXT;
+ALTER TABLE clients ADD COLUMN gravida TEXT;
+ALTER TABLE clients ADD COLUMN parity TEXT;
+ALTER TABLE clients ADD COLUMN lmp TEXT;
 `;

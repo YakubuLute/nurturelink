@@ -107,9 +107,23 @@ export interface VisitForm {
 export interface RegForm {
   type: ClientType;
   name: string;
+  sex: string;          // 'male' | 'female' | ''
   community: string;
-  dob: string;
+  dob: string;          // child's DOB or mother's DOB (YYYY-MM-DD)
   consent: boolean;
+  // Household contact (both types)
+  phone: string;
+  landmark: string;
+  // Pregnant-specific
+  edd: string;          // expected delivery date (YYYY-MM-DD)
+  lmp: string;          // last menstrual period (YYYY-MM-DD)
+  ancFolderNumber: string;
+  gravida: string;
+  parity: string;
+  // Child-specific
+  cwcCardNumber: string;
+  caregiverName: string;
+  caregiverRelationship: string;
 }
 
 // Plans are generated per-client by the AI layer and stored in state.
@@ -308,7 +322,24 @@ interface StoreState {
 // ─── Store ───────────────────────────────────────────────────────────────────
 
 const emptyVisitForm: VisitForm = { weight: '', hb: '', muac: '', diet: [], danger: [] };
-const emptyRegForm: RegForm = { type: 'child', name: '', community: 'Kukuo', dob: '', consent: false };
+const emptyRegForm: RegForm = {
+  type: 'child',
+  name: '',
+  sex: '',
+  community: 'Kukuo',
+  dob: '',
+  consent: false,
+  phone: '',
+  landmark: '',
+  edd: '',
+  lmp: '',
+  ancFolderNumber: '',
+  gravida: '',
+  parity: '',
+  cwcCardNumber: '',
+  caregiverName: '',
+  caregiverRelationship: '',
+};
 
 export const useAppStore = create<StoreState>((set, get) => ({
   // Initial state

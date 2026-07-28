@@ -75,7 +75,14 @@ async function initDb(): Promise<DB> {
   const db = open({ name: DB_NAME, encryptionKey });
 
   for (const stmt of splitStatements(CREATE_TABLES)) {
-    await db.execute(stmt);
+    try {
+      await db.execute(stmt);
+    } catch (e: unknown) {
+      // ALTER TABLE ADD COLUMN throws "duplicate column name" when the column
+      // already exists on an existing DB — safe to ignore.
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!msg.includes('duplicate column name')) throw e;
+    }
   }
 
   return db;
