@@ -199,10 +199,17 @@ function serverReferralToDemoReferral(
 
 export interface CurrentUser {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  otherNames: string | null;
   phone: string;
   role: Role;
   facilityName: string | null;
+}
+
+/** Display-friendly full name: First [Other] Last */
+export function displayName(user: Pick<CurrentUser, 'firstName' | 'lastName' | 'otherNames'>): string {
+  return [user.firstName, user.otherNames, user.lastName].filter(Boolean).join(' ');
 }
 
 interface StoreState {

@@ -55,7 +55,15 @@ export function LoginScreen({ navigation }: Props) {
         const data = await res.json() as {
           accessToken: string;
           refreshToken: string;
-          user: { id: string; name: string; role: string; phone?: string; facilityName?: string | null };
+          user: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            otherNames?: string | null;
+            role: string;
+            phone?: string;
+            facilityName?: string | null;
+          };
         };
         // Token storage is best-effort — on web expo-secure-store falls back to
         // localStorage but may throw; a failure here must not block login.
@@ -64,9 +72,11 @@ export function LoginScreen({ navigation }: Props) {
         );
         const role = mapServerRole(data.user.role);
         login({
-          id: data.user.id,
-          name: data.user.name,
-          phone: phone.trim(),
+          id:          data.user.id,
+          firstName:   data.user.firstName,
+          lastName:    data.user.lastName,
+          otherNames:  data.user.otherNames ?? null,
+          phone:       phone.trim(),
           role,
           facilityName: data.user.facilityName ?? null,
         });
@@ -95,7 +105,7 @@ export function LoginScreen({ navigation }: Props) {
     setLoading(true);
     try {
       await storeSession('cho');
-      login({ id: 'offline', name: 'Offline User', phone: '', role: 'cho', facilityName: null });
+      login({ id: 'offline', firstName: 'Offline', lastName: 'User', otherNames: null, phone: '', role: 'cho', facilityName: null });
       navigation.replace('Home');
     } finally {
       setLoading(false);

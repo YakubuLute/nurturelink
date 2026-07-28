@@ -32,7 +32,9 @@ const ROLES: { value: AppRole; label: string; sub: string }[] = [
 ];
 
 export function SignUpScreen({ navigation }: Props) {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [otherNames, setOtherNames] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -58,7 +60,8 @@ export function SignUpScreen({ navigation }: Props) {
   }, []);
 
   function validate(): string | null {
-    if (!name.trim() || name.trim().length < 2) return 'Full name is required.';
+    if (!firstName.trim()) return 'First name is required.';
+    if (!lastName.trim()) return 'Last name is required.';
     if (!phone.trim() || phone.trim().length < 10) return 'Enter a valid phone number.';
     if (password.length < 8) return 'Password must be at least 8 characters.';
     if (password !== confirmPassword) return 'Passwords do not match.';
@@ -79,8 +82,10 @@ export function SignUpScreen({ navigation }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
-          phone: phone.trim(),
+          firstName:  firstName.trim(),
+          lastName:   lastName.trim(),
+          ...(otherNames.trim() ? { otherNames: otherNames.trim() } : {}),
+          phone:      phone.trim(),
           password,
           role,
           ...(facilityId ? { facilityId } : {}),
@@ -133,16 +138,52 @@ export function SignUpScreen({ navigation }: Props) {
 
         {/* Form */}
         <View style={styles.form}>
-          {/* Full name */}
+          {/* First name */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Full name</Text>
+            <Text style={styles.fieldLabel}>First name</Text>
             <View style={styles.inputRow}>
               <User size={18} color="#8D9CA5" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                value={name}
-                onChangeText={(v) => { setName(v); setError(null); }}
-                placeholder="Yakubu Lute"
+                value={firstName}
+                onChangeText={(v) => { setFirstName(v); setError(null); }}
+                placeholder="Yakubu"
+                placeholderTextColor="#5A6F7C"
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          {/* Last name */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Last name</Text>
+            <View style={styles.inputRow}>
+              <User size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={lastName}
+                onChangeText={(v) => { setLastName(v); setError(null); }}
+                placeholder="Lute"
+                placeholderTextColor="#5A6F7C"
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          {/* Other names */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Other names <Text style={styles.optionalTag}>(optional)</Text></Text>
+            <View style={styles.inputRow}>
+              <User size={18} color="#8D9CA5" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={otherNames}
+                onChangeText={(v) => { setOtherNames(v); setError(null); }}
+                placeholder="Middle name, etc."
                 placeholderTextColor="#5A6F7C"
                 autoCapitalize="words"
                 autoCorrect={false}

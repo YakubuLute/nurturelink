@@ -18,6 +18,7 @@ import {
   initials,
   avatarStyle,
   priorityStyle,
+  displayName,
 } from '../store';
 import { Bell, WifiOff, Check, Search, X, Plus } from 'lucide-react-native';
 
@@ -225,7 +226,7 @@ export function HomeScreen({ navigation }: Props) {
         <View style={styles.greetingRow}>
           <View style={styles.greetingLeft}>
             <Text style={styles.greetingTime}>{greeting(uiLang)}</Text>
-            <Text style={styles.greetingName}>{currentUser?.name ?? 'Health Worker'}</Text>
+            <Text style={styles.greetingName}>{currentUser ? displayName(currentUser) : 'Health Worker'}</Text>
             <Text style={styles.greetingDate}>{dateStr}{currentUser?.facilityName ? ` · ${currentUser.facilityName}` : ''}</Text>
           </View>
           <View style={styles.greetingActions}>

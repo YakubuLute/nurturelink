@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { useAppStore, UiLang } from '../store';
+import { useAppStore, UiLang, displayName } from '../store';
 import { BottomTabBar } from '../components/BottomTabBar';
 import { ChevronLeft, BarChart2, User, BatteryMedium, HardDrive, Zap, TrendingUp, LayoutGrid, ChevronRight } from 'lucide-react-native';
 
@@ -59,11 +59,11 @@ export function SettingsScreen({ navigation }: Props) {
           <View style={styles.profileRow}>
             <View style={styles.profileAvatar}>
               <Text style={styles.profileAvatarText}>
-                {(currentUser?.name ?? 'U').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+                {currentUser ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase() : 'U'}
               </Text>
             </View>
             <View>
-              <Text style={styles.profileName}>{currentUser?.name ?? 'Health Worker'}</Text>
+              <Text style={styles.profileName}>{currentUser ? displayName(currentUser) : 'Health Worker'}</Text>
               <Text style={styles.profileRole}>
                 {currentUser?.role === 'sup' ? 'Supervisor' : 'Community Health Officer'}
                 {currentUser?.facilityName ? ` · ${currentUser.facilityName}` : ''}

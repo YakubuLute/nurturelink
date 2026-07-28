@@ -19,7 +19,9 @@ export class AuthRepository {
   }
 
   async createUser(data: {
-    name: string;
+    firstName: string;
+    lastName: string;
+    otherNames?: string | null;
     phone: string;
     passwordHash: string;
     role: 'CHO' | 'supervisor';
@@ -27,10 +29,12 @@ export class AuthRepository {
   }) {
     return prisma.user.create({
       data: {
-        name: data.name,
-        phone: data.phone,
+        firstName:  data.firstName,
+        lastName:   data.lastName,
+        otherNames: data.otherNames ?? null,
+        phone:      data.phone,
         passwordHash: data.passwordHash,
-        role: data.role,
+        role:       data.role,
         facilityId: data.facilityId,
       },
     });

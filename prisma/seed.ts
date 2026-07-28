@@ -62,12 +62,13 @@ async function main() {
     where: { phone: '+233244000001' },
     update: {},
     create: {
-      id: 'u1000000-0000-0000-0000-000000000001',
-      name: 'Yakubu Lute',
-      role: 'CHO',
-      phone: '+233244000001',
+      id:           'u1000000-0000-0000-0000-000000000001',
+      firstName:    'Yakubu',
+      lastName:     'Lute',
+      role:         'CHO',
+      phone:        '+233244000001',
       passwordHash: pinHash,
-      facilityId: kukuoFacility.id,
+      facilityId:   kukuoFacility.id,
     },
   });
 
@@ -75,12 +76,13 @@ async function main() {
     where: { phone: '+233244000002' },
     update: {},
     create: {
-      id: 'u1000000-0000-0000-0000-000000000002',
-      name: 'Yakubu Lute (Supervisor)',
-      role: 'supervisor',
-      phone: '+233244000002',
+      id:           'u1000000-0000-0000-0000-000000000002',
+      firstName:    'Yakubu',
+      lastName:     'Lute',
+      role:         'supervisor',
+      phone:        '+233244000002',
       passwordHash: pinHash,
-      facilityId: kukuoFacility.id,
+      facilityId:   kukuoFacility.id,
     },
   });
 
@@ -88,10 +90,11 @@ async function main() {
     where: { phone: '+233000000001' },
     update: {},
     create: {
-      id: 'u0000000-0000-0000-0000-000000000001',
-      name: 'System Admin',
-      role: 'system_admin',
-      phone: '+233000000001',
+      id:           'u0000000-0000-0000-0000-000000000001',
+      firstName:    'System',
+      lastName:     'Admin',
+      role:         'system_admin',
+      phone:        '+233000000001',
       passwordHash: adminHash,
     },
   });

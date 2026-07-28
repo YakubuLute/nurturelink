@@ -9,6 +9,11 @@ import {
 } from '@nurturelink/shared';
 import { AuthRepository } from '../repositories/auth.repository';
 
+/** Build a display-friendly full name from name parts. */
+function fullName(firstName: string, lastName: string, otherNames?: string | null): string {
+  return [firstName, otherNames, lastName].filter(Boolean).join(' ');
+}
+
 /** Parse '15m', '1h', '7d' → seconds for the expiresIn response field. */
 function parseTtlSeconds(ttl: string): number {
   const match = ttl.match(/^(\d+)([smhd])$/);
@@ -76,10 +81,12 @@ export class AuthService {
       refreshToken,
       expiresIn: parseTtlSeconds(expiresIn),
       user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        facilityId: user.facilityId,
+        id:           user.id,
+        firstName:    user.firstName,
+        lastName:     user.lastName,
+        otherNames:   user.otherNames ?? null,
+        role:         user.role,
+        facilityId:   user.facilityId,
         facilityName: user.facility?.name ?? null,
       },
     };
@@ -91,10 +98,12 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(input.password, 12);
     await this.repo.createUser({
-      name: input.name,
-      phone: input.phone,
+      firstName:  input.firstName,
+      lastName:   input.lastName,
+      otherNames: input.otherNames ?? null,
+      phone:      input.phone,
       passwordHash,
-      role: input.role,
+      role:       input.role,
       facilityId: input.facilityId ?? null,
     });
 
