@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, UiLang, displayName } from '../store';
 import { BottomTabBar } from '../components/BottomTabBar';
-import { ChevronLeft, BarChart2, User, BatteryMedium, HardDrive, Zap, TrendingUp, LayoutGrid, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, BarChart2, BatteryMedium, HardDrive, Zap, TrendingUp, LayoutGrid, ChevronRight } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -28,7 +28,10 @@ export function SettingsScreen({ navigation }: Props) {
     setUiLang,
     logout,
     currentUser,
+    refreshDeviceStats,
   } = useAppStore();
+
+  useEffect(() => { refreshDeviceStats(); }, []);
 
   const issuedCount = referrals.filter((r) => r.status === 'issued').length;
   const storagePct = Math.min((storageUsed / 250) * 100, 100);
@@ -81,16 +84,6 @@ export function SettingsScreen({ navigation }: Props) {
         {/* THIS DEVICE section */}
         <Text style={styles.sectionLabel}>THIS DEVICE</Text>
         <View style={styles.card}>
-          {/* Profiles row */}
-          <View style={styles.settingRow}>
-            <User size={20} color="#374151" />
-            <View style={styles.settingBody}>
-              <Text style={styles.settingTitle}>3 worker profiles</Text>
-              <Text style={styles.settingDesc}>Shared compound handset · each logs in with a PIN</Text>
-            </View>
-          </View>
-          <View style={styles.divider} />
-
           {/* Battery row */}
           <View style={styles.settingRow}>
             <BatteryMedium size={20} color="#374151" />
@@ -203,7 +196,9 @@ export function SettingsScreen({ navigation }: Props) {
           <LayoutGrid size={20} color="#374151" />
           <View style={styles.settingBody}>
             <Text style={styles.settingTitle}>District overview</Text>
-            <Text style={styles.settingDesc}>Sagnarigu district · 6 CHPS zones</Text>
+            <Text style={styles.settingDesc}>
+              {[currentUser?.facilityDistrict, currentUser?.facilityRegion].filter(Boolean).join(' · ') || 'No district assigned'}
+            </Text>
           </View>
           <ChevronRight size={18} color="#9CA3AF" />
         </TouchableOpacity>

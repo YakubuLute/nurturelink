@@ -6,6 +6,8 @@
  * for the hackathon demo everything lives in memory.
  */
 import { create } from 'zustand';
+import * as Battery from 'expo-battery';
+import * as FileSystem from 'expo-file-system';
 import { loadReferenceBundle } from '../db/bundle-loader';
 import { clearSession } from '../auth/session';
 import { persistClient, persistVisit, persistReferral, uuidv4 } from '../db/persist';
@@ -365,6 +367,7 @@ interface StoreState {
   sync: () => void;
   toggleOffline: () => void;
   toggleAdaptive: () => void;
+  refreshDeviceStats: () => Promise<void>;
 
   // Demo
   seedDemoData: () => void;
@@ -769,6 +772,21 @@ export const useAppStore = create<StoreState>((set, get) => ({
   },
   toggleOffline: () => set((s) => ({ offline: !s.offline })),
   toggleAdaptive: () => set((s) => ({ adaptiveSync: !s.adaptiveSync })),
+
+  refreshDeviceStats: async () => {
+    try {
+      const [batteryLevel, dirInfo] = await Promise.all([
+        Battery.getBatteryLevelAsync(),
+        FileSystem.getInfoAsync(FileSystem.documentDirectory ?? '', { size: true }),
+      ]);
+      const batteryPct = Math.round(batteryLevel * 100);
+      const usedBytes = dirInfo.exists ? (dirInfo as { size?: number }).size ?? 0 : 0;
+      const usedMB = Math.round(usedBytes / (1024 * 1024));
+      set({ battery: batteryPct, storageUsed: Math.min(usedMB, 250) });
+    } catch {
+      // Leave existing values if device APIs are unavailable (e.g. web/simulator)
+    }
+  },
 
   seedDemoData: () => {
     const demoUser: CurrentUser = {
