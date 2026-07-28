@@ -15,22 +15,47 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
-import { ChevronLeft, Check, WifiOff, Baby, User, CalendarDays } from 'lucide-react-native';
+import {
+  ChevronLeft, Check, WifiOff, Baby, User, CalendarDays,
+  Phone, MapPin, FileText, Info,
+} from 'lucide-react-native';
 import { syncNow } from '../sync/orchestrator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
 const COMMUNITIES = ['Kukuo', 'Sagnarigu', 'Gizaa', 'Voggu'] as const;
+const RELATIONSHIPS = ['Mother', 'Father', 'Grandparent', 'Guardian'] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDisplayDate(iso: string): string {
-  // iso is YYYY-MM-DD
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
 }
 
-// ─── Client type selector ─────────────────────────────────────────────────────
+function calcEddFromLmp(lmpIso: string): string {
+  const d = new Date(lmpIso);
+  d.setDate(d.getDate() + 280);
+  return d.toISOString().slice(0, 10);
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function SectionHeader({ label }: { label: string }) {
+  return <Text style={sh.label}>{label}</Text>;
+}
+
+const sh = StyleSheet.create({
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6B7280',
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    marginTop: 4,
+  },
+});
 
 function TypeSelector({
   value,
@@ -87,70 +112,63 @@ const ts = StyleSheet.create({
   textInactive: { color: '#08283B' },
 });
 
-// ─── Community chip selector ──────────────────────────────────────────────────
-
-function CommunitySelector({
+function ChipSelector<T extends string>({
+  options,
   value,
   onChange,
 }: {
-  value: string;
-  onChange: (c: string) => void;
+  options: readonly T[];
+  value: T | string;
+  onChange: (v: T) => void;
 }) {
   return (
-    <View style={cs.wrap}>
-      {COMMUNITIES.map((c) => (
+    <View style={chip.wrap}>
+      {options.map((o) => (
         <TouchableOpacity
-          key={c}
-          style={[cs.chip, value === c ? cs.chipActive : cs.chipInactive]}
-          onPress={() => onChange(c)}
+          key={o}
+          style={[chip.item, value === o ? chip.itemActive : chip.itemInactive]}
+          onPress={() => onChange(o)}
           accessibilityRole="button"
-          accessibilityLabel={c}
-          accessibilityState={{ selected: value === c }}
+          accessibilityLabel={o}
+          accessibilityState={{ selected: value === o }}
         >
-          <Text style={[cs.chipText, value === c ? cs.textActive : cs.textInactive]}>{c}</Text>
+          <Text style={[chip.text, value === o ? chip.textActive : chip.textInactive]}>{o}</Text>
         </TouchableOpacity>
       ))}
     </View>
   );
 }
 
-const cs = StyleSheet.create({
+const chip = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  chipActive: { backgroundColor: '#08283B', borderColor: '#08283B' },
-  chipInactive: { backgroundColor: '#FDFDFD', borderColor: '#D1D5DB' },
-  chipText: { fontSize: 14, fontWeight: '500' },
+  item: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1.5 },
+  itemActive: { backgroundColor: '#08283B', borderColor: '#08283B' },
+  itemInactive: { backgroundColor: '#FDFDFD', borderColor: '#D1D5DB' },
+  text: { fontSize: 14, fontWeight: '500' },
   textActive: { color: '#FFFFFF' },
   textInactive: { color: '#08283B' },
 });
-
-// ─── Native date picker ───────────────────────────────────────────────────────
 
 function DateField({
   label,
   value,
   onChange,
   isFuture,
+  hint,
 }: {
   label: string;
-  value: string;          // YYYY-MM-DD or ''
+  value: string;
   onChange: (iso: string) => void;
-  isFuture?: boolean;     // true for EDD (no maximumDate cap)
+  isFuture?: boolean;
+  hint?: string;
 }) {
   const [showPicker, setShowPicker] = useState(false);
   const dateObj = value ? new Date(value) : null;
-
   const pickerValue = dateObj ?? (isFuture ? new Date() : new Date(2000, 0, 1));
   const maxDate = isFuture ? undefined : new Date();
 
   return (
     <View>
-      {/* Trigger button — shown on Android and web (iOS shows inline) */}
       {Platform.OS !== 'ios' && (
         <Pressable
           style={[dp.btn, showPicker && dp.btnOpen]}
@@ -164,8 +182,6 @@ function DateField({
           </Text>
         </Pressable>
       )}
-
-      {/* iOS: button + collapsible inline spinner */}
       {Platform.OS === 'ios' && (
         <>
           <Pressable
@@ -191,8 +207,6 @@ function DateField({
           )}
         </>
       )}
-
-      {/* Android: modal dialog opened by button press */}
       {Platform.OS === 'android' && showPicker && (
         <DateTimePicker
           value={pickerValue}
@@ -203,8 +217,6 @@ function DateField({
           onDismiss={() => setShowPicker(false)}
         />
       )}
-
-      {/* Web: DateTimePicker renders as <input type="date"> automatically */}
       {Platform.OS === 'web' && (
         <DateTimePicker
           value={pickerValue}
@@ -214,6 +226,7 @@ function DateField({
           onValueChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }}
         />
       )}
+      {hint ? <Text style={dp.hint}>{hint}</Text> : null}
     </View>
   );
 }
@@ -231,74 +244,57 @@ const dp = StyleSheet.create({
     paddingHorizontal: 14,
     height: 52,
   },
-  btnOpen: {
-    borderColor: '#08283B',
-  },
-  btnText: {
-    fontSize: 15,
-    color: '#08283B',
-    flex: 1,
-  },
-  btnPlaceholder: {
-    color: '#9CA3AF',
-  },
+  btnOpen: { borderColor: '#08283B' },
+  btnText: { fontSize: 15, color: '#08283B', flex: 1 },
+  btnPlaceholder: { color: '#9CA3AF' },
+  hint: { fontSize: 11.5, color: '#6B7280', marginTop: 5, marginLeft: 2 },
 });
-
-// ─── Consent checkbox ─────────────────────────────────────────────────────────
 
 function ConsentRow({
   checked,
   onToggle,
+  clientType,
 }: {
   checked: boolean;
   onToggle: () => void;
+  clientType: RegForm['type'];
 }) {
+  const isPregnant = clientType === 'pregnant';
+  const title = isPregnant ? 'Client consent given' : 'Caregiver consent given';
+  const desc = isPregnant
+    ? 'The client has been informed that this data will be stored and used for health monitoring by the CHPS compound.'
+    : 'The caregiver has been informed that this data will be stored and used for health monitoring by the CHPS compound.';
+
   return (
     <TouchableOpacity
-      style={[
-        consent.wrap,
-        checked ? consent.wrapChecked : consent.wrapUnchecked,
-      ]}
+      style={[ct.wrap, checked ? ct.wrapChecked : ct.wrapUnchecked]}
       onPress={onToggle}
       accessibilityRole="checkbox"
-      accessibilityLabel="Caregiver consent given"
+      accessibilityLabel={title}
       accessibilityState={{ checked }}
       activeOpacity={0.8}
     >
-      <View style={[consent.box, checked ? consent.boxChecked : consent.boxUnchecked]}>
+      <View style={[ct.box, checked ? ct.boxChecked : ct.boxUnchecked]}>
         {checked && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
       </View>
-      <View style={consent.body}>
-        <Text style={consent.title}>Caregiver consent given</Text>
-        <Text style={consent.desc}>
-          The caregiver has been informed that this data will be stored and used for health
-          monitoring by the CHPS compound.
-        </Text>
+      <View style={ct.body}>
+        <Text style={ct.title}>{title}</Text>
+        <Text style={ct.desc}>{desc}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-const consent = StyleSheet.create({
+const ct = StyleSheet.create({
   wrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    padding: 14,
-    gap: 12,
+    flexDirection: 'row', alignItems: 'flex-start',
+    borderRadius: 12, borderWidth: 1.5, padding: 14, gap: 12,
   },
   wrapChecked: { backgroundColor: '#F3FAF7', borderColor: '#BCF0DA' },
   wrapUnchecked: { backgroundColor: '#FFFFFF', borderColor: '#D1D5DB' },
   box: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: 1,
+    width: 24, height: 24, borderRadius: 7, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
   },
   boxChecked: { backgroundColor: '#FF5A00', borderColor: '#FF5A00' },
   boxUnchecked: { backgroundColor: '#FFFFFF', borderColor: '#D1D5DB' },
@@ -313,12 +309,15 @@ export function RegisterScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { regForm, setRegField, saveClient } = useAppStore();
 
+  const isChild = regForm.type === 'child';
+  const isPregnant = regForm.type === 'pregnant';
   const isReady = regForm.name.trim().length > 0 && regForm.consent;
 
-  const namePlaceholder =
-    regForm.type === 'child' ? "Child's full name" : "Mother's full name";
-
-  const dobLabel = regForm.type === 'child' ? 'Date of birth' : 'Expected delivery date';
+  function handleLmpChange(iso: string) {
+    setRegField('lmp', iso);
+    // Auto-calculate EDD from LMP (Naegele's rule: LMP + 280 days)
+    setRegField('edd', calcEddFromLmp(iso));
+  }
 
   function handleSave() {
     const newClient = saveClient();
@@ -347,63 +346,254 @@ export function RegisterScreen({ navigation }: Props) {
         <View style={styles.backBtnPlaceholder} />
       </View>
 
-      {/* ── Scrollable form body ── */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Client type */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Client type</Text>
+        {/* ── CLIENT TYPE ── */}
+        <View style={styles.section}>
+          <SectionHeader label="Client type" />
           <TypeSelector
             value={regForm.type}
             onChange={(t) => setRegField('type', t)}
           />
         </View>
 
-        {/* Full name */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Full name</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder={namePlaceholder}
-            placeholderTextColor="#9CA3AF"
-            value={regForm.name}
-            onChangeText={(v) => setRegField('name', v)}
-            autoCapitalize="words"
-            returnKeyType="next"
-            accessibilityLabel="Full name"
-          />
+        {/* ── ABOUT THE CLIENT ── */}
+        <View style={styles.section}>
+          <SectionHeader label="About the client" />
+
+          {/* Full name */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>
+              {isChild ? "Child's full name" : "Mother's full name"}
+            </Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder={isChild ? "Child's full name" : "Mother's full name"}
+              placeholderTextColor="#9CA3AF"
+              value={regForm.name}
+              onChangeText={(v) => setRegField('name', v)}
+              autoCapitalize="words"
+              returnKeyType="next"
+              accessibilityLabel="Full name"
+            />
+          </View>
+
+          {/* Sex — child only */}
+          {isChild && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Sex</Text>
+              <ChipSelector
+                options={['Male', 'Female'] as const}
+                value={regForm.sex}
+                onChange={(v) => setRegField('sex', v.toLowerCase())}
+              />
+            </View>
+          )}
+
+          {/* Date of birth */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>
+              {isChild ? 'Date of birth' : "Mother's date of birth (optional)"}
+            </Text>
+            <DateField
+              label={isChild ? 'Date of birth' : "Mother's date of birth"}
+              value={regForm.dob}
+              onChange={(iso) => setRegField('dob', iso)}
+              isFuture={false}
+            />
+          </View>
         </View>
 
-        {/* Community */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Community</Text>
-          <CommunitySelector
+        {/* ── PREGNANCY DETAILS (pregnant only) ── */}
+        {isPregnant && (
+          <View style={styles.section}>
+            <SectionHeader label="Pregnancy details" />
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Last menstrual period</Text>
+              <DateField
+                label="Last menstrual period"
+                value={regForm.lmp}
+                onChange={handleLmpChange}
+                isFuture={false}
+                hint="Expected delivery date is calculated automatically"
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Expected delivery date</Text>
+              <DateField
+                label="Expected delivery date"
+                value={regForm.edd}
+                onChange={(iso) => setRegField('edd', iso)}
+                isFuture
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>ANC folder number (optional)</Text>
+              <View style={styles.iconInput}>
+                <FileText size={18} color="#9CA3AF" style={styles.iconInputIcon} />
+                <TextInput
+                  style={styles.iconInputText}
+                  placeholder="e.g. ANC-2026-00142"
+                  placeholderTextColor="#9CA3AF"
+                  value={regForm.ancFolderNumber}
+                  onChangeText={(v) => setRegField('ancFolderNumber', v)}
+                  autoCapitalize="characters"
+                  returnKeyType="next"
+                  accessibilityLabel="ANC folder number"
+                />
+              </View>
+            </View>
+
+            <View style={styles.row2}>
+              <View style={[styles.fieldGroup, styles.flex1]}>
+                <Text style={styles.fieldLabel}>Gravida</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="No. of pregnancies"
+                  placeholderTextColor="#9CA3AF"
+                  value={regForm.gravida}
+                  onChangeText={(v) => setRegField('gravida', v.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  accessibilityLabel="Gravida"
+                />
+              </View>
+              <View style={[styles.fieldGroup, styles.flex1]}>
+                <Text style={styles.fieldLabel}>Parity</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="No. of births"
+                  placeholderTextColor="#9CA3AF"
+                  value={regForm.parity}
+                  onChangeText={(v) => setRegField('parity', v.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  returnKeyType="next"
+                  accessibilityLabel="Parity"
+                />
+              </View>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Info size={14} color="#427CAF" />
+              <Text style={styles.infoText}>
+                Gravida = total pregnancies including this one. Parity = previous births.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── CHILD HEALTH RECORDS (child only) ── */}
+        {isChild && (
+          <View style={styles.section}>
+            <SectionHeader label="Child health records" />
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>CWC card number (optional)</Text>
+              <View style={styles.iconInput}>
+                <FileText size={18} color="#9CA3AF" style={styles.iconInputIcon} />
+                <TextInput
+                  style={styles.iconInputText}
+                  placeholder="e.g. CWC-2026-00089"
+                  placeholderTextColor="#9CA3AF"
+                  value={regForm.cwcCardNumber}
+                  onChangeText={(v) => setRegField('cwcCardNumber', v)}
+                  autoCapitalize="characters"
+                  returnKeyType="next"
+                  accessibilityLabel="CWC card number"
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ── CAREGIVER (child only) ── */}
+        {isChild && (
+          <View style={styles.section}>
+            <SectionHeader label="Caregiver" />
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Caregiver name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Caregiver's full name"
+                placeholderTextColor="#9CA3AF"
+                value={regForm.caregiverName}
+                onChangeText={(v) => setRegField('caregiverName', v)}
+                autoCapitalize="words"
+                returnKeyType="next"
+                accessibilityLabel="Caregiver name"
+              />
+            </View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Relationship to child</Text>
+              <ChipSelector
+                options={RELATIONSHIPS}
+                value={regForm.caregiverRelationship}
+                onChange={(v) => setRegField('caregiverRelationship', v)}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* ── HOUSEHOLD CONTACT ── */}
+        <View style={styles.section}>
+          <SectionHeader label="Household contact (optional)" />
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Phone number</Text>
+            <View style={styles.iconInput}>
+              <Phone size={18} color="#9CA3AF" style={styles.iconInputIcon} />
+              <TextInput
+                style={styles.iconInputText}
+                placeholder="e.g. 0241234567"
+                placeholderTextColor="#9CA3AF"
+                value={regForm.phone}
+                onChangeText={(v) => setRegField('phone', v)}
+                keyboardType="phone-pad"
+                returnKeyType="next"
+                accessibilityLabel="Phone number"
+              />
+            </View>
+          </View>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Landmark or household description</Text>
+            <View style={styles.iconInput}>
+              <MapPin size={18} color="#9CA3AF" style={styles.iconInputIcon} />
+              <TextInput
+                style={styles.iconInputText}
+                placeholder="e.g. Near the borehole, red gate"
+                placeholderTextColor="#9CA3AF"
+                value={regForm.landmark}
+                onChangeText={(v) => setRegField('landmark', v)}
+                autoCapitalize="sentences"
+                returnKeyType="next"
+                accessibilityLabel="Landmark"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* ── COMMUNITY ── */}
+        <View style={styles.section}>
+          <SectionHeader label="Community" />
+          <ChipSelector
+            options={COMMUNITIES}
             value={regForm.community}
             onChange={(c) => setRegField('community', c)}
           />
         </View>
 
-        {/* Date of birth / EDD — native date picker */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{dobLabel}</Text>
-          <DateField
-            label={dobLabel}
-            value={regForm.dob}
-            onChange={(iso) => setRegField('dob', iso)}
-            isFuture={regForm.type === 'pregnant'}
-          />
-        </View>
-
-        {/* Consent */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Consent</Text>
+        {/* ── CONSENT ── */}
+        <View style={styles.section}>
+          <SectionHeader label="Consent" />
           <ConsentRow
             checked={regForm.consent}
             onToggle={() => setRegField('consent', !regForm.consent)}
+            clientType={regForm.type}
           />
         </View>
 
@@ -417,12 +607,7 @@ export function RegisterScreen({ navigation }: Props) {
       </ScrollView>
 
       {/* ── Save button (pinned bottom) ── */}
-      <View
-        style={[
-          styles.saveWrap,
-          { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 },
-        ]}
-      >
+      <View style={[styles.saveWrap, { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 }]}>
         <TouchableOpacity
           style={[styles.saveBtn, isReady ? styles.saveBtnActive : styles.saveBtnDisabled]}
           onPress={handleSave}
@@ -441,10 +626,7 @@ export function RegisterScreen({ navigation }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#F2F4F5',
-  },
+  root: { flex: 1, backgroundColor: '#F2F4F5' },
 
   header: {
     backgroundColor: '#08283B',
@@ -454,12 +636,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  backBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   backBtnPlaceholder: { width: 36 },
   headerTitle: {
     fontSize: 17,
@@ -470,22 +647,27 @@ const styles = StyleSheet.create({
   },
 
   scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
+  scrollContent: { paddingHorizontal: 16, paddingTop: 20 },
+
+  section: {
+    backgroundColor: '#FDFDFD',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
   },
 
-  fieldGroup: { marginBottom: 22 },
+  fieldGroup: { marginBottom: 16 },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
-    letterSpacing: 0.06 * 12,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: '#6B7280',
-    marginBottom: 10,
+    marginBottom: 8,
   },
+
   textInput: {
-    backgroundColor: '#FDFDFD',
+    backgroundColor: '#F9FAFB',
     borderWidth: 1,
     borderColor: '#D1D5DB',
     borderRadius: 12,
@@ -495,6 +677,36 @@ const styles = StyleSheet.create({
     color: '#08283B',
     height: 52,
   },
+
+  iconInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 52,
+  },
+  iconInputIcon: { marginRight: 10 },
+  iconInputText: {
+    flex: 1,
+    fontSize: 15,
+    color: '#08283B',
+    paddingVertical: 13,
+  },
+
+  row2: { flexDirection: 'row', gap: 12 },
+  flex1: { flex: 1 },
+
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: -4,
+    marginBottom: 4,
+  },
+  infoText: { fontSize: 11.5, color: '#427CAF', flex: 1, lineHeight: 16 },
 
   offlineNote: {
     flexDirection: 'row',
@@ -517,17 +729,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
   },
-  saveBtn: {
-    height: 52,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  saveBtn: { height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   saveBtnActive: { backgroundColor: '#08283B' },
   saveBtnDisabled: { backgroundColor: '#B2BCC2' },
-  saveBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
+  saveBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
 });

@@ -542,7 +542,9 @@ export const useAppStore = create<StoreState>((set, get) => ({
       type: regForm.type,
       age: regForm.type === 'child' ? 'new' : '—',
       community: regForm.community,
-      caregiver: regForm.name.trim(),
+      caregiver: regForm.type === 'child'
+        ? (regForm.caregiverName.trim() || regForm.name.trim())
+        : regForm.name.trim(),
       priority: 'new',
       metric: 'weight',
       severe: false,
@@ -562,9 +564,20 @@ export const useAppStore = create<StoreState>((set, get) => ({
       clientId: id,
       name: nc.name,
       type: nc.type,
+      sex: regForm.sex || null,
       community: nc.community,
       dob: regForm.dob || null,
+      edd: regForm.edd || null,
+      lmp: regForm.lmp || null,
       consentAt: now,
+      phone: regForm.phone.trim() || null,
+      landmark: regForm.landmark.trim() || null,
+      ancFolderNumber: regForm.ancFolderNumber.trim() || null,
+      gravida: regForm.gravida.trim() || null,
+      parity: regForm.parity.trim() || null,
+      cwcCardNumber: regForm.cwcCardNumber.trim() || null,
+      caregiverName: regForm.caregiverName.trim() || null,
+      caregiverRelationship: regForm.caregiverRelationship || null,
     }).catch((e) => console.warn('[Store] persistClient error:', e));
 
     return nc;
