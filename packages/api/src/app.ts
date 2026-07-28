@@ -18,6 +18,12 @@ import { errorMiddleware } from './middleware/error';
 export function createApp(): Application {
   const app = express();
 
+  // ── Request logging ─────────────────────────────────────────────────────────
+  app.use((req, _res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+  });
+
   // ── Security & parsing ──────────────────────────────────────────────────────
   app.use(helmet());
   app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));

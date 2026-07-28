@@ -1,6 +1,12 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { LoginInput, LoginResponse, RefreshTokenResponse } from '@nurturelink/shared';
+import crypto from 'crypto';
+import {
+  LoginInput,
+  LoginResponse,
+  RefreshTokenResponse,
+  RegisterInput,
+} from '@nurturelink/shared';
 import { AuthRepository } from '../repositories/auth.repository';
 
 /** Parse '15m', '1h', '7d' → seconds for the expiresIn response field. */
@@ -16,6 +22,39 @@ function parseTtlSeconds(ttl: string): number {
   return 900;
 }
 
+// ── In-memory OTP store (demo / hackathon — replace with DB table for prod) ──
+interface OtpEntry {
+  code: string;
+  mode: 'registration' | 'password-reset';
+  expiresAt: Date;
+}
+const otpStore = new Map<string, OtpEntry>();
+
+function generateOtp(): string {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+function storeOtp(phone: string, mode: OtpEntry['mode']): string {
+  const code = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+  otpStore.set(phone, { code, mode, expiresAt });
+  // In production: send SMS. In dev: log to console.
+  console.log(`[OTP] ${phone} → ${code} (${mode}, expires ${expiresAt.toISOString()})`);
+  return code;
+}
+
+function consumeOtp(phone: string, code: string, mode: OtpEntry['mode']): boolean {
+  const entry = otpStore.get(phone);
+  if (!entry) return false;
+  if (entry.mode !== mode) return false;
+  if (entry.expiresAt < new Date()) { otpStore.delete(phone); return false; }
+  if (entry.code !== code) return false;
+  otpStore.delete(phone);
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export class AuthService {
   private repo = new AuthRepository();
 
@@ -23,8 +62,7 @@ export class AuthService {
     const user = await this.repo.findByPhone(input.phone);
     if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
-    // PIN is compared against the bcrypt hash stored as password_hash in DB.
-    const valid = await bcrypt.compare(input.pin, user.passwordHash);
+    const valid = await bcrypt.compare(input.password, user.passwordHash);
     if (!valid) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
     const secret = process.env.JWT_SECRET!;
@@ -39,6 +77,67 @@ export class AuthService {
       expiresIn: parseTtlSeconds(expiresIn),
       user: { id: user.id, name: user.name, role: user.role, facilityId: user.facilityId },
     };
+  }
+
+  async register(input: RegisterInput): Promise<{ message: string; otpCode?: string }> {
+    const existing = await this.repo.findByPhone(input.phone);
+    if (existing) throw Object.assign(new Error('Phone number already registered'), { status: 409 });
+
+    const passwordHash = await bcrypt.hash(input.password, 12);
+    await this.repo.createUser({
+      name: input.name,
+      phone: input.phone,
+      passwordHash,
+      role: input.role,
+      facilityId: input.facilityId ?? null,
+    });
+
+    const code = storeOtp(input.phone, 'registration');
+    const isDev = process.env.NODE_ENV !== 'production';
+    return {
+      message: 'Registration successful. Check your SMS for a verification code.',
+      ...(isDev ? { otpCode: code } : {}),
+    };
+  }
+
+  async forgotPassword(phone: string): Promise<{ message: string; otpCode?: string }> {
+    const user = await this.repo.findByPhone(phone);
+    // Don't reveal whether the phone exists — same message either way.
+    if (!user) return { message: 'If that number is registered, an OTP has been sent.' };
+
+    const code = storeOtp(phone, 'password-reset');
+    const isDev = process.env.NODE_ENV !== 'production';
+    return {
+      message: 'If that number is registered, an OTP has been sent.',
+      ...(isDev ? { otpCode: code } : {}),
+    };
+  }
+
+  async verifyOtp(phone: string, code: string, mode: 'registration' | 'password-reset'): Promise<{ message: string }> {
+    const valid = consumeOtp(phone, code, mode);
+    if (!valid) throw Object.assign(new Error('Invalid or expired OTP'), { status: 400 });
+    return { message: 'OTP verified.' };
+  }
+
+  async resendVerification(phone: string): Promise<{ message: string; otpCode?: string }> {
+    const user = await this.repo.findByPhone(phone);
+    if (!user) return { message: 'If that number is registered, an OTP has been sent.' };
+
+    const code = storeOtp(phone, 'registration');
+    const isDev = process.env.NODE_ENV !== 'production';
+    return {
+      message: 'Verification code resent.',
+      ...(isDev ? { otpCode: code } : {}),
+    };
+  }
+
+  async resetPassword(phone: string, code: string, password: string): Promise<{ message: string }> {
+    const valid = consumeOtp(phone, code, 'password-reset');
+    if (!valid) throw Object.assign(new Error('Invalid or expired OTP'), { status: 400 });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    await this.repo.updatePasswordHash(phone, passwordHash);
+    return { message: 'Password reset successful.' };
   }
 
   async refresh(token: string): Promise<RefreshTokenResponse> {

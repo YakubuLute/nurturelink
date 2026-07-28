@@ -15,6 +15,28 @@ export class AuthRepository {
     return prisma.user.findUnique({ where: { phone } });
   }
 
+  async createUser(data: {
+    name: string;
+    phone: string;
+    passwordHash: string;
+    role: 'CHO' | 'supervisor';
+    facilityId: string | null;
+  }) {
+    return prisma.user.create({
+      data: {
+        name: data.name,
+        phone: data.phone,
+        passwordHash: data.passwordHash,
+        role: data.role,
+        facilityId: data.facilityId,
+      },
+    });
+  }
+
+  async updatePasswordHash(phone: string, passwordHash: string) {
+    return prisma.user.update({ where: { phone }, data: { passwordHash } });
+  }
+
   async createRefreshToken(userId: string): Promise<string> {
     const token = uuidv4();
     const tokenHash = sha256(token);

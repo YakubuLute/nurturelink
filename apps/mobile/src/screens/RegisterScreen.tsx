@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Platform,
   Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
