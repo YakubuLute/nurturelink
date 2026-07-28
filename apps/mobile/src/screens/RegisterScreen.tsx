@@ -10,7 +10,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
@@ -145,12 +145,6 @@ function DateField({
   const [showPicker, setShowPicker] = useState(false);
   const dateObj = value ? new Date(value) : null;
 
-  function handleChange(_: DateTimePickerEvent, selected?: Date) {
-    // Android dismisses automatically; iOS keeps the picker open
-    if (Platform.OS === 'android') setShowPicker(false);
-    if (selected) onChange(selected.toISOString().slice(0, 10));
-  }
-
   const pickerValue = dateObj ?? (isFuture ? new Date() : new Date(2000, 0, 1));
   const maxDate = isFuture ? undefined : new Date();
 
@@ -171,7 +165,7 @@ function DateField({
         </Pressable>
       )}
 
-      {/* iOS: always-visible inline spinner */}
+      {/* iOS: button + collapsible inline spinner */}
       {Platform.OS === 'ios' && (
         <>
           <Pressable
@@ -191,21 +185,22 @@ function DateField({
               mode="date"
               display="spinner"
               maximumDate={maxDate}
-              onChange={handleChange}
+              onValueChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }}
               style={{ marginTop: 4 }}
             />
           )}
         </>
       )}
 
-      {/* Android: dialog opened by button press */}
+      {/* Android: modal dialog opened by button press */}
       {Platform.OS === 'android' && showPicker && (
         <DateTimePicker
           value={pickerValue}
           mode="date"
           display="default"
           maximumDate={maxDate}
-          onChange={handleChange}
+          onValueChange={(_, date) => { setShowPicker(false); if (date) onChange(date.toISOString().slice(0, 10)); }}
+          onDismiss={() => setShowPicker(false)}
         />
       )}
 
@@ -216,7 +211,7 @@ function DateField({
           mode="date"
           display="default"
           maximumDate={maxDate}
-          onChange={handleChange}
+          onValueChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }}
         />
       )}
     </View>
