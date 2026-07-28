@@ -84,6 +84,7 @@ export function LoginScreen({ navigation }: Props) {
           facilityName:     data.user.facilityName ?? null,
           facilityDistrict: data.user.facilityDistrict ?? null,
           facilityRegion:   data.user.facilityRegion ?? null,
+          avatarUri:        null,
         });
         // Fire-and-forget: load real data in the background; UI navigates immediately
         loadUserData(data.accessToken).catch((e) =>
@@ -115,7 +116,7 @@ export function LoginScreen({ navigation }: Props) {
     setLoading(true);
     try {
       await storeSession('cho');
-      login({ id: 'offline', firstName: 'Offline', lastName: 'User', otherNames: null, phone: '', role: 'cho', facilityName: null, facilityDistrict: null, facilityRegion: null });
+      login({ id: 'offline', firstName: 'Offline', lastName: 'User', otherNames: null, phone: '', role: 'cho', facilityName: null, facilityDistrict: null, facilityRegion: null, avatarUri: null });
       navigation.replace('Home');
     } finally {
       setLoading(false);

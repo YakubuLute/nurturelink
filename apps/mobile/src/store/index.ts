@@ -275,7 +275,10 @@ export interface CurrentUser {
   facilityName: string | null;
   facilityDistrict: string | null;
   facilityRegion: string | null;
+  avatarUri: string | null;
 }
+
+export type ProfileEditable = Pick<CurrentUser, 'firstName' | 'lastName' | 'otherNames' | 'phone' | 'avatarUri'>;
 
 /** Display-friendly full name: First [Other] Last */
 export function displayName(user: Pick<CurrentUser, 'firstName' | 'lastName' | 'otherNames'>): string {
@@ -338,6 +341,7 @@ interface StoreState {
   setUiLang: (lang: UiLang) => void;
   loadUserData: (accessToken: string) => Promise<void>;
   loadSupervisorData: () => Promise<void>;
+  updateProfile: (fields: Partial<ProfileEditable>) => void;
 
   // Actions — clients
   addClient: (c: DemoClient) => void;
@@ -474,6 +478,9 @@ export const useAppStore = create<StoreState>((set, get) => ({
   },
   setSessionExpired: (v) => set({ sessionExpired: v }),
   setUiLang: (lang) => set({ uiLang: lang }),
+  updateProfile: (fields) => set((s) => ({
+    currentUser: s.currentUser ? { ...s.currentUser, ...fields } : s.currentUser,
+  })),
 
   loadUserData: async (accessToken: string) => {
     set({ dataLoading: true });
@@ -840,6 +847,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
       facilityName: 'Kukuo CHPS Compound',
       facilityDistrict: 'Sagnarigu Municipal',
       facilityRegion: 'Northern Region',
+      avatarUri: null,
     };
 
     // Client IDs match RANK_SIGNALS keys in ClientScreen for explainable ranking demo
