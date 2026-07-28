@@ -56,7 +56,11 @@ export function LoginScreen({ navigation }: Props) {
           refreshToken: string;
           user: { id: string; name: string; role: string; phone?: string };
         };
-        await storeTokens(data.accessToken, data.refreshToken);
+        // Token storage is best-effort — on web expo-secure-store falls back to
+        // localStorage but may throw; a failure here must not block login.
+        storeTokens(data.accessToken, data.refreshToken).catch((e) =>
+          console.warn('[Login] storeTokens failed (non-fatal):', e),
+        );
         const role = mapServerRole(data.user.role);
         login({
           id: data.user.id,
@@ -72,8 +76,8 @@ export function LoginScreen({ navigation }: Props) {
       } else {
         setError('Login failed. Please try again.');
       }
-    } catch {
-      // Network unavailable — offer offline mode
+    } catch (e) {
+      console.error('[Login] unexpected error:', e);
       setError('No connection. Tap "Work offline" to continue without syncing.');
     } finally {
       setLoading(false);
