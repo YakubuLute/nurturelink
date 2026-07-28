@@ -326,7 +326,7 @@ const ct = StyleSheet.create({
 
 export function RegisterScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { regForm, setRegField, saveClient, currentUser } = useAppStore();
+  const { regForm, setRegField, saveClient, currentUser, clients } = useAppStore();
   const [step, setStep] = useState<1 | 2>(1);
 
   const isChild = regForm.type === 'child';
@@ -343,7 +343,7 @@ export function RegisterScreen({ navigation }: Props) {
     else navigation.goBack();
   }
 
-  function handleSave() {
+  function doSave() {
     const newClient = saveClient();
     if (!newClient) {
       Alert.alert('Incomplete form', 'Please enter a name and confirm consent.');
@@ -351,6 +351,30 @@ export function RegisterScreen({ navigation }: Props) {
     }
     syncNow('foreground').catch(() => {});
     navigation.navigate('Client', { clientId: newClient.id });
+  }
+
+  function handleSave() {
+    // G8: fuzzy duplicate check — first name match within same community
+    const enteredFirst = regForm.name.trim().split(' ')[0].toLowerCase();
+    const duplicates = clients.filter((c) => {
+      const existingFirst = c.name.split(' ')[0].toLowerCase();
+      return (
+        existingFirst === enteredFirst &&
+        c.community.toLowerCase() === regForm.community.toLowerCase()
+      );
+    });
+    if (duplicates.length > 0) {
+      Alert.alert(
+        'Possible existing record',
+        `"${duplicates[0].name}" in ${regForm.community} may already be registered. Review before creating a new record.`,
+        [
+          { text: 'Review existing', style: 'cancel' },
+          { text: 'Create anyway', onPress: doSave },
+        ],
+      );
+    } else {
+      doSave();
+    }
   }
 
   const typeLabel = isChild ? 'Child' : 'Pregnant woman';

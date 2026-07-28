@@ -36,15 +36,28 @@ function greeting(lang: 'en' | 'dag'): string {
 
 // ─── Sync status banner ───────────────────────────────────────────────────────
 
+function formatSyncTime(iso: string | null): string {
+  if (!iso) return 'Not yet synced';
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return isToday
+    ? `Last sync today · ${timeStr}`
+    : `Last sync ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${timeStr}`;
+}
+
 function SyncBanner({
   offline,
   syncing,
   pendingRecords,
+  lastSyncAt,
   onSync,
 }: {
   offline: boolean;
   syncing: boolean;
   pendingRecords: number;
+  lastSyncAt: string | null;
   onSync: () => void;
 }) {
   if (offline) {
@@ -55,12 +68,12 @@ function SyncBanner({
         </View>
         <View style={banner.mid}>
           <Text style={banner.titleDark}>
-            Working offline · {pendingRecords} record{pendingRecords !== 1 ? 's' : ''} on device
+            Working offline · {pendingRecords} record{pendingRecords !== 1 ? 's' : ''} saved on device
           </Text>
-          <Text style={banner.subWarn}>They'll sync automatically when you're online</Text>
+          <Text style={banner.subWarn}>Syncs automatically when back online</Text>
         </View>
         <TouchableOpacity style={banner.warnBtn} onPress={onSync} accessibilityRole="button">
-          <Text style={banner.warnBtnText}>Sync now</Text>
+          <Text style={banner.warnBtnText}>Try now</Text>
         </TouchableOpacity>
       </View>
     );
@@ -71,8 +84,8 @@ function SyncBanner({
       <View style={[banner.wrap, banner.blueWrap]}>
         <ActivityIndicator color="#427CAF" size="small" style={{ marginRight: 12 }} />
         <View style={banner.mid}>
-          <Text style={banner.titleBlue}>Syncing…</Text>
-          <Text style={banner.subBlue}>Uploading {pendingRecords} records to DHIMS2</Text>
+          <Text style={banner.titleBlue}>Syncing {pendingRecords} record{pendingRecords !== 1 ? 's' : ''}…</Text>
+          <Text style={banner.subBlue}>Uploading to DHIMS2</Text>
         </View>
       </View>
     );
@@ -82,8 +95,8 @@ function SyncBanner({
     return (
       <View style={[banner.wrap, banner.blueWrap]}>
         <View style={banner.mid}>
-          <Text style={banner.titleBlue}>{pendingRecords} changes ready to sync</Text>
-          <Text style={banner.subBlue}>You're back online</Text>
+          <Text style={banner.titleBlue}>{pendingRecords} record{pendingRecords !== 1 ? 's' : ''} ready to sync</Text>
+          <Text style={banner.subBlue}>Online · tap to upload now</Text>
         </View>
         <TouchableOpacity style={banner.darkBtn} onPress={onSync} accessibilityRole="button">
           <Text style={banner.darkBtnText}>Sync now</Text>
@@ -98,8 +111,8 @@ function SyncBanner({
         <Check size={16} color="#057A55" strokeWidth={3} />
       </View>
       <View style={banner.mid}>
-        <Text style={banner.titleGreen}>All caught up</Text>
-        <Text style={banner.subGreen}>Last synced to DHIMS2 · 11:01 am</Text>
+        <Text style={banner.titleGreen}>All records synced</Text>
+        <Text style={banner.subGreen}>{formatSyncTime(lastSyncAt)}</Text>
       </View>
     </View>
   );
@@ -170,6 +183,7 @@ export function HomeScreen({ navigation }: Props) {
     notifications,
     offline,
     syncing,
+    lastSyncAt,
     pendingRecords,
     uiLang,
     sync,
@@ -256,9 +270,30 @@ export function HomeScreen({ navigation }: Props) {
             offline={offline}
             syncing={syncing}
             pendingRecords={pendingRecords}
+            lastSyncAt={lastSyncAt}
             onSync={sync}
           />
         </View>
+
+        {/* ── DHIMS2 monthly report card (G11) ── */}
+        <TouchableOpacity
+          style={styles.dhimsCard}
+          onPress={() => navigation.navigate('Tally')}
+          accessibilityRole="button"
+          accessibilityLabel="Monthly DHIMS2 report"
+          activeOpacity={0.8}
+        >
+          <View style={styles.dhimsIconBox}>
+            <TrendingUp size={18} color="#427CAF" />
+          </View>
+          <View style={styles.dhimsMid}>
+            <Text style={styles.dhimsTitle}>
+              {now.toLocaleDateString('en-GB', { month: 'long' })} report · DHIMS2
+            </Text>
+            <Text style={styles.dhimsSub}>Tap to review and submit your monthly tally</Text>
+          </View>
+          <ChevronRight size={16} color="#9CA3AF" />
+        </TouchableOpacity>
 
         {/* ── Search bar ── */}
         <View style={styles.searchWrap}>
@@ -501,7 +536,32 @@ const styles = StyleSheet.create({
   },
 
   // Banner
-  bannerWrap: { marginBottom: 14 },
+  bannerWrap: { marginBottom: 10 },
+
+  // DHIMS2 card
+  dhimsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FDFDFD',
+    borderWidth: 1,
+    borderColor: '#B4DAFB',
+    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+    marginBottom: 14,
+  },
+  dhimsIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    backgroundColor: '#EFF7FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dhimsMid: { flex: 1 },
+  dhimsTitle: { fontSize: 13, fontWeight: '700', color: '#08283B' },
+  dhimsSub: { fontSize: 11, color: '#427CAF', marginTop: 1 },
 
   // Search
   searchWrap: {
