@@ -9,11 +9,6 @@ import {
 } from '@nurturelink/shared';
 import { AuthRepository } from '../repositories/auth.repository';
 
-/** Build a display-friendly full name from name parts. */
-function fullName(firstName: string, lastName: string, otherNames?: string | null): string {
-  return [firstName, otherNames, lastName].filter(Boolean).join(' ');
-}
-
 /** Parse '15m', '1h', '7d' → seconds for the expiresIn response field. */
 function parseTtlSeconds(ttl: string): number {
   const match = ttl.match(/^(\d+)([smhd])$/);

@@ -1,7 +1,6 @@
 import {
   RegisterClientInput,
   RegisterClientResponse,
-  ClientListResponse,
   Client,
 } from '@nurturelink/shared';
 import { ClientRepository } from '../repositories/client.repository';
