@@ -114,9 +114,9 @@ function ConfirmModal({ referral, onConfirm, onDismiss }: ConfirmModalProps) {
               mode="date"
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               maximumDate={new Date()}
-              onValueChange={(date: Date) => {
+              onValueChange={(_, date) => {
                 setShowSeenPicker(false);
-                setSeenDate(date);
+                if (date) setSeenDate(date);
               }}
               onDismiss={() => setShowSeenPicker(false)}
             />
@@ -200,9 +200,9 @@ function ConfirmModal({ referral, onConfirm, onDismiss }: ConfirmModalProps) {
                   mode="date"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   minimumDate={new Date()}
-                  onValueChange={(date: Date) => {
+                  onValueChange={(_, date) => {
                     setShowFollowUpPicker(false);
-                    setFollowUpDate(date);
+                    if (date) setFollowUpDate(date);
                   }}
                   onDismiss={() => setShowFollowUpPicker(false)}
                 />

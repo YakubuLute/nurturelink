@@ -324,14 +324,102 @@ const ct = StyleSheet.create({
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
+// ─── MotherPicker ──────────────────────────────────────────────────────────────
+
+interface MotherPickerProps {
+  candidates: import('../store').DemoClient[];
+  value: string;
+  onChange: (id: string) => void;
+}
+
+function MotherPicker({ candidates, value, onChange }: MotherPickerProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selected = candidates.find((c) => c.id === value);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? candidates.filter((c) => c.name.toLowerCase().includes(q) || c.community.toLowerCase().includes(q)) : candidates;
+  }, [candidates, query]);
+
+  if (candidates.length === 0) return null;
+
+  return (
+    <>
+      <TouchableOpacity style={mp.trigger} onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel="Link to mother">
+        <User size={18} color={selected ? '#08283B' : '#9CA3AF'} />
+        <Text style={[mp.triggerText, !selected && mp.placeholder]} numberOfLines={1}>
+          {selected ? `${selected.name} · ${selected.community}` : 'Select mother (optional)'}
+        </Text>
+        {selected ? (
+          <TouchableOpacity onPress={() => onChange('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <X size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+        ) : (
+          <ChevronDown size={16} color="#9CA3AF" />
+        )}
+      </TouchableOpacity>
+      <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: '#FDFDFD' }}>
+          <View style={cp.modalHeader}>
+            <Text style={cp.modalTitle}>Link to mother</Text>
+            <TouchableOpacity onPress={() => { setQuery(''); setOpen(false); }} style={cp.closeBtn}>
+              <X size={20} color="#374151" />
+            </TouchableOpacity>
+          </View>
+          <View style={cp.searchWrap}>
+            <Search size={16} color="#9CA3AF" style={cp.searchIcon} />
+            <TextInput style={cp.searchInput} placeholder="Search by name or community…" placeholderTextColor="#9CA3AF" value={query} onChangeText={setQuery} autoFocus autoCapitalize="words" clearButtonMode="while-editing" />
+          </View>
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[cp.row, value === item.id && cp.rowSelected]}
+                onPress={() => { onChange(item.id); setQuery(''); setOpen(false); }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[cp.rowText, value === item.id && cp.rowTextSelected]}>{item.name}</Text>
+                  <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>{item.community}</Text>
+                </View>
+                {value === item.id && <Check size={16} color="#08283B" strokeWidth={2.5} />}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={<Text style={cp.empty}>No matching clients found.</Text>}
+          />
+        </View>
+      </Modal>
+    </>
+  );
+}
+const mp = StyleSheet.create({
+  trigger: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB',
+    borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52,
+  },
+  triggerText: { flex: 1, fontSize: 15, color: '#08283B' },
+  placeholder: { color: '#9CA3AF' },
+});
+
+// ─── Main screen ─────────────────────────────────────────────────────────────
+
 export function RegisterScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { regForm, setRegField, saveClient, currentUser, clients } = useAppStore();
   const [step, setStep] = useState<1 | 2>(1);
 
-  const isChild = regForm.type === 'child';
+  const isChild    = regForm.type === 'child';
   const isPregnant = regForm.type === 'pregnant';
   const isStep1Ready = regForm.name.trim().length > 0 && regForm.consent;
+
+  // Candidates for mother-child linking: all pregnant/postpartum/lactating women
+  const motherCandidates = useMemo(
+    () => clients.filter((c) => c.type === 'pregnant'),
+    [clients],
+  );
 
   function handleLmpChange(iso: string) {
     setRegField('lmp', iso);
@@ -413,7 +501,42 @@ export function RegisterScreen({ navigation }: Props) {
             {/* Client type */}
             <View style={styles.section}>
               <SectionHeader label="Client type" />
-              <TypeSelector value={regForm.type} onChange={(t) => setRegField('type', t)} />
+              <TypeSelector
+                value={regForm.type}
+                onChange={(t) => {
+                  setRegField('type', t);
+                  setRegField('lifestage', t === 'pregnant' ? 'pregnant' : '');
+                  setRegField('linkedClientId', '');
+                }}
+              />
+              {/* Lifecycle stage — pregnant women only */}
+              {isPregnant && (
+                <View style={{ marginTop: 16 }}>
+                  <Text style={styles.fieldLabel}>Lifecycle stage</Text>
+                  <View style={chip.wrap}>
+                    {(['pregnant', 'postpartum', 'lactating'] as const).map((stage) => {
+                      const LABELS: Record<string, string> = {
+                        pregnant: 'Pregnant', postpartum: 'Postpartum', lactating: 'Lactating',
+                      };
+                      const active = (regForm.lifestage || 'pregnant') === stage;
+                      return (
+                        <TouchableOpacity
+                          key={stage}
+                          style={[chip.item, active ? chip.itemActive : chip.itemInactive]}
+                          onPress={() => setRegField('lifestage', stage)}
+                          accessibilityRole="button"
+                          accessibilityLabel={LABELS[stage]}
+                          accessibilityState={{ selected: active }}
+                        >
+                          <Text style={[chip.text, active ? chip.textActive : chip.textInactive]}>
+                            {LABELS[stage]}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
             </View>
 
             {/* About the client */}
@@ -577,6 +700,25 @@ export function RegisterScreen({ navigation }: Props) {
                 <View style={styles.fieldGroup}>
                   <Text style={styles.fieldLabel}>Relationship to child</Text>
                   <ChipSelector options={RELATIONSHIPS} value={regForm.caregiverRelationship} onChange={(v) => setRegField('caregiverRelationship', v)} />
+                </View>
+              </View>
+            )}
+
+            {/* Link to mother — children only */}
+            {isChild && motherCandidates.length > 0 && (
+              <View style={styles.section}>
+                <SectionHeader label="Link to mother's record" />
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Mother already registered?</Text>
+                  <MotherPicker
+                    candidates={motherCandidates}
+                    value={regForm.linkedClientId}
+                    onChange={(id) => setRegField('linkedClientId', id)}
+                  />
+                </View>
+                <View style={styles.infoRow}>
+                  <Info size={14} color="#427CAF" />
+                  <Text style={styles.infoText}>Linking creates a two-way record connection shown on both profiles.</Text>
                 </View>
               </View>
             )}

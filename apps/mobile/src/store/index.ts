@@ -51,6 +51,18 @@ export interface DemoClient {
   trendArrow: TrendArrow;
   trendColor: string;
   visits: DemoVisit[];
+  // POST-HACKATHON additions
+  lifestage?: string;        // 'pregnant' | 'postpartum' | 'lactating'
+  linkedClientId?: string;   // linked mother (for child) or child (for mother)
+}
+
+export interface VaccineRecord {
+  id: string;
+  vaccineId: string;
+  givenAt: string;             // YYYY-MM-DD
+  batchNumber?: string;
+  aefi?: string;               // adverse event description
+  aefiSeverity?: 'mild' | 'moderate' | 'severe';
 }
 
 export interface DemoReferral {
@@ -124,6 +136,10 @@ export interface VisitForm {
   feedingDuringIllness: string; // 'yes' | 'no' | ''
   // Child 6–59 mo (Vitamin A)
   vitaminAGiven: string;        // 'yes' | 'no' | ''
+  // Newborn only (< 1 month)
+  cordCondition: string;        // 'yes' | 'no' | '' (yes = normal cord)
+  jaundice: string;             // 'yes' | 'no' | ''
+  breastfeedInitiated: string;  // 'yes' | 'no' | ''
 }
 
 export interface RegForm {
@@ -146,6 +162,9 @@ export interface RegForm {
   cwcCardNumber: string;
   caregiverName: string;
   caregiverRelationship: string;
+  // POST-HACKATHON additions
+  lifestage: string;            // 'pregnant' | 'postpartum' | 'lactating'
+  linkedClientId: string;       // mother's client ID (for child registration)
 }
 
 // Plans are generated per-client by the AI layer and stored in state.
@@ -330,6 +349,10 @@ interface StoreState {
   setRecorded: (v: boolean) => void;
   setRecordT: (t: number) => void;
 
+  // Immunization records
+  immunizations: Record<string, VaccineRecord[]>;
+  saveVaccineRecord: (clientId: string, record: VaccineRecord) => void;
+
   // Actions — referrals
   issueReferral: (clientId: string) => void;
   confirmReferralSeen: (clientId: string, details?: { seenAt: string; confirmSource: string; outcome: string; nextFollowUp?: string }) => void;
@@ -353,6 +376,7 @@ const emptyVisitForm: VisitForm = {
   exclusiveBreastfeeding: '', feedingDifficulty: '',
   mealFreqPerDay: '', feedingTexture: '', feedingDuringIllness: '',
   vitaminAGiven: '',
+  cordCondition: '', jaundice: '', breastfeedInitiated: '',
 };
 const emptyRegForm: RegForm = {
   type: 'child',
@@ -371,6 +395,8 @@ const emptyRegForm: RegForm = {
   cwcCardNumber: '',
   caregiverName: '',
   caregiverRelationship: '',
+  lifestage: '',
+  linkedClientId: '',
 };
 
 export const useAppStore = create<StoreState>((set, get) => ({
@@ -402,6 +428,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
     if (bundle) set({ referenceBundle: bundle });
   },
 
+  immunizations: {},
   offline: true,
   syncing: false,
   lastSyncAt: null,
@@ -548,7 +575,8 @@ export const useAppStore = create<StoreState>((set, get) => ({
     const clinicalExtras: Record<string, string> = {};
     for (const k of ['heightCm','oedema','bpSystolic','bpDiastolic','ancVisited',
       'supplementGiven','exclusiveBreastfeeding','feedingDifficulty','mealFreqPerDay',
-      'feedingTexture','feedingDuringIllness','vitaminAGiven'] as const) {
+      'feedingTexture','feedingDuringIllness','vitaminAGiven',
+      'cordCondition','jaundice','breastfeedInitiated'] as const) {
       const v = visitForm[k as keyof VisitForm] as string;
       if (v) clinicalExtras[k] = v;
     }
@@ -596,8 +624,14 @@ export const useAppStore = create<StoreState>((set, get) => ({
       trendArrow: 'flat',
       trendColor: '#427CAF',
       visits: [],
+      lifestage: regForm.lifestage || undefined,
+      linkedClientId: regForm.linkedClientId || undefined,
     };
     get().addClient(nc);
+    // Bidirectional link: update the linked mother/child to point back
+    if (regForm.linkedClientId) {
+      get().patchClient(regForm.linkedClientId, { linkedClientId: id });
+    }
     set({ regForm: emptyRegForm });
 
     // Persist to SQLite + outbox (fire-and-forget)
@@ -699,6 +733,18 @@ export const useAppStore = create<StoreState>((set, get) => ({
       ),
     })),
 
+  // ── Immunizations ──
+  saveVaccineRecord: (clientId, record) =>
+    set((s) => ({
+      immunizations: {
+        ...s.immunizations,
+        [clientId]: [
+          ...(s.immunizations[clientId] ?? []).filter((r) => r.vaccineId !== record.vaccineId),
+          record,
+        ],
+      },
+    })),
+
   // ── Notifications ──
   markAllRead: () =>
     set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
@@ -767,4 +813,30 @@ export function metricLabel(metric: 'hb' | 'weight' | 'muac'): string {
   if (metric === 'hb')   return 'Haemoglobin (g/dL)';
   if (metric === 'muac') return 'MUAC (mm)';
   return 'Weight (kg)';
+}
+
+/**
+ * Derives a human-readable NurtureLink client ID from list position.
+ * Format: NL-{COM}-{YEAR}-{SEQ}  e.g. NL-KUK-2026-00003
+ * Note: position-based, not stable if clients are reordered.
+ */
+export function clientHumanId(client: DemoClient, allClients: DemoClient[]): string {
+  const prefix = client.community
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 3)
+    .toUpperCase()
+    .padEnd(3, 'X');
+  const idx = allClients.findIndex((c) => c.id === client.id);
+  const seq = String(Math.max(idx, 0) + 1).padStart(5, '0');
+  return `NL-${prefix}-${new Date().getFullYear()}-${seq}`;
+}
+
+/** Derives a household display ID from community prefix and index. */
+export function householdHumanId(community: string, idx: number): string {
+  const prefix = community
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 3)
+    .toUpperCase()
+    .padEnd(3, 'X');
+  return `HH-${prefix}-${String(idx + 1).padStart(4, '0')}`;
 }

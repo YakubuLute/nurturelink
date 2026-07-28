@@ -197,6 +197,7 @@ export function VisitScreen({ navigation, route }: Props) {
   const ageMonths  = isChild ? parseChildAgeMonths(client.age) : null;
 
   // Age group flags
+  const isNewborn         = isChild && ageMonths !== null && ageMonths < 1;
   const isInfant          = isChild && (ageMonths === null || ageMonths < 6);
   const isYoungChild      = isChild && ageMonths !== null && ageMonths >= 6 && ageMonths < 24;
   const isOlderChild      = isChild && ageMonths !== null && ageMonths >= 24;
@@ -335,6 +336,32 @@ export function VisitScreen({ navigation, route }: Props) {
                 label="Bilateral oedema (both feet swollen)?"
                 value={form.oedema}
                 onToggle={(v) => setField('oedema', v)}
+              />
+            </View>
+          </>
+        )}
+
+        {/* ── NEWBORN ASSESSMENT — child < 1 month ── */}
+        {isNewborn && (
+          <>
+            <Eyebrow label="NEWBORN ASSESSMENT (< 1 MONTH)" />
+            <View style={[styles.sectionCard, { marginBottom: 20 }]}>
+              <YesNoRow
+                label="Umbilical cord normal (no redness, swelling, or discharge)?"
+                value={form.cordCondition}
+                onToggle={(v) => setField('cordCondition', v)}
+              />
+              <View style={styles.divider} />
+              <YesNoRow
+                label="Jaundice present (yellow skin or eyes)?"
+                value={form.jaundice}
+                onToggle={(v) => setField('jaundice', v)}
+              />
+              <View style={styles.divider} />
+              <YesNoRow
+                label="Breastfeeding initiated within 1 hour of birth?"
+                value={form.breastfeedInitiated}
+                onToggle={(v) => setField('breastfeedInitiated', v)}
               />
             </View>
           </>

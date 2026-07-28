@@ -18,8 +18,12 @@ import {
   priorityStyle,
   formatMetric,
   metricLabel,
+  clientHumanId,
 } from '../store';
-import { ChevronLeft, TrendingUp, TrendingDown, Minus, Check, AlertTriangle, BarChart2, ClipboardList } from 'lucide-react-native';
+import {
+  ChevronLeft, TrendingUp, TrendingDown, Minus, Check, AlertTriangle,
+  BarChart2, ClipboardList, ShieldCheck, ChevronRight, Link,
+} from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -195,7 +199,7 @@ function DietDiversityCard({ lastVisit }: { lastVisit: DemoVisit }) {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export function ClientScreen({ navigation, route }: Props) {
   const { clientId } = route.params;
-  const { clients, referrals, confirmReferralSeen } = useAppStore();
+  const { clients, referrals, confirmReferralSeen, role, immunizations } = useAppStore();
   const client = clients.find((c) => c.id === clientId);
   const referral = referrals.find((r) => r.clientId === clientId);
 
@@ -213,6 +217,15 @@ export function ClientScreen({ navigation, route }: Props) {
   const aStyle = avatarStyle(client.type);
   const abbrev = initials(client.name);
   const label = metricLabel(client.metric);
+
+  const humanId      = clientHumanId(client, clients);
+  const isSupervisor = role === 'sup';
+  const isChild      = client.type === 'child';
+  const linkedClient = client.linkedClientId
+    ? clients.find((c) => c.id === client.linkedClientId) ?? null
+    : null;
+  const vaccinationCount = (immunizations[clientId] ?? []).length;
+  const TOTAL_VACCINES   = 17; // Ghana EPI schedule total
   const currentValue = lastVisit
     ? formatMetric(client.metric, client.metric === 'hb' ? lastVisit.hb : client.metric === 'weight' ? lastVisit.weight : lastVisit.muac)
     : '—';
@@ -246,8 +259,12 @@ export function ClientScreen({ navigation, route }: Props) {
     flagBg = C.highPriorityBg; flagBorder = '#FFCAA8'; flagTextColor = C.highPriority; flagWarn = true;
   }
 
+  const lifecycleLabel =
+    client.lifestage === 'postpartum' ? 'Postpartum'
+    : client.lifestage === 'lactating' ? 'Lactating'
+    : 'Pregnant';
   const subLine = client.type === 'pregnant'
-    ? `Pregnant · ${client.age} yrs · ${client.community}`
+    ? `${lifecycleLabel} · ${client.age} yrs · ${client.community}`
     : `Child · ${client.age} · ${client.community}`;
 
   function handlePlanPress() {
@@ -275,6 +292,7 @@ export function ClientScreen({ navigation, route }: Props) {
           <View style={{ flex: 1 }}>
             <Text style={styles.clientName}>{client.name}</Text>
             <Text style={styles.clientSub}>{subLine}</Text>
+            <Text style={styles.clientId}>{humanId}</Text>
           </View>
         </View>
       </View>
@@ -284,6 +302,35 @@ export function ClientScreen({ navigation, route }: Props) {
         style={{ flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 16, borderTopRightRadius: 16, marginTop: -8 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
+        {/* Supervisor read-only banner */}
+        {isSupervisor && (
+          <View style={[styles.card, { backgroundColor: C.lb50, borderColor: C.lb200, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+            <ShieldCheck size={16} color={C.lb700} />
+            <Text style={{ fontSize: 13, color: C.lb700, fontWeight: '600', flex: 1 }}>
+              Supervisor view — you can review records but not edit them.
+            </Text>
+          </View>
+        )}
+
+        {/* Linked mother / child card */}
+        {linkedClient && (
+          <TouchableOpacity
+            style={[styles.card, { marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+            onPress={() => navigation.navigate('Client', { clientId: linkedClient.id })}
+            accessibilityLabel={`View linked ${linkedClient.type === 'pregnant' ? 'mother' : 'child'} record`}
+          >
+            <Link size={16} color={C.fg3} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, color: C.fg3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 }}>
+                {isChild ? 'Linked mother' : 'Linked child'}
+              </Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>{linkedClient.name}</Text>
+              <Text style={{ fontSize: 12, color: C.fg3, marginTop: 1 }}>{linkedClient.community}</Text>
+            </View>
+            <ChevronRight size={16} color={C.fg4} />
+          </TouchableOpacity>
+        )}
+
         {/* Referral banner */}
         {client.referred && referral && (
           <View style={[styles.card, { backgroundColor: C.errorBg, borderColor: C.errorBorder, marginBottom: 12 }]}>
@@ -374,6 +421,26 @@ export function ClientScreen({ navigation, route }: Props) {
         {/* Diet diversity card */}
         {lastVisit && <DietDiversityCard lastVisit={lastVisit} />}
 
+        {/* Immunization tracker card — children only */}
+        {isChild && (
+          <TouchableOpacity
+            style={[styles.card, { marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+            onPress={() => navigation.navigate('Immunization', { clientId })}
+            accessibilityLabel="View immunization record"
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: C.lb50, alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldCheck size={18} color={C.lb700} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Immunization record</Text>
+              <Text style={{ fontSize: 12, color: C.fg3, marginTop: 2 }}>
+                {vaccinationCount}/{TOTAL_VACCINES} vaccines recorded · Ghana EPI
+              </Text>
+            </View>
+            <ChevronRight size={16} color={C.fg4} />
+          </TouchableOpacity>
+        )}
+
         {/* Visit history */}
         <Text style={styles.sectionHeader}>Visit history</Text>
         {visits.length === 0 ? (
@@ -426,13 +493,15 @@ export function ClientScreen({ navigation, route }: Props) {
 
       {/* ── Bottom action bar ── */}
       <View style={styles.actionBar}>
-        <TouchableOpacity
-          style={styles.actionBtnOutline}
-          onPress={() => navigation.navigate('Visit', { clientId })}
-          accessibilityLabel="Record visit"
-        >
-          <Text style={{ fontSize: 14, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
-        </TouchableOpacity>
+        {!isSupervisor && (
+          <TouchableOpacity
+            style={styles.actionBtnOutline}
+            onPress={() => navigation.navigate('Visit', { clientId })}
+            accessibilityLabel="Record visit"
+          >
+            <Text style={{ fontSize: 14, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
+          </TouchableOpacity>
+        )}
 
         {visits.length > 0 && (
           <TouchableOpacity
@@ -487,6 +556,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: C.lb300,
     marginTop: 2,
+  },
+  clientId: {
+    fontSize: 11,
+    color: 'rgba(180,218,251,0.65)',
+    marginTop: 3,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.3,
   },
   card: {
     backgroundColor: C.surface,
