@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import * as Battery from 'expo-battery';
 import * as FileSystem from 'expo-file-system';
 import { loadReferenceBundle } from '../db/bundle-loader';
-import { clearSession } from '../auth/session';
+import { clearSession, getToken } from '../auth/session';
 import { persistClient, persistVisit, persistReferral, uuidv4 } from '../db/persist';
 import { syncNow } from '../sync/orchestrator';
 import type { ReferenceBundle } from '../engine/types';
@@ -24,6 +24,17 @@ export type Role = 'cho' | 'sup';
 export type ReferralStatus = 'issued' | 'seen';
 export type NotifKind = 'referral' | 'risk' | 'sync' | 'bundle' | 'voice';
 export type NotifGroup = 'today' | 'earlier';
+
+export interface ChoActivity {
+  id: string;
+  name: string;
+  zone: string;
+  clients: number;
+  visited: number;
+  pending: number;
+  lastSync: string;
+  synced: boolean;
+}
 
 export interface DemoVisit {
   date: string;
@@ -285,6 +296,10 @@ interface StoreState {
   notifications: AppNotification[];
   dataLoading: boolean;
 
+  // Supervisor
+  choActivity: ChoActivity[];
+  supervisorLoading: boolean;
+
   // Plan edits (removed / added alternates per client)
   planEdits: Record<string, { removed: string[]; added: string[] }>;
   // AI-generated plans per client (keyed by clientId)
@@ -322,6 +337,7 @@ interface StoreState {
   setSessionExpired: (v: boolean) => void;
   setUiLang: (lang: UiLang) => void;
   loadUserData: (accessToken: string) => Promise<void>;
+  loadSupervisorData: () => Promise<void>;
 
   // Actions — clients
   addClient: (c: DemoClient) => void;
@@ -418,6 +434,9 @@ export const useAppStore = create<StoreState>((set, get) => ({
   notifications: [],
   dataLoading: false,
 
+  choActivity: [],
+  supervisorLoading: false,
+
   planEdits: {},
   plans: {},
 
@@ -496,6 +515,28 @@ export const useAppStore = create<StoreState>((set, get) => ({
     } catch (e) {
       console.warn('[Store] loadUserData error:', e);
       set({ dataLoading: false });
+    }
+  },
+
+  loadSupervisorData: async () => {
+    set({ supervisorLoading: true });
+    try {
+      const token = await getToken();
+      if (!token || token.startsWith('demo.')) {
+        set({ supervisorLoading: false });
+        return;
+      }
+      const res = await fetch(`${API_URL}/supervisor/chos`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        set({ choActivity: json.chos ?? [] });
+      }
+    } catch (e) {
+      console.warn('[Store] loadSupervisorData error:', e);
+    } finally {
+      set({ supervisorLoading: false });
     }
   },
 
