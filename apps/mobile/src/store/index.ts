@@ -219,6 +219,8 @@ export interface CurrentUser {
   phone: string;
   role: Role;
   facilityName: string | null;
+  facilityDistrict: string | null;
+  facilityRegion: string | null;
 }
 
 /** Display-friendly full name: First [Other] Last */

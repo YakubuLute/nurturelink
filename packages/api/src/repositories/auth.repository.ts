@@ -14,7 +14,7 @@ export class AuthRepository {
   async findByPhone(phone: string) {
     return prisma.user.findUnique({
       where: { phone },
-      include: { facility: { select: { name: true } } },
+      include: { facility: { select: { name: true, district: true, region: true } } },
     });
   }
 

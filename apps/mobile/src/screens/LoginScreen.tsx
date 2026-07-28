@@ -63,6 +63,8 @@ export function LoginScreen({ navigation }: Props) {
             role: string;
             phone?: string;
             facilityName?: string | null;
+            facilityDistrict?: string | null;
+            facilityRegion?: string | null;
           };
         };
         // Token storage is best-effort — on web expo-secure-store falls back to
@@ -72,13 +74,15 @@ export function LoginScreen({ navigation }: Props) {
         );
         const role = mapServerRole(data.user.role);
         login({
-          id:          data.user.id,
-          firstName:   data.user.firstName,
-          lastName:    data.user.lastName,
-          otherNames:  data.user.otherNames ?? null,
-          phone:       phone.trim(),
+          id:               data.user.id,
+          firstName:        data.user.firstName,
+          lastName:         data.user.lastName,
+          otherNames:       data.user.otherNames ?? null,
+          phone:            phone.trim(),
           role,
-          facilityName: data.user.facilityName ?? null,
+          facilityName:     data.user.facilityName ?? null,
+          facilityDistrict: data.user.facilityDistrict ?? null,
+          facilityRegion:   data.user.facilityRegion ?? null,
         });
         // Fire-and-forget: load real data in the background; UI navigates immediately
         loadUserData(data.accessToken).catch((e) =>
@@ -105,7 +109,7 @@ export function LoginScreen({ navigation }: Props) {
     setLoading(true);
     try {
       await storeSession('cho');
-      login({ id: 'offline', firstName: 'Offline', lastName: 'User', otherNames: null, phone: '', role: 'cho', facilityName: null });
+      login({ id: 'offline', firstName: 'Offline', lastName: 'User', otherNames: null, phone: '', role: 'cho', facilityName: null, facilityDistrict: null, facilityRegion: null });
       navigation.replace('Home');
     } finally {
       setLoading(false);

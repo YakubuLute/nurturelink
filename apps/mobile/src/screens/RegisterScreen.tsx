@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Pressable,
   ScrollView,
+  FlatList,
+  Modal,
   StyleSheet,
   Alert,
   Platform,
@@ -17,13 +19,21 @@ import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
 import {
   ChevronLeft, Check, WifiOff, Baby, User, CalendarDays,
-  Phone, MapPin, FileText, Info,
+  Phone, MapPin, FileText, Info, ChevronDown, X, Search, MapPinned,
 } from 'lucide-react-native';
 import { syncNow } from '../sync/orchestrator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
-const COMMUNITIES = ['Kukuo', 'Sagnarigu', 'Gizaa', 'Voggu'] as const;
+// Communities in Sagnarigu Municipal District, Northern Region, Ghana
+// Sorted alphabetically. Workers can also type a custom community.
+const SAGNARIGU_COMMUNITIES = [
+  'Barugu', 'Choggu', 'Dohigu', 'Gizaa', 'Gurugu',
+  'Kakpayili', 'Kanvili', 'Kasalgu', 'Katariga', 'Kpinkpanaa',
+  'Kpuyangli', 'Kukuo', 'Kumbuyili', 'Lamashegu', 'Nyanshegu',
+  'Sagnarigu', 'Teshie', 'Voggu', 'Zagyuri',
+] as const;
+
 const RELATIONSHIPS = ['Mother', 'Father', 'Grandparent', 'Guardian'] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

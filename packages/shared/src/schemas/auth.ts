@@ -46,13 +46,15 @@ export const ResetPasswordSchema = z.object({
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 
 export const AuthUserSchema = z.object({
-  id:          z.string().uuid(),
-  firstName:   z.string(),
-  lastName:    z.string(),
-  otherNames:  z.string().nullable(),
-  role:        UserRoleSchema,
-  facilityId:  z.string().uuid().nullable(),
-  facilityName: z.string().nullable(),
+  id:               z.string().uuid(),
+  firstName:        z.string(),
+  lastName:         z.string(),
+  otherNames:       z.string().nullable(),
+  role:             UserRoleSchema,
+  facilityId:       z.string().uuid().nullable(),
+  facilityName:     z.string().nullable(),
+  facilityDistrict: z.string().nullable(),
+  facilityRegion:   z.string().nullable(),
 });
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 

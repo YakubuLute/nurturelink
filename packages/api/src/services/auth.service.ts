@@ -58,7 +58,7 @@ function consumeOtp(phone: string, code: string, mode: OtpEntry['mode']): boolea
 export class AuthService {
   private repo = new AuthRepository();
 
-  async login(input: LoginInput): Promise<LoginResponse & { user: LoginResponse['user'] & { facilityName: string | null } }> {
+  async login(input: LoginInput): Promise<LoginResponse & { user: LoginResponse['user'] & { facilityName: string | null; facilityDistrict: string | null; facilityRegion: string | null } }> {
     const user = await this.repo.findByPhone(input.phone);
     if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
@@ -82,7 +82,9 @@ export class AuthService {
         otherNames:   user.otherNames ?? null,
         role:         user.role,
         facilityId:   user.facilityId,
-        facilityName: user.facility?.name ?? null,
+        facilityName:     user.facility?.name ?? null,
+        facilityDistrict: user.facility?.district ?? null,
+        facilityRegion:   user.facility?.region ?? null,
       },
     };
   }
