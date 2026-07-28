@@ -186,7 +186,6 @@ export function HomeScreen({ navigation }: Props) {
     lastSyncAt,
     pendingRecords,
     uiLang,
-    sync,
     currentUser,
     dataLoading,
   } = useAppStore();
@@ -271,7 +270,7 @@ export function HomeScreen({ navigation }: Props) {
             syncing={syncing}
             pendingRecords={pendingRecords}
             lastSyncAt={lastSyncAt}
-            onSync={sync}
+            onSync={() => navigation.navigate('Sync')}
           />
         </View>
 
@@ -403,7 +402,7 @@ export function HomeScreen({ navigation }: Props) {
         active="home"
         onHome={() => {}}
         onReferrals={() => navigation.navigate('ReferralsList')}
-        onSync={sync}
+        onSync={() => navigation.navigate('Sync')}
         onProfile={() => navigation.navigate('Settings')}
         referralBadge={pendingReferrals}
       />

@@ -24,7 +24,6 @@ export function SettingsScreen({ navigation }: Props) {
     telemetryCount,
     uiLang,
     referrals,
-    sync,
     toggleAdaptive,
     setUiLang,
     logout,
@@ -226,7 +225,7 @@ export function SettingsScreen({ navigation }: Props) {
         active="profile"
         onHome={() => navigation.navigate('Home')}
         onReferrals={() => navigation.navigate('ReferralsList')}
-        onSync={sync}
+        onSync={() => navigation.navigate('Sync')}
         onProfile={() => {}}
         referralBadge={issuedCount}
       />

@@ -458,7 +458,7 @@ function ReferralCard({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export function ReferralsListScreen({ navigation }: Props) {
-  const { referrals, confirmReferralSeen, sync } = useAppStore();
+  const { referrals, confirmReferralSeen } = useAppStore();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const issuedCount = referrals.filter((r) => r.status === 'issued').length;
@@ -543,7 +543,7 @@ export function ReferralsListScreen({ navigation }: Props) {
         active="referrals"
         onHome={() => navigation.navigate('Home')}
         onReferrals={() => {}}
-        onSync={sync}
+        onSync={() => navigation.navigate('Sync')}
         onProfile={() => navigation.navigate('Settings')}
         referralBadge={issuedCount}
       />
