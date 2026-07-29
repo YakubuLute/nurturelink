@@ -62,7 +62,7 @@ export class AuthService {
     const user = await this.repo.findByPhone(input.phone);
     if (!user) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
-    const valid = await bcrypt.compare(input.password, user.passwordHash);
+    const valid = await bcrypt.compare(input.pin, user.passwordHash);
     if (!valid) throw Object.assign(new Error('Invalid credentials'), { status: 401 });
 
     const secret = process.env.JWT_SECRET!;

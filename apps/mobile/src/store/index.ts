@@ -12,7 +12,10 @@ import { loadReferenceBundle } from '../db/bundle-loader';
 import { clearSession, getToken } from '../auth/session';
 import { persistClient, persistVisit, persistReferral, uuidv4 } from '../db/persist';
 import { syncNow } from '../sync/orchestrator';
-import type { ReferenceBundle } from '../engine/types';
+import type { ReferenceBundle, PlanInput, EngineFlag, PlanResult } from '../engine/types';
+import { generatePlan } from '../engine';
+import { NUTRIENT_LABELS } from '../engine/rationale';
+import type { FlagCode } from '@nurturelink/shared';
 
 // ─── Domain types (local, demo-optimised) ────────────────────────────────────
 
@@ -183,6 +186,84 @@ export interface RegForm {
 // Plans are generated per-client by the AI layer and stored in state.
 // The PlanScreen falls back to a generic template if no plan is available.
 export const PLANS: Record<string, PlanData> = {};
+
+// ─── Engine helpers ───────────────────────────────────────────────────────────
+
+const TIER_DISPLAY: Record<string, string> = {
+  staple_cheap: 'Low cost',
+  market: 'Market',
+  premium: 'Premium',
+};
+
+const REASON_DISPLAY: Record<string, string> = {
+  in_season_abundant:   'Abundant in season now',
+  in_season_available:  'Available in season',
+  storable_year_round:  'Can be dried and stored year-round',
+  garden_or_wild:       'Available from kitchen garden or wild',
+  affordable_staple:    'Affordable staple food',
+  affordable_market:    'Available at local market',
+  closes_ironMg_gap:    'Helps close iron gap',
+  closes_folateUg_gap:  'Helps close folate gap',
+  closes_proteinG_gap:  'Good source of protein',
+  closes_energyKcal_gap:'Good energy source',
+  closes_vitAUgRae_gap: 'Rich in Vitamin A',
+  closes_zincMg_gap:    'Good source of zinc',
+};
+
+/** Parse a DemoClient's age field into months for the engine. */
+function parseAgeMonths(client: DemoClient): number | undefined {
+  if (client.type === 'pregnant') return undefined;
+  const age = client.age;
+  if (typeof age === 'number') return age * 12;
+  if (typeof age === 'string') {
+    const moMatch = age.match(/^(\d+)\s*mo/);
+    if (moMatch) return parseInt(moMatch[1], 10);
+    const yrMatch = age.match(/^(\d+)/);
+    if (yrMatch) return parseInt(yrMatch[1], 10) * 12;
+  }
+  return 12;
+}
+
+/** Map a PlanResult from the engine to the PlanData shape PlanScreen expects. */
+function planResultToPlanData(result: PlanResult, client: DemoClient): PlanData {
+  const monthName = new Date().toLocaleString('en-US', { month: 'long' });
+  const nutrientLabels = result.targetNutrients
+    .map((n) => NUTRIENT_LABELS[n] ?? n)
+    .join(', ');
+
+  const foods: PlanFood[] = result.selectedFoods.map((f) => ({
+    name: f.name,
+    local: f.localName,
+    group: f.foodGroup,
+    tier: TIER_DISPLAY[f.tier] ?? f.tier,
+    why: f.reasons
+      .slice(0, 2)
+      .map((r) => REASON_DISPLAY[r] ?? r)
+      .join('. '),
+  }));
+
+  const adequacy = Object.entries(result.adequacy).map(([key, val]) => ({
+    label: (NUTRIENT_LABELS as Record<string, string>)[key] ?? key,
+    pct: Math.round((val ?? 0) * 100),
+  }));
+
+  const rationale = result.rationale.map((entry) => {
+    const food = result.selectedFoods.find((f) => f.id === entry.foodId);
+    const topReason = entry.reasons[0];
+    return `${food?.name ?? entry.foodId}: ${REASON_DISPLAY[topReason ?? ''] ?? topReason ?? ''}`;
+  });
+
+  return {
+    seasonNote: `In season · ${monthName} · Northern Savannah`,
+    targetNote: `${client.name}'s plan targets ${nutrientLabels} using locally available, affordable foods.`,
+    foods,
+    alternates: [],
+    adequacy,
+    rationale,
+    voiceEn: result.voiceScriptTemplate,
+    voiceDag: result.voiceScriptTemplate,
+  };
+}
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
@@ -621,6 +702,33 @@ export const useAppStore = create<StoreState>((set, get) => ({
 
     get().patchClient(clientId, patch);
     set((s) => ({ telemetryCount: s.telemetryCount + 1, pendingRecords: s.pendingRecords + 1 }));
+
+    // ── Run recommendation engine (synchronous, on-device, pure) ─────────────
+    if (!severe) {
+      const { referenceBundle } = get();
+      if (referenceBundle) {
+        const engineFlags: EngineFlag[] = flagReasons.map((f) => ({
+          code: f.code as FlagCode,
+          value: f.value,
+        }));
+        const agroZoneId =
+          referenceBundle.seasonalAvailability[0]?.agroZoneId ??
+          'a1b2c3d4-0000-0000-0000-000000000001';
+        const planInput: PlanInput = {
+          clientType: client.type,
+          ageMonths: parseAgeMonths(client),
+          flags: engineFlags,
+          agroZoneId,
+          currentMonth: new Date().getMonth() + 1,
+          affordabilityCeiling: 'staple_cheap',
+        };
+        const engineResult = generatePlan(planInput, referenceBundle);
+        if (engineResult.kind === 'plan') {
+          const planData = planResultToPlanData(engineResult, client);
+          set((s) => ({ plans: { ...s.plans, [clientId]: planData } }));
+        }
+      }
+    }
 
     // Persist visit + flag to SQLite + outbox (fire-and-forget)
     const visitId = uuidv4();
