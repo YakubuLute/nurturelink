@@ -685,8 +685,11 @@ export const useAppStore = create<StoreState>((set, get) => ({
       (hb !== null && hb > 0 && hb < hbReferThreshold);
 
     const lastVisit = client.visits[client.visits.length - 1];
+    const today = new Date();
+    const todayLabel = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
     const newVisit: DemoVisit = {
-      date: '12th Nov, 2026',
+      date: todayLabel,
       weight: parseFloat(visitForm.weight) || lastVisit?.weight || 0,
       hb: hb !== null ? hb : null,
       muac: muac || 235,
@@ -878,6 +881,11 @@ export const useAppStore = create<StoreState>((set, get) => ({
     const client = get().clients.find((c) => c.id === clientId);
     if (!client) return;
     const referralId = uuidv4();
+    const now = new Date();
+    const atLabel  = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dueDate  = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const dueLabel = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
     const ref: DemoReferral = {
       id: referralId,
       clientId,
@@ -886,8 +894,8 @@ export const useAppStore = create<StoreState>((set, get) => ({
       reason: client.flagDetail,
       facility: 'Tamale West Hospital',
       status: 'issued',
-      at: '12th Nov, 2026',
-      due: '15th Nov, 2026',
+      at: atLabel,
+      due: dueLabel,
     };
     get().patchClient(clientId, { referred: true });
     set((s) => ({ referrals: [...s.referrals, ref], telemetryCount: s.telemetryCount + 1 }));
@@ -1047,8 +1055,8 @@ export const useAppStore = create<StoreState>((set, get) => ({
         trendArrow: 'down',
         trendColor: '#C81E1E',
         visits: [
-          { date: '1st Jul, 2026',  weight: 6.4, hb: null, muac: 115, diet: ['grains','breast'],   danger: [],         synced: true,  owner: 'You' },
-          { date: '22nd Jul, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'],            danger: ['oedema'], synced: false, owner: 'You' },
+          { date: '1st Jul, 2026',  weight: 6.4, hb: null, muac: 115, diet: ['grains','breast'],              danger: [],                   synced: true,  owner: 'You' },
+          { date: '22nd Jul, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'],            danger: ['bilateral_oedema'], synced: false, owner: 'You' },
         ],
       },
       {
@@ -1144,6 +1152,69 @@ export const useAppStore = create<StoreState>((set, get) => ({
       },
     ];
 
+    // Pre-seeded plans so PlanScreen shows real data immediately (no visit needed first)
+    const demoPlans: Record<string, PlanData> = {
+      // Amina — pregnant, declining Hb → iron + folate + energy gap
+      amina: {
+        seasonNote: 'In season · July · Northern Savannah',
+        targetNote: "Amina's plan targets iron, folate, and energy using locally available, affordable foods.",
+        foods: [
+          { name: 'Dawadawa (fermented locust bean)', local: 'Dawadawa', group: 'legumes', tier: 'Low cost', why: 'Highest iron source in the Northern Savannah (9 mg/100g). Adds flavour to soups.' },
+          { name: 'Moringa leaves (fresh)',            local: 'Zogale',   group: 'vita',    tier: 'Low cost', why: 'Rich in iron, folate, and Vitamin A. Grows wild and in kitchen gardens.' },
+          { name: 'Cowpea (beans)',                    local: 'Tuya',     group: 'legumes', tier: 'Low cost', why: 'Iron and folate. Abundant this season. Storable and affordable.' },
+          { name: 'Dried small fish (tilapia)',        local: 'Amani',    group: 'flesh',   tier: 'Low cost', why: 'Iron and protein. Dried fish is available year-round and affordable.' },
+          { name: 'Millet',                            local: 'Nyɔri',    group: 'grains',  tier: 'Low cost', why: 'Energy base for meals. Iron and folate from a local staple grain.' },
+        ],
+        alternates: [
+          { name: 'Bambara beans', local: 'Suya', group: 'legumes', tier: 'Low cost', why: 'Protein and iron when cowpea is unavailable.' },
+          { name: 'Egg',           local: 'Poli', group: 'eggs',    tier: 'Market',   why: 'Protein and Vitamin A when affordable.' },
+        ],
+        adequacy: [
+          { label: 'Iron',    pct: 88 },
+          { label: 'Folate',  pct: 82 },
+          { label: 'Energy',  pct: 91 },
+          { label: 'Protein', pct: 79 },
+          { label: 'Vit A',   pct: 94 },
+        ],
+        rationale: [
+          'Dawadawa: highest iron in the Northern Savannah. Closes iron gap.',
+          'Moringa + cowpea: folate from two complementary local sources.',
+          'All 5 foods are low-cost staples available this month.',
+        ],
+        voiceEn: "Amina's feeding plan: Add dawadawa and dried fish to every soup for iron. Eat moringa leaves with TZ at least 3 times a week. Cook cowpea and millet together for an energy-rich meal. These foods will help your blood stay strong for you and your baby.",
+        voiceDag: "Amina din tuma nɔŋ: Di dawadawa ni amani soup biɛlim naa. Di zogale tuya nɔŋ daa nyɔri biɛlim naa. Di nyɔri ni tuya di biɛlim pam. N di nɔ n tuma din zuɣu.",
+      },
+      // Rahimatu — child 18mo, flat weight → energy + protein + diet diversity gap
+      rahim: {
+        seasonNote: 'In season · July · Northern Savannah',
+        targetNote: "Rahimatu's plan targets energy, protein, and diet diversity to support catch-up growth.",
+        foods: [
+          { name: 'Sorghum (TZ / tuo zaafi)',   local: 'Saa',    group: 'grains',  tier: 'Low cost', why: 'Energy-dense base for daily meals. Familiar staple for complementary feeding.' },
+          { name: 'Groundnut (peanut)',          local: 'Sisim',  group: 'legumes', tier: 'Low cost', why: 'High energy and protein. Abundant this season. Can be made into soup or paste.' },
+          { name: 'Moringa leaves (fresh)',      local: 'Zogale', group: 'vita',    tier: 'Low cost', why: 'Vitamins A and C, iron. Adds micronutrients to any meal.' },
+          { name: 'Egg',                         local: 'Poli',   group: 'eggs',    tier: 'Market',   why: 'Complete protein and Vitamin A for growth. One egg per day if affordable.' },
+        ],
+        alternates: [
+          { name: 'Cowpea (beans)',   local: 'Tuya',  group: 'legumes', tier: 'Low cost', why: 'Protein when groundnut unavailable.' },
+          { name: 'Dried small fish', local: 'Amani', group: 'flesh',   tier: 'Low cost', why: 'Iron and protein; storable.' },
+        ],
+        adequacy: [
+          { label: 'Energy',  pct: 86 },
+          { label: 'Protein', pct: 91 },
+          { label: 'Iron',    pct: 72 },
+          { label: 'Vit A',   pct: 88 },
+          { label: 'Zinc',    pct: 78 },
+        ],
+        rationale: [
+          'Flat weight for 2 months: energy and protein are priority nutrients.',
+          'Groundnut provides high energy density for complementary feeding.',
+          'Moringa closes the Vitamin A and iron gap with a free kitchen garden food.',
+        ],
+        voiceEn: "Rahimatu's feeding plan: Mix groundnut paste into sorghum TZ every day for energy. Add one egg three times a week for growth. Put moringa leaves in the soup for vitamins. Continue breastfeeding alongside these foods.",
+        voiceDag: "Rahimatu din tuma nɔŋ: Di sisim saa nɔŋ daa. Di gala biɛlim naa zuɣ protein. Di zogale soup din zuɣu vitamins. Suɣiri yuli n ti.",
+      },
+    };
+
     set({
       isLoggedIn: true,
       role: 'cho',
@@ -1152,6 +1223,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
       clients: demoClients,
       referrals: demoReferrals,
       notifications: demoNotifications,
+      plans: demoPlans,
       offline: true,
       syncing: false,
       lastSyncAt: null,

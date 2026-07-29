@@ -32,14 +32,18 @@ export function LoginScreen({ navigation }: Props) {
   const seedDemoData = useAppStore((s) => s.seedDemoData);
 
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
-    if (!phone.trim() || !password.trim()) {
-      setError('Phone number and password are required.');
+    if (!phone.trim() || !pin.trim()) {
+      setError('Phone number and PIN are required.');
+      return;
+    }
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+      setError('PIN must be exactly 4 digits.');
       return;
     }
     setError(null);
@@ -49,7 +53,7 @@ export function LoginScreen({ navigation }: Props) {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim(), password }),
+        body: JSON.stringify({ phone: phone.trim(), pin }),
       });
 
       if (res.ok) {
@@ -92,7 +96,7 @@ export function LoginScreen({ navigation }: Props) {
         );
         navigation.replace(role === 'sup' ? 'Supervisor' : 'Home');
       } else if (res.status === 401) {
-        setError('Incorrect phone number or password.');
+        setError('Incorrect phone number or PIN.');
       } else if (res.status === 403) {
         setError('Account not verified. Check your SMS for a verification code.');
       } else {
@@ -163,42 +167,44 @@ export function LoginScreen({ navigation }: Props) {
             </View>
           </View>
 
-          {/* Password */}
+          {/* PIN */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Password</Text>
+            <Text style={styles.fieldLabel}>PIN (4 digits)</Text>
             <View style={styles.inputRow}>
               <Lock size={18} color="#8D9CA5" style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, styles.inputFlex]}
-                value={password}
-                onChangeText={(v) => { setPassword(v); setError(null); }}
-                placeholder="Your password"
+                value={pin}
+                onChangeText={(v) => { setPin(v.replace(/\D/g, '').slice(0, 4)); setError(null); }}
+                placeholder="• • • •"
                 placeholderTextColor="#5A6F7C"
-                secureTextEntry={!showPassword}
+                secureTextEntry={!showPin}
+                keyboardType="number-pad"
+                maxLength={4}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
               />
               <Pressable
-                onPress={() => setShowPassword((v) => !v)}
+                onPress={() => setShowPin((v) => !v)}
                 style={styles.eyeBtn}
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityLabel={showPin ? 'Hide PIN' : 'Show PIN'}
               >
-                {showPassword
+                {showPin
                   ? <EyeOff size={18} color="#8D9CA5" />
                   : <Eye size={18} color="#8D9CA5" />}
               </Pressable>
             </View>
           </View>
 
-          {/* Forgot password */}
+          {/* Forgot PIN */}
           <Pressable
             onPress={() => navigation.navigate('ForgotPassword')}
             style={styles.forgotRow}
             accessibilityRole="link"
           >
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Text style={styles.forgotText}>Forgot PIN?</Text>
           </Pressable>
 
           {/* Error */}

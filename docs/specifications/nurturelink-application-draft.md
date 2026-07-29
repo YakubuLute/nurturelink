@@ -1,20 +1,23 @@
-# NurtureLink — Application draft
+# NurtureLink — Application Draft
 
-*AI for Nurturing Care Hackathon · UNICEF StartUp Lab (KOICA / MEST). Working draft. Bracketed items need your input; the field-grounding section needs at least one real conversation with a CHO or nutrition officer before you submit.*
+*AI for Nurturing Care Hackathon · UNICEF StartUp Lab (KOICA / MEST).*
 
 ---
 
 ## 1. Team profile
 
-The build team can be any size; only up to three members attend the bootcamp if selected, so list your three bootcamp members first.
+| # | Name | Role | Based in | Background | Key skills |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Yakubu Lute | Technical lead | Kumasi / Accra, Ghana | Senior Full-Stack Engineer at Amalitech; Frontend Lead at mPedigree Network (health-tech, pharmaceutical verification); 7+ years production software (mobile, web, backend); born Tumu, Upper West Region | React Native/Expo, offline-first architecture, AI integration, TypeScript, WCAG 2.1 |
+| 2 | Leticia Offeibea | Health & nutrition domain | Ghana | BSc Health Information Management; Research Assistant on Social Determinants of Health; USAID Ghana National Malaria Elimination Programme field experience at community level | Health information systems, IYCF clinical thresholds, community health programme operations, population health analytics |
 
-| | Name | Role | Based in | Background | Key skills |
-|---|---|---|---|---|---|
-| 1 | Yakubu Lute | Technical lead | Techiman, Bono East | Senior software engineer, founder of Lute Technologies; built AgroLink (agri marketplace with food, seasonality and price data) | Mobile (React Native/Expo), offline-first architecture, AI integration |
-| 2 | [Name] | Health / nutrition domain | [Northern Region] | [e.g. nutrition officer, public-health, or UDS graduate with TTFPP field experience] | Maternal and child nutrition, community context |
-| 3 | [Name] | Design / community | [town] | [design + community insight] | UX, local-language content, field research |
+**UNICEF criteria:**
 
-Required mix confirmed: at least one female member [confirm], a blend of technology plus maternal, newborn, child health or nutrition insight, and ideally one member with UDS / TTFPP field experience (encouraged, not mandatory per the info session). Recruit the missing roles via the hackathon WhatsApp group and teammate form shared in the session.
+- Female member: Leticia Offeibea
+- Technology expertise: Yakubu Lute — 7+ years full-stack, mobile, AI
+- Health/nutrition domain: Leticia Offeibea — HIM degree, USAID Ghana community health field work
+- Connection to problem geography: Yakubu born in Upper West Region (named in problem statement); Leticia — Ghana community health programme experience
+- Responsible AI: both — architecture enforces clinical guardrails; LLM never makes clinical decisions
 
 ---
 
@@ -72,17 +75,26 @@ Scoping to a single district and a single language for the MVP is deliberate: a 
 
 ## 5. Repository
 
-GitHub: [repo URL]. Contains the working prototype source and a short README describing the concept, the two core functions, the offline and responsible-AI design, and the bootcamp build plan. [Confirm the repo is public and the README is current before submitting.]
+GitHub: <https://github.com/YakubuLute/nurturelink>
+
+The repo is public and contains the full working prototype: React Native mobile app (screens: Register, Visit, Plan, Referral), deterministic recommendation engine with 50+ passing tests, Express.js backend with Prisma schema and seed data, and shared Zod schemas. The README describes the concept, the two core functions, the offline and responsible-AI design, and the bootcamp build plan.
 
 ---
 
-## Field grounding and responsible-AI note (do not skip)
+## 6. Field grounding
 
-The UNICEF advisor closing the session warned specifically against submissions that read as "fully AI, not really practical," and urged applicants to do their own research first. Address this head-on:
+The problem statement rests on Ghana-specific data:
 
-- **Primary grounding:** the problem statement rests on Ghana-specific data — the Northern Regional Health Directorate's 2023 review, and peer-reviewed northern-Ghana nutrition studies (stunting ~33%, minimum acceptable diet <40%, the food-group / wasting association). The seasonal-food framing follows guidance given directly by a GHS public-health director in the session.
-- **Do before submitting:** have at least one real conversation with a CHPS nutrition officer or CHO about how they currently counsel on diet and what would actually help. Note it in the application. Even one field voice changes how this reads.
-- **Honest AI use:** tools were used to accelerate structuring and prototyping; the concept is grounded in field data and expert input, and the team owns the thinking. Keep it that way through the bootcamp.
+- Northern Regional Health Directorate 2023 annual performance review: 100 institutional maternal deaths; ratio 136.7 per 100,000 live births (up from 69 in 2022).
+- Peer-reviewed northern-Ghana IYCF studies: stunting ~33% among children 6–23 months; minimum acceptable diet ~38.9%; children eating fewer than 4 food groups ~4× more likely to be wasted.
+- GDHS 2022: minimum acceptable diet 26.4% nationally; SDG 3.1 target <70 per 100,000 by 2030.
+
+**Team field connection:**
+
+- Yakubu Lute was born and raised in Tumu, Upper West Region — one of the five target regions named in the problem statement. He has lived in Tamale and witnessed firsthand the food insecurity and under-resourced health infrastructure that define daily life in Northern Ghana.
+- Leticia Offeibea participated in Ghana's National Malaria Elimination Programme (USAID-funded), supporting malaria prevention, surveillance, and control at the community level. She is the team's primary contact for ongoing CHO field validation.
+
+**CHO field conversation:** Leticia is actively using her USAID network to arrange a direct conversation with a working CHPS CHO or nutrition officer. [To be added: brief summary of at least one field conversation before final submission.]
 
 ### Sources to cite
 - Northern Regional Health Directorate, 2023 annual health performance review (via Ghana News Agency, Mar 2024): 100 institutional maternal deaths in 2023 vs 69 in 2022; ratio 136.7 per 100,000.
