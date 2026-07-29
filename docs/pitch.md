@@ -41,12 +41,15 @@ Generic advice ("eat more greens") fails poor households who cannot act on a lis
 **NurtureLink** is a mobile app (React Native / Expo) that runs **fully offline** and does two things:
 
 ### A — Longitudinal nutrition record
+
 Built from what the CHO already collects (weight, MUAC, Hb, dietary recall), the app shows each client's trend across visits and flags declining haemoglobin, flat weight, or low diet diversity — so the CHO knows who to prioritise and why.
 
 ### B — Seasonal affordable-food plan
+
 For a flagged client, the app generates a feeding plan using foods that are in season, affordable, and locally available in that district this month — chosen to close the specific nutrient gap (iron and folate for an anaemic mother; energy and protein for a faltering child). The plan is delivered as a plain-language voice note in Dagbani that the caregiver keeps on any phone.
 
 ### Responsible AI design
+
 The LLM (Claude Haiku) **never makes clinical decisions**. It only rephrases a deterministically generated plan into natural spoken language. If the LLM is unavailable, a template fallback produces the same output. **Severe cases bypass AI entirely and route to referral.** No client PII is sent to the LLM.
 
 ---
@@ -143,6 +146,7 @@ The LLM (Claude Haiku) **never makes clinical decisions**. It only rephrases a d
 The following features are fully implemented and testable in the demo caseload today:
 
 ### Core clinical flows
+
 - [x] Client registration — child and pregnant woman types, all CHPS clinical fields (ANC#, CWC#, gravida, parity, LMP, EDD, caregiver)
 - [x] Visit recording — client-type-conditional form (pregnant fields vs child fields vs newborn fields)
 - [x] Dietary recall — 8 WHO IYCF food groups, diet diversity score (0–8)
@@ -152,11 +156,13 @@ The following features are fully implemented and testable in the demo caseload t
 - [x] Newborn assessment section — cord condition, jaundice, breastfeeding initiation
 
 ### Flags and risk logic
+
 - [x] Clinical thresholds read from reference bundle (not hardcoded) — versioned, auditable, updatable without a code release
 - [x] Severe-case guardrail — MUAC < 115 mm, Hb < 7 g/dL, or any danger sign → `ReferralRequired`, plan generation blocked
 - [x] Watch flags — MUAC 115–124 mm, Hb below watch threshold → `watch` severity, plan generated with flag context
 
 ### Recommendation engine
+
 - [x] Deterministic on-device engine — pure function, no network, no randomness; same input always returns same output
 - [x] Seasonal food selection — Northern Savannah availability data (12 foods × 12 months)
 - [x] Nutrient gap targeting — iron, folate, energy, protein, Vitamin A, zinc against WHO/IYCF targets
@@ -165,17 +171,20 @@ The following features are fully implemented and testable in the demo caseload t
 - [x] 50+ passing unit tests covering every nutrient gap profile × season × severity combination
 
 ### Plan display
+
 - [x] Food cards with local Dagbani names, cost tier badge, and reason text
 - [x] Nutrient adequacy bars (% of WHO daily target met)
 - [x] Voice script — English and Dagbani templates generated from plan data
 - [x] Plan pre-seeded for demo clients (no visit required to see a real plan)
 
 ### Referrals
+
 - [x] Referral issue — client marked referred, referral record created with reason and flag codes
 - [x] Referral confirmation — outcome field, confirmation source, follow-up date picker
 - [x] Emergency sync triggered on referral issue (highest priority outbox item)
 
 ### Infrastructure
+
 - [x] Offline-first — all reads from SQLite; writes to SQLite first, queued in outbox for sync
 - [x] SQLCipher at-rest encryption — 256-bit key generated per device, stored in Expo SecureStore
 - [x] Outbox-based sync — idempotent push/pull with UUID primary keys
@@ -186,6 +195,7 @@ The following features are fully implemented and testable in the demo caseload t
 - [x] Bottom tab bar — Home, Referrals (badge), Sync, Profile
 
 ### Backend
+
 - [x] Express.js API — auth, clients, visits, flags, referrals, sync push/pull, reference bundle endpoints
 - [x] Prisma schema — all core and reference tables, migrations, seed data
 - [x] Pilot district seed — 12 Northern Savannah foods, 12-month seasonal availability, 6 WHO clinical thresholds, 5 demo clients with 13 visit records, referral
@@ -195,18 +205,21 @@ The following features are fully implemented and testable in the demo caseload t
 ## 6. What Is Left for Bootcamp (26–28 August 2026)
 
 ### Day 1 — Lock scope and data
+
 - [ ] Validate food list and clinical thresholds with a working CHO or nutrition officer (Leticia's network)
 - [ ] Record 5–10 Dagbani audio phrases for the voice note (needs a native Dagbani speaker)
 - [ ] Replace demo affordability tiers with real community price benchmarks from field input
 - [ ] Finalise pilot district (likely Sagnarigu Municipal or Tamale Metro)
 
 ### Day 2 — Strengthen the engine and sync
+
 - [ ] Wire voice playback to real audio files (currently text script displayed)
 - [ ] Complete pull sync — server → device for reference bundle updates
 - [ ] Build conflict flag UI for concurrent edit cases (last-write-wins is implemented; UI is not)
 - [ ] Longitudinal trend chart on client detail screen (data exists; chart not rendered)
 
 ### Day 3 — Polish and demo path
+
 - [ ] End-to-end demo path rehearsal: login → caseload → visit → plan → voice note → referral
 - [ ] DHIMS2-compatible export endpoint (schema aligned; serializer not wired)
 - [ ] Final pitch deck and 2-minute demo video

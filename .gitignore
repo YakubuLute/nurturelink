@@ -35,3 +35,7 @@ coverage/
 
 # Turbo
 .turbo/
+
+# Generated pitch PDF (regenerate with: node docs/generate-pdf.mjs)
+docs/NurtureLink-pitch.pdf
+docs/_pitch_tmp.html
