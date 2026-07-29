@@ -224,6 +224,23 @@ function parseAgeMonths(client: DemoClient): number | undefined {
   return 12;
 }
 
+/**
+ * Look up a clinical threshold value from the reference bundle.
+ * Returns null when the bundle is not loaded — callers must supply a safe fallback.
+ */
+function getThreshold(
+  bundle: ReferenceBundle | null,
+  metric: string,
+  condition: string,
+  severity: string,
+): number | null {
+  if (!bundle) return null;
+  const row = bundle.clinicalThresholds.find(
+    (t) => t.metric === metric && t.condition === condition && t.severity === severity,
+  );
+  return row?.thresholdValue ?? null;
+}
+
 /** Map a PlanResult from the engine to the PlanData shape PlanScreen expects. */
 function planResultToPlanData(result: PlanResult, client: DemoClient): PlanData {
   const monthName = new Date().toLocaleString('en-US', { month: 'long' });
@@ -648,16 +665,24 @@ export const useAppStore = create<StoreState>((set, get) => ({
     }),
 
   saveVisit: (clientId) => {
-    const { visitForm, clients } = get();
+    const { visitForm, clients, referenceBundle } = get();
     const client = clients.find((c) => c.id === clientId);
     if (!client) return 'plan';
 
     const muac = parseFloat(visitForm.muac) || 0;
     const hb = visitForm.hb ? parseFloat(visitForm.hb) : null;
+    const clientCondition = client.type === 'pregnant' ? 'pregnant' : 'child';
+
+    // Thresholds from reference bundle; safe fallbacks match WHO seeded values
+    const muacReferThreshold = getThreshold(referenceBundle, 'muac_mm', 'child', 'refer') ?? 115;
+    const muacWatchThreshold = getThreshold(referenceBundle, 'muac_mm', 'child', 'watch') ?? 125;
+    const hbReferThreshold   = getThreshold(referenceBundle, 'hb_g_dl', clientCondition, 'refer') ?? 7.0;
+    const hbWatchThreshold   = getThreshold(referenceBundle, 'hb_g_dl', clientCondition, 'watch') ?? (clientCondition === 'pregnant' ? 11.0 : 10.0);
+
     const severe =
       visitForm.danger.length > 0 ||
-      (muac > 0 && muac < 115) ||
-      (hb !== null && hb > 0 && hb < 7);
+      (muac > 0 && muac < muacReferThreshold) ||
+      (hb !== null && hb > 0 && hb < hbReferThreshold);
 
     const lastVisit = client.visits[client.visits.length - 1];
     const newVisit: DemoVisit = {
@@ -684,19 +709,19 @@ export const useAppStore = create<StoreState>((set, get) => ({
       if (visitForm.danger.length > 0) {
         patch.flagDetail = 'Danger sign recorded at this visit';
         flagReasons.push({ code: 'DANGER_SIGNS' });
-      } else if (muac > 0 && muac < 115) {
-        patch.flagDetail = `MUAC ${Math.round(muac)} mm — below the 115 mm threshold`;
+      } else if (muac > 0 && muac < muacReferThreshold) {
+        patch.flagDetail = `MUAC ${Math.round(muac)} mm — below the ${muacReferThreshold} mm threshold`;
         flagReasons.push({ code: 'SEVERE_MUAC', value: muac });
       } else {
-        patch.flagDetail = 'Hb below the severe-anaemia threshold (7 g/dL)';
+        patch.flagDetail = `Hb below the severe-anaemia threshold (${hbReferThreshold} g/dL)`;
         flagReasons.push({ code: 'SEVERE_ANAEMIA', value: hb ?? undefined });
       }
       patch.trendColor = '#C81E1E';
       patch.trendArrow = 'down';
       patch.trendNote = 'Danger sign — needs clinical care';
     } else {
-      if (muac > 0 && muac < 125) { severity = 'watch'; flagReasons.push({ code: 'SEVERE_MUAC', value: muac }); }
-      if (hb !== null && hb > 0 && hb < 11) { severity = 'watch'; flagReasons.push({ code: 'FALLING_HB', value: hb }); }
+      if (muac > 0 && muac < muacWatchThreshold) { severity = 'watch'; flagReasons.push({ code: 'SEVERE_MUAC', value: muac }); }
+      if (hb !== null && hb > 0 && hb < hbWatchThreshold) { severity = 'watch'; flagReasons.push({ code: 'FALLING_HB', value: hb }); }
       if (client.priority === 'new') patch.priority = 'stable';
     }
 
