@@ -1,9 +1,53 @@
 # NurtureLink
 
-An offline-first nutrition decision-support app for CHPS Community Health Officers (CHOs) in rural Northern Ghana. Tracks longitudinal client nutrition trends and generates seasonally appropriate, affordable, local-language feeding plans.
+> **Offline-first nutrition decision support for CHPS Community Health Officers in rural Northern Ghana.**
+> Built for the [UNICEF AI for Nurturing Care Hackathon](https://www.unicef.org) (KOICA / MEST StartUp Lab), Tamale 2026.
 
-Built for the **UNICEF AI for Nurturing Care Hackathon** (KOICA / MEST StartUp Lab).
-Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
+---
+
+## The Problem
+
+In Northern Ghana, **1 in 3 children under 5 is stunted**. Fewer than 4 in 10 receive a minimum acceptable diet. Children eating fewer than 4 food groups are nearly **4× more likely to be wasted**. The Northern Region reported 100 institutional maternal deaths in 2023 — a ratio of 136.7 per 100,000 live births against an SDG target of < 70.
+
+Community Health Officers (CHOs) at CHPS compounds are the last-mile workers — but they have no tool for two critical tasks:
+
+1. **Seeing how a client's nutrition is trending** across visits, not just today's single reading.
+2. **Knowing exactly which foods to recommend** that are nutritious, in season, affordable, and available in that community right now.
+
+Generic advice ("eat more greens") fails. The right foods vary by season and these are poor households who cannot act on a list of foods they cannot find or afford.
+
+---
+
+## Who Uses It
+
+A **CHPS Community Health Officer (CHO)** visiting 10–25 households per day in a rural Northern Ghana community. They carry a low-end Android phone (Android 8+, ~2 GB RAM). Network is intermittent or absent. Literacy varies. They need answers in Dagbani, not a dashboard.
+
+---
+
+## What NurtureLink Does
+
+NurtureLink adds **no new measurements**. It makes the data the CHO already collects actionable:
+
+| Input (CHO already collects) | Output (NurtureLink generates) |
+| --- | --- |
+| MUAC, weight, Hb, blood pressure | Flag: at-risk / refer immediately |
+| Dietary recall (24-hour, 8 food groups) | Diet diversity score + gap analysis |
+| Client type: child / pregnant woman | Tailored feeding plan for their age/stage |
+| Community + current month | Seasonally available, affordable local foods |
+| Danger signs checklist | Hard referral gate — no plan issued for severe cases |
+
+**The engine is deterministic and runs entirely on-device.** It works offline indefinitely. When connectivity returns, records sync and AI-generated voice scripts (in Dagbani/local language) are delivered.
+
+---
+
+## Responsible AI
+
+The LLM (Claude Haiku) **never makes clinical decisions**. Its only role:
+
+- Rephrase a fixed, deterministically generated feeding plan into natural spoken language for the voice note
+- Parse free-text dietary recall input into structured food groups (worker confirms before it counts)
+
+If the LLM is unavailable, a template-based fallback produces the same plan text. **Severe cases (MUAC < 115 mm, Hb < 7 g/dL, any obstetric danger sign) bypass AI entirely and route directly to referral.** No client PII is ever sent to the LLM.
 
 ---
 

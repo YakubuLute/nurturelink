@@ -60,6 +60,9 @@ export function BottomTabBar({ active, onHome, onReferrals, onSync, onProfile, r
             accessibilityLabel={tab.label}
             accessibilityState={{ selected: isActive }}
           >
+            {/* Active indicator bar at top */}
+            <View style={[styles.activeBar, isActive && styles.activeBarVisible]} />
+
             {/* Icon with optional pill background */}
             <View style={[styles.iconWrapper, isActive && styles.iconWrapperActive]}>
               {tab.getIcon(isActive)}
@@ -94,6 +97,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 3,
+  },
+  activeBar: {
+    position: 'absolute',
+    top: -8,
+    width: '60%',
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+  },
+  activeBarVisible: {
+    backgroundColor: BRAND,
   },
   iconWrapper: {
     position: 'relative',

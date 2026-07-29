@@ -58,11 +58,14 @@ const FOOD_GROUPS = [
 ];
 
 const DANGER_SIGNS = [
-  { id: 'oedema',   label: 'Swelling of both feet (bilateral oedema)' },
-  { id: 'nofeed',   label: 'Not feeding or vomiting everything' },
-  { id: 'convuls',  label: 'Convulsions or unusually sleepy' },
-  { id: 'fever',    label: 'High fever or body very cold' },
-  { id: 'bleeding', label: 'Bleeding or severe pain (obstetric)' },
+  { id: 'bilateral_oedema',       label: 'Swelling of both feet (bilateral oedema)' },
+  { id: 'convulsions',            label: 'Convulsions or unusually sleepy' },
+  { id: 'heavy_vaginal_bleeding', label: 'Heavy vaginal bleeding' },
+  { id: 'severe_headache_visual', label: 'Severe headache or vision problems' },
+  { id: 'severe_abdominal_pain',  label: 'Severe abdominal pain' },
+  { id: 'difficulty_breathing',   label: 'Difficulty breathing at rest' },
+  { id: 'baby_not_moving',        label: 'Baby not moving (3rd trimester)' },
+  { id: 'pallor_severe',          label: 'Severe pallor (whitening of palms/eyelids)' },
 ];
 
 const FEEDING_TEXTURES = [
