@@ -22,6 +22,8 @@ import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { TallyScreen } from './src/screens/TallyScreen';
 import { SupervisorScreen } from './src/screens/SupervisorScreen';
+import { ImmunizationScreen } from './src/screens/ImmunizationScreen';
+import { SyncScreen } from './src/screens/SyncScreen';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -44,6 +46,8 @@ export type RootStackParamList = {
   Settings: undefined;
   Tally: undefined;
   Supervisor: undefined;
+  Immunization: { clientId: string };
+  Sync: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -77,6 +81,8 @@ function App() {
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Tally" component={TallyScreen} />
           <Stack.Screen name="Supervisor" component={SupervisorScreen} />
+          <Stack.Screen name="Immunization" component={ImmunizationScreen} />
+          <Stack.Screen name="Sync" component={SyncScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

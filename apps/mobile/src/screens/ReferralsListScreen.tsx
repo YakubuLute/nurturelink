@@ -1,35 +1,376 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
+  Modal,
+  Platform,
+  Pressable,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, DemoReferral, initials, avatarStyle } from '../store';
 import { BottomTabBar } from '../components/BottomTabBar';
-import { ChevronLeft, Check, Phone, Shield, Clock } from 'lucide-react-native';
+import {
+  ChevronLeft, Check, Phone, Shield, Clock, CalendarDays, X,
+} from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralsList'>;
 
+// ─── Confirm modal ────────────────────────────────────────────────────────────
+
+const CONFIRM_SOURCES = [
+  { id: 'facility',   label: 'Facility feedback' },
+  { id: 'phone_call', label: 'Caregiver phone call' },
+  { id: 'home_visit', label: 'Home follow-up' },
+  { id: 'slip',       label: 'Referral slip returned' },
+  { id: 'supervisor', label: 'Supervisor report' },
+];
+
+const OUTCOMES = [
+  { id: 'improving',     label: 'Improving',     color: '#057A55', bg: '#F3FAF7', border: '#BCF0DA' },
+  { id: 'no_change',     label: 'No change',      color: '#B48700', bg: '#FFF9E6', border: '#FFE18A' },
+  { id: 'deteriorating', label: 'Deteriorating',  color: '#C81E1E', bg: '#FDF2F2', border: '#FBD5D5' },
+  { id: 'deceased',      label: 'Deceased',       color: '#374151', bg: '#F9FAFB', border: '#D1D5DB' },
+];
+
+interface ConfirmModalProps {
+  referral: DemoReferral;
+  onConfirm: (details: { seenAt: string; confirmSource: string; outcome: string; nextFollowUp?: string }) => void;
+  onDismiss: () => void;
+}
+
+function ConfirmModal({ referral, onConfirm, onDismiss }: ConfirmModalProps) {
+  const [seenDate, setSeenDate] = useState(new Date());
+  const [showSeenPicker, setShowSeenPicker] = useState(false);
+  const [confirmSource, setConfirmSource] = useState('');
+  const [outcome, setOutcome] = useState('');
+  const [followUpDate, setFollowUpDate] = useState<Date | null>(null);
+  const [showFollowUpPicker, setShowFollowUpPicker] = useState(false);
+  const [noFollowUp, setNoFollowUp] = useState(false);
+
+  const canConfirm = confirmSource !== '' && outcome !== '';
+
+  function formatDate(d: Date): string {
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function handleConfirm() {
+    onConfirm({
+      seenAt: formatDate(seenDate),
+      confirmSource,
+      outcome,
+      nextFollowUp: noFollowUp || !followUpDate ? undefined : followUpDate.toISOString().slice(0, 10),
+    });
+  }
+
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="slide"
+      onRequestClose={onDismiss}
+    >
+      <Pressable style={modalStyles.backdrop} onPress={onDismiss} />
+      <View style={modalStyles.sheet}>
+        <View style={modalStyles.handle} />
+
+        {/* Header */}
+        <View style={modalStyles.header}>
+          <View>
+            <Text style={modalStyles.headerTitle}>Confirm referral seen</Text>
+            <Text style={modalStyles.headerSub}>{referral.name}</Text>
+          </View>
+          <Pressable onPress={onDismiss} style={modalStyles.closeBtn} accessibilityLabel="Close">
+            <X size={20} color="#6B7280" />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          style={modalStyles.body}
+          contentContainerStyle={modalStyles.bodyContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Confirmation date ── */}
+          <Text style={modalStyles.sectionLabel}>DATE SEEN</Text>
+          {Platform.OS !== 'ios' && (
+            <Pressable
+              style={modalStyles.dateBtn}
+              onPress={() => setShowSeenPicker(true)}
+              accessibilityRole="button"
+            >
+              <CalendarDays size={16} color="#6B7280" />
+              <Text style={modalStyles.dateBtnText}>{formatDate(seenDate)}</Text>
+            </Pressable>
+          )}
+          {(showSeenPicker || Platform.OS === 'ios') && (
+            <DateTimePicker
+              value={seenDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              maximumDate={new Date()}
+              onValueChange={(_, date) => {
+                setShowSeenPicker(false);
+                if (date) setSeenDate(date);
+              }}
+              onDismiss={() => setShowSeenPicker(false)}
+            />
+          )}
+
+          {/* ── How confirmed ── */}
+          <Text style={[modalStyles.sectionLabel, { marginTop: 18 }]}>HOW WAS THIS CONFIRMED?</Text>
+          <View style={modalStyles.chipGrid}>
+            {CONFIRM_SOURCES.map((s) => {
+              const sel = confirmSource === s.id;
+              return (
+                <Pressable
+                  key={s.id}
+                  style={[modalStyles.chip, sel && modalStyles.chipActive]}
+                  onPress={() => setConfirmSource(sel ? '' : s.id)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: sel }}
+                >
+                  {sel && <Check size={12} color="#FF5A00" style={{ marginRight: 4 }} />}
+                  <Text style={[modalStyles.chipText, sel && modalStyles.chipTextActive]}>
+                    {s.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* ── Outcome ── */}
+          <Text style={[modalStyles.sectionLabel, { marginTop: 18 }]}>OUTCOME</Text>
+          <View style={modalStyles.outcomeRow}>
+            {OUTCOMES.map((o) => {
+              const sel = outcome === o.id;
+              return (
+                <Pressable
+                  key={o.id}
+                  style={[
+                    modalStyles.outcomeBtn,
+                    { borderColor: sel ? o.color : '#E5E7EB', backgroundColor: sel ? o.bg : '#FDFDFD' },
+                  ]}
+                  onPress={() => setOutcome(sel ? '' : o.id)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: sel }}
+                >
+                  <Text style={[modalStyles.outcomeBtnText, { color: sel ? o.color : '#6B7280' }]}>
+                    {o.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* ── Next follow-up ── */}
+          <Text style={[modalStyles.sectionLabel, { marginTop: 18 }]}>NEXT FOLLOW-UP DATE</Text>
+          <Pressable
+            style={[modalStyles.chip, noFollowUp && modalStyles.chipActive, { alignSelf: 'flex-start', marginBottom: 10 }]}
+            onPress={() => { setNoFollowUp((v) => !v); setFollowUpDate(null); }}
+          >
+            {noFollowUp && <Check size={12} color="#FF5A00" style={{ marginRight: 4 }} />}
+            <Text style={[modalStyles.chipText, noFollowUp && modalStyles.chipTextActive]}>
+              No follow-up needed
+            </Text>
+          </Pressable>
+
+          {!noFollowUp && (
+            <>
+              {Platform.OS !== 'ios' && (
+                <Pressable
+                  style={modalStyles.dateBtn}
+                  onPress={() => setShowFollowUpPicker(true)}
+                  accessibilityRole="button"
+                >
+                  <CalendarDays size={16} color="#6B7280" />
+                  <Text style={[modalStyles.dateBtnText, !followUpDate && { color: '#9CA3AF' }]}>
+                    {followUpDate ? formatDate(followUpDate) : 'Select date…'}
+                  </Text>
+                </Pressable>
+              )}
+              {(showFollowUpPicker || Platform.OS === 'ios') && (
+                <DateTimePicker
+                  value={followUpDate ?? new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  minimumDate={new Date()}
+                  onValueChange={(_, date) => {
+                    setShowFollowUpPicker(false);
+                    if (date) setFollowUpDate(date);
+                  }}
+                  onDismiss={() => setShowFollowUpPicker(false)}
+                />
+              )}
+            </>
+          )}
+
+          {/* Spacer for buttons */}
+          <View style={{ height: 80 }} />
+        </ScrollView>
+
+        {/* Footer buttons */}
+        <View style={modalStyles.footer}>
+          <Pressable style={modalStyles.cancelBtn} onPress={onDismiss} accessibilityRole="button">
+            <Text style={modalStyles.cancelBtnText}>Cancel</Text>
+          </Pressable>
+          <Pressable
+            style={[modalStyles.confirmBtn, !canConfirm && modalStyles.confirmBtnDisabled]}
+            onPress={handleConfirm}
+            disabled={!canConfirm}
+            accessibilityRole="button"
+          >
+            <Check size={15} color="#FDFDFD" strokeWidth={3} />
+            <Text style={modalStyles.confirmBtnText}>Confirm seen</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: {
+    backgroundColor: '#FDFDFD',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '88%',
+  },
+  handle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginTop: 10, marginBottom: 4,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F1F3',
+  },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#08283B' },
+  headerSub: { fontSize: 12.5, color: '#6B7280', marginTop: 2 },
+  closeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  body: { flex: 1 },
+  bodyContent: { paddingHorizontal: 20, paddingTop: 16 },
+
+  sectionLabel: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+
+  dateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F2F4F5',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+  },
+  dateBtnText: { fontSize: 13.5, fontWeight: '600', color: '#08283B' },
+
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+  },
+  chipActive: {
+    borderColor: '#FF5A00',
+    backgroundColor: 'rgba(255,90,0,0.06)',
+  },
+  chipText: { fontSize: 12.5, color: '#6B7280', fontWeight: '500' },
+  chipTextActive: { color: '#FF5A00', fontWeight: '600' },
+
+  outcomeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  outcomeBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    flex: 1,
+    minWidth: '40%',
+    alignItems: 'center',
+  },
+  outcomeBtnText: { fontSize: 13, fontWeight: '600' },
+
+  footer: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    flexDirection: 'row',
+    gap: 10,
+    padding: 16,
+    paddingBottom: 28,
+    backgroundColor: '#FDFDFD',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F1F3',
+  },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  confirmBtn: {
+    flex: 2,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#057A55',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  confirmBtnDisabled: { opacity: 0.4 },
+  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#FDFDFD' },
+});
+
+// ─── Referral card ────────────────────────────────────────────────────────────
+
 function ReferralCard({
   referral,
-  onConfirm,
+  onConfirmPress,
 }: {
   referral: DemoReferral;
-  onConfirm: () => void;
+  onConfirmPress: () => void;
 }) {
   const av = avatarStyle(referral.type);
   const ins = initials(referral.name);
   const isIssued = referral.status === 'issued';
   const isSeen = referral.status === 'seen';
 
+  const outcomeStyle = OUTCOMES.find((o) => o.id === referral.outcome);
+
   return (
     <View style={styles.card}>
-      {/* Top row: avatar + name + facility + status badge */}
+      {/* Top row */}
       <View style={styles.cardTop}>
         <View style={[styles.avatar, { backgroundColor: av.bg }]}>
           <Text style={[styles.avatarText, { color: av.fg }]}>{ins}</Text>
@@ -38,26 +379,14 @@ function ReferralCard({
           <Text style={styles.clientName}>{referral.name}</Text>
           <Text style={styles.facilityText}>{referral.facility}</Text>
         </View>
-        <View
-          style={[
-            styles.statusBadge,
-            isIssued
-              ? { backgroundColor: '#FFEFE6' }
-              : { backgroundColor: '#F3FAF7' },
-          ]}
-        >
-          <Text
-            style={[
-              styles.statusBadgeText,
-              isIssued ? { color: '#B54000' } : { color: '#057A55' },
-            ]}
-          >
+        <View style={[styles.statusBadge, isIssued ? { backgroundColor: '#FFEFE6' } : { backgroundColor: '#F3FAF7' }]}>
+          <Text style={[styles.statusBadgeText, isIssued ? { color: '#B54000' } : { color: '#057A55' }]}>
             {isIssued ? 'AWAITING' : 'SEEN'}
           </Text>
         </View>
       </View>
 
-      {/* Reason box */}
+      {/* Reason */}
       <View style={styles.reasonBox}>
         <Text style={styles.reasonText}>{referral.reason}</Text>
       </View>
@@ -72,11 +401,33 @@ function ReferralCard({
       {isSeen && referral.seenAt && (
         <View style={styles.stripSeen}>
           <Check size={14} color="#057A55" strokeWidth={3} />
-          <Text style={styles.stripTextSeen}>Seen at facility {referral.seenAt}</Text>
+          <Text style={styles.stripTextSeen}>Seen · {referral.seenAt}</Text>
+          {referral.confirmSource && (
+            <Text style={styles.stripTextSeenSub}>
+              {' · '}{CONFIRM_SOURCES.find((s) => s.id === referral.confirmSource)?.label}
+            </Text>
+          )}
         </View>
       )}
 
-      {/* Footer row */}
+      {/* Outcome badge on confirmed cards */}
+      {isSeen && outcomeStyle && (
+        <View style={[styles.outcomePill, { backgroundColor: outcomeStyle.bg, borderColor: outcomeStyle.border }]}>
+          <Text style={[styles.outcomePillText, { color: outcomeStyle.color }]}>
+            {outcomeStyle.label}
+          </Text>
+        </View>
+      )}
+
+      {/* Next follow-up */}
+      {isSeen && referral.nextFollowUp && (
+        <View style={styles.followUpRow}>
+          <CalendarDays size={13} color="#6B7280" />
+          <Text style={styles.followUpText}>Next follow-up: {referral.nextFollowUp}</Text>
+        </View>
+      )}
+
+      {/* Footer */}
       <View style={styles.cardFooter}>
         <Text style={styles.issuedAt}>Issued {referral.at}</Text>
         {isIssued && (
@@ -91,7 +442,7 @@ function ReferralCard({
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.confirmBtn}
-              onPress={onConfirm}
+              onPress={onConfirmPress}
               accessibilityRole="button"
               accessibilityLabel="Confirm client was seen"
             >
@@ -104,11 +455,22 @@ function ReferralCard({
   );
 }
 
+// ─── Main screen ──────────────────────────────────────────────────────────────
+
 export function ReferralsListScreen({ navigation }: Props) {
-  const { referrals, confirmReferralSeen, sync } = useAppStore();
+  const { referrals, confirmReferralSeen } = useAppStore();
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const issuedCount = referrals.filter((r) => r.status === 'issued').length;
-  const seenCount = referrals.filter((r) => r.status === 'seen').length;
+  const seenCount   = referrals.filter((r) => r.status === 'seen').length;
+
+  const confirmingReferral = referrals.find((r) => r.id === confirmingId);
+
+  function handleConfirm(details: { seenAt: string; confirmSource: string; outcome: string; nextFollowUp?: string }) {
+    if (!confirmingReferral) return;
+    confirmReferralSeen(confirmingReferral.clientId, details);
+    setConfirmingId(null);
+  }
 
   return (
     <View style={styles.root}>
@@ -139,7 +501,7 @@ export function ReferralsListScreen({ navigation }: Props) {
       >
         {referrals.length > 0 ? (
           <>
-            {/* Stats row */}
+            {/* Stats */}
             <View style={styles.statsRow}>
               <View style={[styles.statCard, { backgroundColor: '#FFF9E6', borderColor: '#FFE18A' }]}>
                 <Text style={[styles.statCount, { color: '#B48700' }]}>{issuedCount}</Text>
@@ -151,20 +513,18 @@ export function ReferralsListScreen({ navigation }: Props) {
               </View>
             </View>
             <Text style={styles.statsNote}>
-              Track each severe case until the child is confirmed seen
+              Track each severe case until the client is confirmed seen
             </Text>
 
-            {/* Referral cards */}
             {referrals.map((r) => (
               <ReferralCard
                 key={r.id}
                 referral={r}
-                onConfirm={() => confirmReferralSeen(r.clientId)}
+                onConfirmPress={() => setConfirmingId(r.id)}
               />
             ))}
           </>
         ) : (
-          /* Empty state */
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
               <Shield size={48} color="#9CA3AF" />
@@ -183,22 +543,28 @@ export function ReferralsListScreen({ navigation }: Props) {
         active="referrals"
         onHome={() => navigation.navigate('Home')}
         onReferrals={() => {}}
-        onSync={sync}
+        onSync={() => navigation.navigate('Sync')}
         onProfile={() => navigation.navigate('Settings')}
         referralBadge={issuedCount}
       />
+
+      {/* Confirm seen modal */}
+      {confirmingReferral && (
+        <ConfirmModal
+          referral={confirmingReferral}
+          onConfirm={handleConfirm}
+          onDismiss={() => setConfirmingId(null)}
+        />
+      )}
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#F2F4F5',
-  },
-  headerSafe: {
-    backgroundColor: '#08283B',
-  },
+  root: { flex: 1, backgroundColor: '#F2F4F5' },
+  headerSafe: { backgroundColor: '#08283B' },
   header: {
     backgroundColor: '#08283B',
     flexDirection: 'row',
@@ -207,69 +573,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  backBtn: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-  },
-  backArrow: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  headerCenter: {
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  headerSub: {
-    fontSize: 12,
-    color: '#92C9F9',
-    marginTop: 2,
-  },
+  backBtn: { width: 36, height: 36, justifyContent: 'center' },
+  headerCenter: { alignItems: 'center' },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  headerSub: { fontSize: 12, color: '#92C9F9', marginTop: 2 },
 
   scroll: { flex: 1 },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 20,
-  },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 20 },
 
-  // Stats row
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 10,
-  },
-  statCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-  },
-  statCount: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 3,
-  },
-  statLabel: {
-    fontSize: 11.5,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  statsNote: {
-    fontSize: 11.5,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    marginBottom: 18,
-    lineHeight: 16,
-  },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  statCard: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 14, alignItems: 'center' },
+  statCount: { fontSize: 22, fontWeight: '700', marginBottom: 3 },
+  statLabel: { fontSize: 11.5, fontWeight: '500', textAlign: 'center' },
+  statsNote: { fontSize: 11.5, color: '#9CA3AF', textAlign: 'center', marginBottom: 18, lineHeight: 16 },
 
-  // Referral card
   card: {
     backgroundColor: '#FDFDFD',
     borderWidth: 1,
@@ -278,50 +595,15 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 12,
   },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 10,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  cardTopMid: {
-    flex: 1,
-  },
-  clientName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#08283B',
-    marginBottom: 2,
-  },
-  facilityText: {
-    fontSize: 11.5,
-    color: '#6B7280',
-  },
-  statusBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 20,
-    flexShrink: 0,
-  },
-  statusBadgeText: {
-    fontSize: 9.5,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
+  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
+  avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  avatarText: { fontSize: 14, fontWeight: '700' },
+  cardTopMid: { flex: 1 },
+  clientName: { fontSize: 15, fontWeight: '700', color: '#08283B', marginBottom: 2 },
+  facilityText: { fontSize: 11.5, color: '#6B7280' },
+  statusBadge: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, flexShrink: 0 },
+  statusBadgeText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4 },
 
-  // Reason box
   reasonBox: {
     backgroundColor: '#F9FAFB',
     borderRadius: 10,
@@ -329,105 +611,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 10,
   },
-  reasonText: {
-    fontSize: 12,
-    color: '#374151',
-    lineHeight: 18,
-  },
+  reasonText: { fontSize: 12, color: '#374151', lineHeight: 18 },
 
-  // Strips
   stripIssued: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    backgroundColor: '#FFF9E6',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 11,
-    marginBottom: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    backgroundColor: '#FFF9E6', borderRadius: 8,
+    paddingVertical: 8, paddingHorizontal: 11, marginBottom: 10,
   },
   stripSeen: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    backgroundColor: '#F3FAF7',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 11,
-    marginBottom: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    backgroundColor: '#F3FAF7', borderRadius: 8,
+    paddingVertical: 8, paddingHorizontal: 11, marginBottom: 8,
+    flexWrap: 'wrap',
   },
-  stripTextIssued: {
-    fontSize: 12,
-    color: '#8C6900',
-    fontWeight: '600',
-  },
-  stripTextSeen: {
-    fontSize: 12,
-    color: '#057A55',
-    fontWeight: '600',
-  },
+  stripTextIssued: { fontSize: 12, color: '#8C6900', fontWeight: '600' },
+  stripTextSeen: { fontSize: 12, color: '#057A55', fontWeight: '600' },
+  stripTextSeenSub: { fontSize: 12, color: '#6B7280' },
 
-  // Footer
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  issuedAt: {
-    fontSize: 11,
-    color: '#9CA3AF',
-    flex: 1,
-  },
-  footerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  callBtn: {
-    backgroundColor: '#F2F4F5',
-    borderRadius: 9,
-    paddingVertical: 8,
-    paddingHorizontal: 13,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  callBtnText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: '#08283B',
-  },
-  confirmBtn: {
-    backgroundColor: '#057A55',
-    borderRadius: 9,
-    paddingVertical: 8,
-    paddingHorizontal: 13,
-  },
-  confirmBtnText: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-
-  // Empty state
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 64,
-    paddingHorizontal: 32,
-  },
-  emptyIcon: {
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#374151',
+  outcomePill: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     marginBottom: 8,
   },
-  emptyBody: {
-    fontSize: 13.5,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    lineHeight: 20,
+  outcomePillText: { fontSize: 11.5, fontWeight: '700' },
+
+  followUpRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginBottom: 8,
   },
+  followUpText: { fontSize: 12, color: '#6B7280' },
+
+  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  issuedAt: { fontSize: 11, color: '#9CA3AF', flex: 1 },
+  footerActions: { flexDirection: 'row', gap: 8 },
+  callBtn: {
+    backgroundColor: '#F2F4F5', borderRadius: 9,
+    paddingVertical: 8, paddingHorizontal: 13,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+  },
+  callBtnText: { fontSize: 12.5, fontWeight: '600', color: '#08283B' },
+  confirmBtn: {
+    backgroundColor: '#057A55', borderRadius: 9,
+    paddingVertical: 8, paddingHorizontal: 13,
+  },
+  confirmBtnText: { fontSize: 12.5, fontWeight: '700', color: '#FFFFFF' },
+
+  emptyState: { alignItems: 'center', paddingVertical: 64, paddingHorizontal: 32 },
+  emptyIcon: { marginBottom: 16 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#374151', marginBottom: 8 },
+  emptyBody: { fontSize: 13.5, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
 });

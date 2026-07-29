@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Home, Shield, RefreshCw, User } from 'lucide-react-native';
 
+const BRAND = '#FF5A00';
+const INACTIVE = '#9CA3AF';
+
 interface Props {
   active: 'home' | 'referrals' | 'sync' | 'profile';
   onHome: () => void;
@@ -15,31 +18,31 @@ export function BottomTabBar({ active, onHome, onReferrals, onSync, onProfile, r
   const tabs: {
     key: 'home' | 'referrals' | 'sync' | 'profile';
     label: string;
-    icon: React.ReactNode;
+    getIcon: (isActive: boolean) => React.ReactNode;
     onPress: () => void;
   }[] = [
     {
       key: 'home',
       label: 'Home',
-      icon: <Home size={22} color={active === 'home' ? '#08283B' : '#9CA3AF'} />,
+      getIcon: (a) => <Home size={22} color={a ? BRAND : INACTIVE} />,
       onPress: onHome,
     },
     {
       key: 'referrals',
       label: 'Referrals',
-      icon: <Shield size={22} color={active === 'referrals' ? '#08283B' : '#9CA3AF'} />,
+      getIcon: (a) => <Shield size={22} color={a ? BRAND : INACTIVE} />,
       onPress: onReferrals,
     },
     {
       key: 'sync',
       label: 'Sync',
-      icon: <RefreshCw size={22} color={active === 'sync' ? '#08283B' : '#9CA3AF'} />,
+      getIcon: (a) => <RefreshCw size={22} color={a ? BRAND : INACTIVE} />,
       onPress: onSync,
     },
     {
       key: 'profile',
       label: 'Profile',
-      icon: <User size={22} color={active === 'profile' ? '#08283B' : '#9CA3AF'} />,
+      getIcon: (a) => <User size={22} color={a ? BRAND : INACTIVE} />,
       onPress: onProfile,
     },
   ];
@@ -57,14 +60,17 @@ export function BottomTabBar({ active, onHome, onReferrals, onSync, onProfile, r
             accessibilityLabel={tab.label}
             accessibilityState={{ selected: isActive }}
           >
-            <View style={styles.iconWrapper}>
-              {tab.icon}
+            {/* Icon with optional pill background */}
+            <View style={[styles.iconWrapper, isActive && styles.iconWrapperActive]}>
+              {tab.getIcon(isActive)}
               {tab.key === 'referrals' && referralBadge !== undefined && referralBadge > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{referralBadge > 99 ? '99+' : referralBadge}</Text>
                 </View>
               )}
             </View>
+
+            {/* Label */}
             <Text style={[styles.label, isActive ? styles.labelActive : styles.labelInactive]}>
               {tab.label}
             </Text>
@@ -93,15 +99,19 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 32,
-    height: 24,
+    width: 48,
+    height: 32,
+    borderRadius: 16,
+  },
+  iconWrapperActive: {
+    backgroundColor: 'rgba(255, 90, 0, 0.10)',
   },
   label: {
     fontSize: 10,
   },
   labelActive: {
-    color: '#08283B',
-    fontWeight: '600',
+    color: BRAND,
+    fontWeight: '700',
   },
   labelInactive: {
     color: '#9CA3AF',
@@ -109,8 +119,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -2,
-    right: -8,
+    top: 2,
+    right: 4,
     minWidth: 15,
     height: 15,
     borderRadius: 8,

@@ -11,7 +11,9 @@ datasource db {
 
 model User {
   id           String   @id @default(uuid())
-  name         String
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  otherNames   String?  @map("other_names")
   role         UserRole
   facilityId   String?  @map("facility_id")
   phone        String   @unique

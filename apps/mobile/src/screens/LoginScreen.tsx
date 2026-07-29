@@ -28,6 +28,8 @@ function mapServerRole(serverRole: string): Role {
 
 export function LoginScreen({ navigation }: Props) {
   const login = useAppStore((s) => s.login);
+  const loadUserData = useAppStore((s) => s.loadUserData);
+  const seedDemoData = useAppStore((s) => s.seedDemoData);
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -54,16 +56,40 @@ export function LoginScreen({ navigation }: Props) {
         const data = await res.json() as {
           accessToken: string;
           refreshToken: string;
-          user: { id: string; name: string; role: string; phone?: string };
+          user: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            otherNames?: string | null;
+            role: string;
+            phone?: string;
+            facilityName?: string | null;
+            facilityDistrict?: string | null;
+            facilityRegion?: string | null;
+          };
         };
-        await storeTokens(data.accessToken, data.refreshToken);
+        // Token storage is best-effort — on web expo-secure-store falls back to
+        // localStorage but may throw; a failure here must not block login.
+        storeTokens(data.accessToken, data.refreshToken).catch((e) =>
+          console.warn('[Login] storeTokens failed (non-fatal):', e),
+        );
         const role = mapServerRole(data.user.role);
         login({
-          id: data.user.id,
-          name: data.user.name,
-          phone: phone.trim(),
+          id:               data.user.id,
+          firstName:        data.user.firstName,
+          lastName:         data.user.lastName,
+          otherNames:       data.user.otherNames ?? null,
+          phone:            phone.trim(),
           role,
+          facilityName:     data.user.facilityName ?? null,
+          facilityDistrict: data.user.facilityDistrict ?? null,
+          facilityRegion:   data.user.facilityRegion ?? null,
+          avatarUri:        null,
         });
+        // Fire-and-forget: load real data in the background; UI navigates immediately
+        loadUserData(data.accessToken).catch((e) =>
+          console.warn('[Login] loadUserData failed (non-fatal):', e),
+        );
         navigation.replace(role === 'sup' ? 'Supervisor' : 'Home');
       } else if (res.status === 401) {
         setError('Incorrect phone number or password.');
@@ -72,12 +98,17 @@ export function LoginScreen({ navigation }: Props) {
       } else {
         setError('Login failed. Please try again.');
       }
-    } catch {
-      // Network unavailable — offer offline mode
+    } catch (e) {
+      console.error('[Login] unexpected error:', e);
       setError('No connection. Tap "Work offline" to continue without syncing.');
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleDemoMode() {
+    seedDemoData();
+    navigation.replace('Home');
   }
 
   async function handleOffline() {
@@ -85,7 +116,7 @@ export function LoginScreen({ navigation }: Props) {
     setLoading(true);
     try {
       await storeSession('cho');
-      login({ id: 'offline', name: 'Offline User', phone: '', role: 'cho' });
+      login({ id: 'offline', firstName: 'Offline', lastName: 'User', otherNames: null, phone: '', role: 'cho', facilityName: null, facilityDistrict: null, facilityRegion: null, avatarUri: null });
       navigation.replace('Home');
     } finally {
       setLoading(false);
@@ -183,6 +214,20 @@ export function LoginScreen({ navigation }: Props) {
             {loading
               ? <ActivityIndicator color="#FDFDFD" size="small" />
               : <Text style={styles.loginBtnText}>Sign in</Text>}
+          </Pressable>
+
+          {/* Demo mode */}
+          <Pressable
+            style={styles.demoBtn}
+            onPress={handleDemoMode}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Launch demo with sample data"
+          >
+            <View style={styles.demoBadge}>
+              <Text style={styles.demoBadgeText}>DEMO</Text>
+            </View>
+            <Text style={styles.demoBtnText}>Try with sample caseload</Text>
           </Pressable>
 
           {/* Offline mode */}
@@ -338,6 +383,36 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
+  },
+
+  demoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,90,0,0.35)',
+    backgroundColor: 'rgba(255,90,0,0.08)',
+    marginBottom: 10,
+  },
+  demoBadge: {
+    backgroundColor: BRAND,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  demoBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  demoBtnText: {
+    fontSize: 14,
+    color: '#FF8040',
+    fontWeight: '600',
   },
 
   offlineBtn: {

@@ -165,8 +165,8 @@ export function PlanScreen({ navigation, route }: Props) {
     );
   }
 
-  const basePlan  = PLANS[clientId] ?? genericPlan(client);
-  const isAiPlan  = clientId === 'amina' || clientId === 'rahim';
+  const basePlan  = store.plans[clientId] ?? PLANS[clientId] ?? genericPlan(client);
+  const isAiPlan  = store.plans[clientId] != null || PLANS[clientId] != null;
 
   // Compute visible foods: base foods + added alternates, minus removed
   const allFoods: PlanFood[] = [

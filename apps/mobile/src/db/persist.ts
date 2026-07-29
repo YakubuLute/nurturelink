@@ -20,9 +20,23 @@ export interface PersistClientInput {
   clientId: string;
   name: string;
   type: 'pregnant' | 'child';
+  sex: string | null;
   community: string;
-  dob: string | null;
+  dob: string | null;          // child DOB or mother's DOB (pregnant)
+  edd: string | null;          // expected delivery date (pregnant)
+  lmp: string | null;          // last menstrual period (pregnant)
   consentAt: string;
+  // Household contact
+  phone: string | null;
+  landmark: string | null;
+  // Pregnant-specific
+  ancFolderNumber: string | null;
+  gravida: string | null;
+  parity: string | null;
+  // Child-specific
+  cwcCardNumber: string | null;
+  caregiverName: string | null;
+  caregiverRelationship: string | null;
 }
 
 export async function persistClient(input: PersistClientInput): Promise<void> {
@@ -31,18 +45,28 @@ export async function persistClient(input: PersistClientInput): Promise<void> {
 
   // Write household
   await execute(
-    `INSERT INTO households (id, facility_id, label, community, updated_at, synced_at)
-     VALUES (?,?,?,?,?,NULL)
+    `INSERT INTO households (id, facility_id, label, community, phone, landmark, updated_at, synced_at)
+     VALUES (?,?,?,?,?,?,?,NULL)
      ON CONFLICT(id) DO NOTHING`,
-    [householdId, FACILITY_ID, input.community, input.community, now],
+    [householdId, FACILITY_ID, input.community, input.community, input.phone, input.landmark, now],
   );
 
   // Write client
   await execute(
-    `INSERT INTO clients (id, household_id, type, name, dob, consent_at, active, updated_at, synced_at)
-     VALUES (?,?,?,?,?,?,1,?,NULL)
+    `INSERT INTO clients
+       (id, household_id, type, name, sex, dob, edd_gestation,
+        anc_folder_number, cwc_card_number, caregiver_name, caregiver_relationship,
+        gravida, parity, lmp, consent_at, active, updated_at, synced_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,NULL)
      ON CONFLICT(id) DO NOTHING`,
-    [input.clientId, householdId, input.type, input.name, input.dob, input.consentAt, now],
+    [
+      input.clientId, householdId, input.type, input.name, input.sex,
+      input.dob, input.edd,
+      input.ancFolderNumber, input.cwcCardNumber,
+      input.caregiverName, input.caregiverRelationship,
+      input.gravida, input.parity, input.lmp,
+      input.consentAt, now,
+    ],
   );
 
   // Enqueue outbox mutations
@@ -51,6 +75,8 @@ export async function persistClient(input: PersistClientInput): Promise<void> {
     facilityId: FACILITY_ID,
     label: input.community,
     community: input.community,
+    phone: input.phone,
+    landmark: input.landmark,
     updatedAt: now,
   });
 
@@ -59,7 +85,16 @@ export async function persistClient(input: PersistClientInput): Promise<void> {
     householdId,
     type: input.type,
     name: input.name,
+    sex: input.sex,
     dob: input.dob,
+    eddGestation: input.edd,
+    ancFolderNumber: input.ancFolderNumber,
+    cwcCardNumber: input.cwcCardNumber,
+    caregiverName: input.caregiverName,
+    caregiverRelationship: input.caregiverRelationship,
+    gravida: input.gravida,
+    parity: input.parity,
+    lmp: input.lmp,
     consentAt: input.consentAt,
     active: true,
     updatedAt: now,

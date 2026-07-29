@@ -1,7 +1,6 @@
 import {
   RegisterClientInput,
   RegisterClientResponse,
-  ClientListResponse,
   Client,
 } from '@nurturelink/shared';
 import { ClientRepository } from '../repositories/client.repository';
@@ -60,10 +59,13 @@ export class ClientService {
     };
   }
 
-  async listByFacility(facilityId: string): Promise<ClientListResponse> {
+  async listByFacility(facilityId: string): Promise<{ clients: (Client & { community: string })[]; cursor: string | null; hasMore: boolean }> {
     const rows = await repo.findClientsByFacility(facilityId);
     return {
-      clients: rows.map(serializeClient),
+      clients: rows.map((row) => ({
+        ...serializeClient(row),
+        community: row.household?.community ?? '',
+      })),
       cursor: rows.length > 0 ? rows[rows.length - 1].updatedAt.toISOString() : null,
       hasMore: false,
     };

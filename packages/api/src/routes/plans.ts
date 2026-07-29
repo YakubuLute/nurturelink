@@ -24,7 +24,7 @@ plansRouter.post('/', authenticate, async (req, res, next) => {
 // GET /plans/client/:clientId — all plans for a client
 plansRouter.get('/client/:clientId', authenticate, async (req, res, next) => {
   try {
-    const plans = await svc.listByClient(req.params.clientId);
+    const plans = await svc.listByClient(String(req.params.clientId));
     res.json({ plans });
   } catch (err) {
     next(err);
@@ -34,7 +34,7 @@ plansRouter.get('/client/:clientId', authenticate, async (req, res, next) => {
 // GET /plans/:id — single plan
 plansRouter.get('/:id', authenticate, async (req, res, next) => {
   try {
-    const plan = await svc.findById(req.params.id);
+    const plan = await svc.findById(String(req.params.id));
     if (!plan) {
       res.status(404).json({ error: 'Plan not found' });
       return;

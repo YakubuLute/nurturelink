@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,22 @@ import {
   TouchableOpacity,
   Switch,
   StyleSheet,
+  TextInput,
+  Image,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../App';
-import { useAppStore, UiLang } from '../store';
+import { useAppStore, UiLang, displayName, ProfileEditable } from '../store';
 import { BottomTabBar } from '../components/BottomTabBar';
-import { ChevronLeft, BarChart2, User, BatteryMedium, HardDrive, Zap, TrendingUp, LayoutGrid, ChevronRight } from 'lucide-react-native';
+import {
+  ChevronLeft, BarChart2, BatteryMedium, HardDrive, Zap, TrendingUp,
+  LayoutGrid, ChevronRight, Pencil, X, Check, Camera,
+} from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -24,49 +33,243 @@ export function SettingsScreen({ navigation }: Props) {
     telemetryCount,
     uiLang,
     referrals,
-    sync,
     toggleAdaptive,
     setUiLang,
     logout,
     currentUser,
+    refreshDeviceStats,
+    updateProfile,
   } = useAppStore();
+
+  useEffect(() => { refreshDeviceStats(); }, []);
 
   const issuedCount = referrals.filter((r) => r.status === 'issued').length;
   const storagePct = Math.min((storageUsed / 250) * 100, 100);
+
+  // ── Edit mode state ──────────────────────────────────────────────────────────
+  const [editMode, setEditMode] = useState(false);
+  const [form, setForm] = useState<ProfileEditable>({
+    firstName: currentUser?.firstName ?? '',
+    lastName: currentUser?.lastName ?? '',
+    otherNames: currentUser?.otherNames ?? '',
+    phone: currentUser?.phone ?? '',
+    avatarUri: currentUser?.avatarUri ?? null,
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof ProfileEditable, string>>>({});
+
+  function enterEdit() {
+    setForm({
+      firstName: currentUser?.firstName ?? '',
+      lastName: currentUser?.lastName ?? '',
+      otherNames: currentUser?.otherNames ?? '',
+      phone: currentUser?.phone ?? '',
+      avatarUri: currentUser?.avatarUri ?? null,
+    });
+    setErrors({});
+    setEditMode(true);
+  }
+
+  function handleCancel() {
+    const dirty =
+      form.firstName !== (currentUser?.firstName ?? '') ||
+      form.lastName !== (currentUser?.lastName ?? '') ||
+      form.otherNames !== (currentUser?.otherNames ?? '') ||
+      form.phone !== (currentUser?.phone ?? '') ||
+      form.avatarUri !== (currentUser?.avatarUri ?? null);
+
+    if (dirty) {
+      Alert.alert('Discard changes?', 'Your edits will not be saved.', [
+        { text: 'Keep editing', style: 'cancel' },
+        { text: 'Discard', style: 'destructive', onPress: () => setEditMode(false) },
+      ]);
+    } else {
+      setEditMode(false);
+    }
+  }
+
+  function validate(): boolean {
+    const errs: typeof errors = {};
+    if (!form.firstName.trim()) errs.firstName = 'First name is required';
+    if (!form.lastName.trim()) errs.lastName = 'Last name is required';
+    if (form.phone && !/^\+?[\d\s\-()]{7,15}$/.test(form.phone.trim())) {
+      errs.phone = 'Enter a valid phone number';
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  function handleSave() {
+    if (!validate()) return;
+    updateProfile({
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      otherNames: form.otherNames?.trim() || null,
+      phone: form.phone.trim(),
+      avatarUri: form.avatarUri,
+    });
+    setEditMode(false);
+  }
+
+  async function handlePickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo access to set a profile picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      if (editMode) {
+        setForm((f) => ({ ...f, avatarUri: result.assets[0].uri }));
+      } else {
+        updateProfile({ avatarUri: result.assets[0].uri });
+      }
+    }
+  }
 
   function handleSignOut() {
     logout();
     navigation.replace('Login');
   }
 
+  // ── Avatar display helper ────────────────────────────────────────────────────
+  const displayedAvatarUri = editMode ? form.avatarUri : currentUser?.avatarUri ?? null;
+  const initials = currentUser
+    ? `${currentUser.firstName[0]}${currentUser.lastName[0]}`.toUpperCase()
+    : 'U';
+
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       {/* ── Header ── */}
       <SafeAreaView style={styles.headerSafe} edges={['top']}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <ChevronLeft size={24} color="#FDFDFD" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Profile & device</Text>
-            <View style={{ width: 36 }} />
+            {editMode ? (
+              <TouchableOpacity
+                onPress={handleCancel}
+                style={styles.headerBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel editing"
+              >
+                <X size={22} color="#FDFDFD" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.headerBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <ChevronLeft size={24} color="#FDFDFD" />
+              </TouchableOpacity>
+            )}
+
+            <Text style={styles.headerTitle}>
+              {editMode ? 'Edit profile' : 'Profile & device'}
+            </Text>
+
+            {editMode ? (
+              <TouchableOpacity
+                onPress={handleSave}
+                style={styles.headerBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Save profile"
+              >
+                <Check size={22} color="#FDFDFD" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={enterEdit}
+                style={styles.headerBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Edit profile"
+              >
+                <Pencil size={20} color="#FDFDFD" />
+              </TouchableOpacity>
+            )}
           </View>
+
+          {/* Avatar + name */}
           <View style={styles.profileRow}>
-            <View style={styles.profileAvatar}>
-              <Text style={styles.profileAvatarText}>
-                {(currentUser?.name ?? 'U').split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
-              </Text>
-            </View>
-            <View>
-              <Text style={styles.profileName}>{currentUser?.name ?? 'Health Worker'}</Text>
-              <Text style={styles.profileRole}>
-                {currentUser?.role === 'sup' ? 'Supervisor' : 'Community Health Officer'}
-              </Text>
+            <TouchableOpacity
+              onPress={handlePickAvatar}
+              style={styles.avatarWrap}
+              accessibilityRole="button"
+              accessibilityLabel="Change profile picture"
+            >
+              {displayedAvatarUri ? (
+                <Image source={{ uri: displayedAvatarUri }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.profileAvatar}>
+                  <Text style={styles.profileAvatarText}>{initials}</Text>
+                </View>
+              )}
+              <View style={styles.cameraBadge}>
+                <Camera size={12} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.profileInfo}>
+              {editMode ? (
+                <>
+                  <View style={styles.nameRow}>
+                    <View style={[styles.fieldWrap, { flex: 1 }]}>
+                      <TextInput
+                        style={[styles.nameInput, errors.firstName ? styles.inputError : undefined]}
+                        value={form.firstName}
+                        onChangeText={(v) => setForm((f) => ({ ...f, firstName: v }))}
+                        placeholder="First name"
+                        placeholderTextColor="#6B7280"
+                        autoCapitalize="words"
+                        accessibilityLabel="First name"
+                      />
+                      {errors.firstName ? (
+                        <Text style={styles.errorText}>{errors.firstName}</Text>
+                      ) : null}
+                    </View>
+                    <View style={[styles.fieldWrap, { flex: 1 }]}>
+                      <TextInput
+                        style={[styles.nameInput, errors.lastName ? styles.inputError : undefined]}
+                        value={form.lastName}
+                        onChangeText={(v) => setForm((f) => ({ ...f, lastName: v }))}
+                        placeholder="Last name"
+                        placeholderTextColor="#6B7280"
+                        autoCapitalize="words"
+                        accessibilityLabel="Last name"
+                      />
+                      {errors.lastName ? (
+                        <Text style={styles.errorText}>{errors.lastName}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  <TextInput
+                    style={styles.otherNamesInput}
+                    value={form.otherNames ?? ''}
+                    onChangeText={(v) => setForm((f) => ({ ...f, otherNames: v }))}
+                    placeholder="Other names (optional)"
+                    placeholderTextColor="#6B7280"
+                    autoCapitalize="words"
+                    accessibilityLabel="Other names"
+                  />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.profileName}>
+                    {currentUser ? displayName(currentUser) : 'Health Worker'}
+                  </Text>
+                  <Text style={styles.profileRole}>
+                    {currentUser?.role === 'sup' ? 'Supervisor' : 'Community Health Officer'}
+                    {currentUser?.facilityName ? ` · ${currentUser.facilityName}` : ''}
+                  </Text>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -77,21 +280,67 @@ export function SettingsScreen({ navigation }: Props) {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
+        {/* PROFILE section (edit mode only) */}
+        {editMode && (
+          <>
+            <Text style={styles.sectionLabel}>CONTACT</Text>
+            <View style={styles.card}>
+              <View style={styles.settingRow}>
+                <View style={[styles.settingBody, { paddingVertical: 4 }]}>
+                  <Text style={styles.fieldLabel}>Phone number</Text>
+                  <TextInput
+                    style={[styles.inlineInput, errors.phone ? styles.inputError : undefined]}
+                    value={form.phone}
+                    onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
+                    placeholder="+233 XX XXX XXXX"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="phone-pad"
+                    accessibilityLabel="Phone number"
+                  />
+                  {errors.phone ? (
+                    <Text style={styles.errorText}>{errors.phone}</Text>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+          </>
+        )}
+
+        {/* Account info (view mode) */}
+        {!editMode && (
+          <>
+            <Text style={styles.sectionLabel}>ACCOUNT</Text>
+            <View style={styles.card}>
+              <View style={styles.settingRow}>
+                <View style={styles.settingBody}>
+                  <Text style={styles.settingTitle}>Phone</Text>
+                  <Text style={styles.settingDesc}>{currentUser?.phone || '—'}</Text>
+                </View>
+              </View>
+              {(currentUser?.facilityDistrict || currentUser?.facilityRegion) && (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.settingRow}>
+                    <View style={styles.settingBody}>
+                      <Text style={styles.settingTitle}>District</Text>
+                      <Text style={styles.settingDesc}>
+                        {[currentUser.facilityDistrict, currentUser.facilityRegion]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
+            </View>
+          </>
+        )}
+
         {/* THIS DEVICE section */}
         <Text style={styles.sectionLabel}>THIS DEVICE</Text>
         <View style={styles.card}>
-          {/* Profiles row */}
-          <View style={styles.settingRow}>
-            <User size={20} color="#374151" />
-            <View style={styles.settingBody}>
-              <Text style={styles.settingTitle}>3 worker profiles</Text>
-              <Text style={styles.settingDesc}>Shared compound handset · each logs in with a PIN</Text>
-            </View>
-          </View>
-          <View style={styles.divider} />
-
-          {/* Battery row */}
           <View style={styles.settingRow}>
             <BatteryMedium size={20} color="#374151" />
             <View style={styles.settingBody}>
@@ -100,8 +349,6 @@ export function SettingsScreen({ navigation }: Props) {
             </View>
           </View>
           <View style={styles.divider} />
-
-          {/* Storage row */}
           <View style={styles.settingRow}>
             <HardDrive size={20} color="#374151" />
             <View style={styles.settingBody}>
@@ -117,7 +364,6 @@ export function SettingsScreen({ navigation }: Props) {
         {/* SYNC & DATA section */}
         <Text style={styles.sectionLabel}>SYNC & DATA</Text>
         <View style={styles.card}>
-          {/* Adaptive sync toggle */}
           <View style={styles.settingRowSpaced}>
             <Zap size={20} color="#374151" />
             <View style={styles.settingBody}>
@@ -133,8 +379,6 @@ export function SettingsScreen({ navigation }: Props) {
             />
           </View>
           <View style={styles.divider} />
-
-          {/* Telemetry row */}
           <View style={styles.settingRow}>
             <BarChart2 size={20} color="#374151" />
             <View style={styles.settingBody}>
@@ -143,8 +387,6 @@ export function SettingsScreen({ navigation }: Props) {
             </View>
           </View>
           <View style={styles.divider} />
-
-          {/* Monthly tally row */}
           <TouchableOpacity
             style={styles.settingRowSpaced}
             onPress={() => navigation.navigate('Tally')}
@@ -203,7 +445,9 @@ export function SettingsScreen({ navigation }: Props) {
           <LayoutGrid size={20} color="#374151" />
           <View style={styles.settingBody}>
             <Text style={styles.settingTitle}>District overview</Text>
-            <Text style={styles.settingDesc}>Sagnarigu district · 6 CHPS zones</Text>
+            <Text style={styles.settingDesc}>
+              {[currentUser?.facilityDistrict, currentUser?.facilityRegion].filter(Boolean).join(' · ') || 'No district assigned'}
+            </Text>
           </View>
           <ChevronRight size={18} color="#9CA3AF" />
         </TouchableOpacity>
@@ -225,11 +469,11 @@ export function SettingsScreen({ navigation }: Props) {
         active="profile"
         onHome={() => navigation.navigate('Home')}
         onReferrals={() => navigation.navigate('ReferralsList')}
-        onSync={sync}
+        onSync={() => navigation.navigate('Sync')}
         onProfile={() => {}}
         referralBadge={issuedCount}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -252,15 +496,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  backBtn: {
+  headerBtn: {
     width: 36,
     height: 36,
     justifyContent: 'center',
-  },
-  backArrow: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 16,
@@ -269,33 +509,103 @@ const styles = StyleSheet.create({
   },
   profileRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 14,
     paddingHorizontal: 20,
     marginTop: 4,
   },
+  profileInfo: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
+
+  // Avatar
+  avatarWrap: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#427CAF',
+  },
   profileAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: '#427CAF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileAvatarText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
   },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#08283B',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // View mode name/role
   profileName: {
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   profileRole: {
     fontSize: 12.5,
     color: '#92C9F9',
+  },
+
+  // Edit mode name inputs (inline in header)
+  nameRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  fieldWrap: {
+    gap: 2,
+  },
+  nameInput: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  otherNamesInput: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    fontSize: 13,
+    color: '#FFFFFF',
+    marginTop: 4,
+  },
+  inputError: {
+    borderColor: '#FCA5A5',
+  },
+  errorText: {
+    fontSize: 10.5,
+    color: '#FCA5A5',
+    marginTop: 2,
   },
 
   scroll: { flex: 1 },
@@ -354,6 +664,26 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: '#6B7280',
     lineHeight: 16,
+  },
+
+  // Inline card input (phone)
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  inlineInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#08283B',
+    backgroundColor: '#F9FAFB',
   },
 
   // Storage bar

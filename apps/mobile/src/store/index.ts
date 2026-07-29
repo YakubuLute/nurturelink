@@ -6,8 +6,10 @@
  * for the hackathon demo everything lives in memory.
  */
 import { create } from 'zustand';
+import * as Battery from 'expo-battery';
+import * as FileSystem from 'expo-file-system';
 import { loadReferenceBundle } from '../db/bundle-loader';
-import { clearSession } from '../auth/session';
+import { clearSession, getToken } from '../auth/session';
 import { persistClient, persistVisit, persistReferral, uuidv4 } from '../db/persist';
 import { syncNow } from '../sync/orchestrator';
 import type { ReferenceBundle } from '../engine/types';
@@ -22,6 +24,17 @@ export type Role = 'cho' | 'sup';
 export type ReferralStatus = 'issued' | 'seen';
 export type NotifKind = 'referral' | 'risk' | 'sync' | 'bundle' | 'voice';
 export type NotifGroup = 'today' | 'earlier';
+
+export interface ChoActivity {
+  id: string;
+  name: string;
+  zone: string;
+  clients: number;
+  visited: number;
+  pending: number;
+  lastSync: string;
+  synced: boolean;
+}
 
 export interface DemoVisit {
   date: string;
@@ -51,6 +64,18 @@ export interface DemoClient {
   trendArrow: TrendArrow;
   trendColor: string;
   visits: DemoVisit[];
+  // POST-HACKATHON additions
+  lifestage?: string;        // 'pregnant' | 'postpartum' | 'lactating'
+  linkedClientId?: string;   // linked mother (for child) or child (for mother)
+}
+
+export interface VaccineRecord {
+  id: string;
+  vaccineId: string;
+  givenAt: string;             // YYYY-MM-DD
+  batchNumber?: string;
+  aefi?: string;               // adverse event description
+  aefiSeverity?: 'mild' | 'moderate' | 'severe';
 }
 
 export interface DemoReferral {
@@ -64,6 +89,10 @@ export interface DemoReferral {
   at: string;
   seenAt?: string;
   due?: string;
+  // G7: enriched confirmation data
+  confirmSource?: string;
+  outcome?: string;
+  nextFollowUp?: string;
 }
 
 export interface AppNotification {
@@ -97,234 +126,163 @@ export interface PlanFood {
 }
 
 export interface VisitForm {
+  // Always present
   weight: string;
   hb: string;
   muac: string;
   diet: string[];
   danger: string[];
+  // Children only (all ages)
+  heightCm: string;
+  oedema: string;               // 'yes' | 'no' | ''
+  // Pregnant only
+  bpSystolic: string;
+  bpDiastolic: string;
+  ancVisited: string;           // 'yes' | 'no' | ''
+  supplementGiven: string;      // 'yes' | 'no' | ''
+  // Child 0–5 mo
+  exclusiveBreastfeeding: string; // 'yes' | 'no' | ''
+  feedingDifficulty: string;    // 'yes' | 'no' | ''
+  // Child 6–23 mo
+  mealFreqPerDay: string;
+  feedingTexture: string;       // 'smooth' | 'mashed' | 'lumpy' | 'family' | ''
+  feedingDuringIllness: string; // 'yes' | 'no' | ''
+  // Child 6–59 mo (Vitamin A)
+  vitaminAGiven: string;        // 'yes' | 'no' | ''
+  // Newborn only (< 1 month)
+  cordCondition: string;        // 'yes' | 'no' | '' (yes = normal cord)
+  jaundice: string;             // 'yes' | 'no' | ''
+  breastfeedInitiated: string;  // 'yes' | 'no' | ''
 }
 
 export interface RegForm {
   type: ClientType;
   name: string;
+  sex: string;          // 'male' | 'female' | ''
   community: string;
-  dob: string;
+  dob: string;          // child's DOB or mother's DOB (YYYY-MM-DD)
   consent: boolean;
+  // Household contact (both types)
+  phone: string;
+  landmark: string;
+  // Pregnant-specific
+  edd: string;          // expected delivery date (YYYY-MM-DD)
+  lmp: string;          // last menstrual period (YYYY-MM-DD)
+  ancFolderNumber: string;
+  gravida: string;
+  parity: string;
+  // Child-specific
+  cwcCardNumber: string;
+  caregiverName: string;
+  caregiverRelationship: string;
+  // POST-HACKATHON additions
+  lifestage: string;            // 'pregnant' | 'postpartum' | 'lactating'
+  linkedClientId: string;       // mother's client ID (for child registration)
 }
 
-// ─── Seed data ───────────────────────────────────────────────────────────────
+// Plans are generated per-client by the AI layer and stored in state.
+// The PlanScreen falls back to a generic template if no plan is available.
+export const PLANS: Record<string, PlanData> = {};
 
-const SEED_CLIENTS: DemoClient[] = [
-  {
-    id: 'amina',
-    name: 'Amina Mahama',
-    type: 'pregnant',
-    age: 26,
-    community: 'Kukuo',
-    caregiver: 'Amina',
-    priority: 'high',
-    metric: 'hb',
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
+
+// ─── Server response types (used in loadUserData) ─────────────────────────────
+
+interface ServerClient {
+  id: string;
+  householdId: string;
+  type: 'pregnant' | 'child';
+  name: string;
+  dob: string | null;
+  eddGestation: string | null;
+  sex: 'M' | 'F' | 'unknown' | null;
+  consentAt: string;
+  active: boolean;
+  updatedAt: string;
+  community: string;
+}
+
+interface ServerReferral {
+  id: string;
+  clientId: string;
+  visitId: string;
+  reason: string;
+  flagCodes: string[];
+  facilityTo: string | null;
+  status: string;
+  issuedAt: string;
+  updatedAt: string;
+}
+
+function ageFromDob(dob: string | null, type: 'pregnant' | 'child'): string | number {
+  if (!dob) return type === 'pregnant' ? '—' : 'new';
+  const months = Math.round((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+  if (type === 'child') {
+    if (months < 24) return `${months} mo`;
+    return Math.floor(months / 12);
+  }
+  return Math.round(months / 12);
+}
+
+function serverClientToDemoClient(c: ServerClient): DemoClient {
+  return {
+    id: c.id,
+    name: c.name,
+    type: c.type,
+    age: ageFromDob(c.dob, c.type),
+    community: c.community,
+    caregiver: c.name,
+    priority: 'new',
+    metric: c.type === 'pregnant' ? 'hb' : 'muac',
     severe: false,
     referred: false,
-    flag: 'Falling haemoglobin',
-    flagDetail: 'Hb 11.2 → 9.6 g/dL over 3 visits · mild anaemia',
-    trendNote: 'Falling — approaching anaemia threshold (11.0 g/dL)',
-    trendArrow: 'down',
-    trendColor: '#C81E1E',
-    visits: [
-      { date: '12th Sep, 2026', weight: 58.4, hb: 11.2, muac: 242, diet: ['grains', 'legumes', 'veg'], danger: [], synced: true, owner: 'You' },
-      { date: '10th Oct, 2026', weight: 59.1, hb: 10.4, muac: 238, diet: ['grains', 'legumes'], danger: [], synced: true, owner: 'You' },
-      { date: '7th Nov, 2026',  weight: 59.8, hb: 9.6,  muac: 235, diet: ['grains', 'legumes'], danger: [], synced: false, owner: 'You' },
-    ],
-  },
-  {
-    id: 'rahim',
-    name: 'Baby Rahim',
-    type: 'child',
-    age: '14 mo',
-    community: 'Sagnarigu',
-    caregiver: 'Fuseina A.',
-    priority: 'high',
-    metric: 'weight',
-    severe: false,
-    referred: false,
-    flag: 'Flat weight-for-age',
-    flagDetail: 'No weight gain in 2 months · only 2 food groups',
-    trendNote: 'Weight has plateaued — growth faltering',
+    flag: 'New client · awaiting first visit',
+    flagDetail: '',
+    trendNote: '',
     trendArrow: 'flat',
-    trendColor: '#B48700',
-    visits: [
-      { date: '15th Sep, 2026', weight: 8.1, hb: null, muac: 132, diet: ['grains', 'legumes', 'vita'], danger: [], synced: true, owner: 'You' },
-      { date: '13th Oct, 2026', weight: 8.2, hb: null, muac: 129, diet: ['grains', 'legumes'], danger: [], synced: true, owner: 'You' },
-      { date: '9th Nov, 2026',  weight: 8.2, hb: null, muac: 128, diet: ['grains', 'legumes'], danger: [], synced: false, owner: 'You' },
-    ],
-  },
-  {
-    id: 'latif',
-    name: 'Baby Latif',
-    type: 'child',
-    age: '9 mo',
-    community: 'Gizaa',
-    caregiver: 'Memuna I.',
-    priority: 'urgent',
-    metric: 'muac',
-    severe: true,
-    referred: true,
-    flag: 'Severe wasting risk',
-    flagDetail: 'MUAC 108 mm — below the 115 mm red-zone threshold',
-    trendNote: 'MUAC in the red zone — danger sign',
-    trendArrow: 'down',
-    trendColor: '#C81E1E',
-    visits: [
-      { date: '18th Oct, 2026', weight: 6.4, hb: null, muac: 118, diet: ['grains', 'legumes'], danger: [], synced: true, owner: 'You' },
-      { date: '12th Nov, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'], danger: [], synced: false, owner: 'You' },
-    ],
-  },
-  {
-    id: 'zeinab',
-    name: 'Zeinab Osman',
-    type: 'pregnant',
-    age: 31,
-    community: 'Kukuo',
-    caregiver: 'Zeinab',
-    priority: 'stable',
-    metric: 'hb',
-    severe: false,
-    referred: false,
-    flag: 'On track · Hb stable',
-    flagDetail: 'Hb steady at 11.8 g/dL',
-    trendNote: 'Stable and healthy',
-    trendArrow: 'up',
-    trendColor: '#057A55',
-    visits: [
-      { date: '14th Sep, 2026', weight: 62.1, hb: 11.6, muac: 258, diet: ['grains', 'legumes', 'flesh', 'veg'], danger: [], synced: true, owner: 'You' },
-      { date: '12th Nov, 2026', weight: 63.4, hb: 11.8, muac: 260, diet: ['grains', 'legumes', 'flesh', 'vita', 'veg'], danger: [], synced: true, owner: 'You' },
-    ],
-  },
-  {
-    id: 'sadia',
-    name: 'Baby Sadia',
-    type: 'child',
-    age: '20 mo',
-    community: 'Sagnarigu',
-    caregiver: 'Ayishetu M.',
-    priority: 'stable',
-    metric: 'weight',
-    severe: false,
-    referred: false,
-    flag: 'Diet improving',
-    flagDetail: 'Diet diversity up from 3 to 5 groups',
-    trendNote: 'Gaining well',
-    trendArrow: 'up',
-    trendColor: '#057A55',
-    visits: [
-      { date: '16th Sep, 2026', weight: 10.2, hb: null, muac: 145, diet: ['grains', 'legumes', 'vita'], danger: [], synced: true, owner: 'You' },
-      { date: '10th Nov, 2026', weight: 10.9, hb: null, muac: 148, diet: ['grains', 'legumes', 'flesh', 'vita', 'veg'], danger: [], synced: true, owner: 'You' },
-    ],
-  },
-];
+    trendColor: '#427CAF',
+    visits: [],
+  };
+}
 
-const SEED_REFERRALS: DemoReferral[] = [
-  {
-    id: 'r1',
-    clientId: 'latif',
-    name: 'Baby Latif',
-    type: 'child',
-    reason: 'MUAC 108 mm — below the 115 mm severe-wasting threshold',
-    facility: 'Tamale West Hospital',
-    status: 'issued',
-    at: '12th Nov, 2026',
-    due: '15th Nov, 2026',
-  },
-  {
-    id: 'r0',
-    clientId: 'fatima',
-    name: 'Baby Fatima',
-    type: 'child',
-    reason: 'Bilateral oedema (danger sign) recorded at visit',
-    facility: 'Tamale West Hospital',
-    status: 'seen',
-    at: '2nd Nov, 2026',
-    seenAt: '5th Nov, 2026',
-  },
-];
-
-const SEED_NOTIFICATIONS: AppNotification[] = [
-  { id: 'n1', kind: 'referral', title: 'Follow-up due: Baby Latif', body: 'Confirm the referral was seen at Tamale West Hospital.', time: '20 min ago', read: false, group: 'today', target: 'referrals' },
-  { id: 'n2', kind: 'risk', title: 'Priority raised: Amina Mahama', body: 'Haemoglobin fell to 9.6 g/dL — counselling recommended.', time: '2 h ago', read: false, group: 'today', target: 'client:amina' },
-  { id: 'n3', kind: 'sync', title: '3 records pending sync', body: "They'll upload automatically when you're back online.", time: '3 h ago', read: false, group: 'today', target: 'sync' },
-  { id: 'n4', kind: 'bundle', title: 'New seasonal bundle available', body: 'v1.4 · November foods for Kukuo zone. Syncs on Wi-Fi.', time: 'Yesterday', read: true, group: 'earlier', target: '' },
-  { id: 'n5', kind: 'voice', title: 'Dagbani voice pack updated', body: 'Refreshed counselling phrases were added.', time: '2 days ago', read: true, group: 'earlier', target: '' },
-];
-
-export const PLANS: Record<string, PlanData> = {
-  amina: {
-    seasonNote: 'In season · November · Kukuo zone',
-    targetNote: "Amina's haemoglobin has fallen to 9.6 g/dL. This plan closes an iron & folate gap using foods available and affordable in her locality this month.",
-    foods: [
-      { name: 'Moringa leaves',     local: 'Zogale',       group: 'vita',    tier: 'Free / garden', why: 'Rich in iron & folate; grows around the compound.' },
-      { name: 'Cowpea (beans)',     local: 'Tuya',         group: 'legumes', tier: 'Low cost',       why: 'Iron & protein; stores well through the dry season.' },
-      { name: 'Groundnut paste',    local: 'Sinkpaŋ zim',  group: 'legumes', tier: 'Low cost',       why: 'Energy, protein & folate; add to soups and koko.' },
-      { name: 'Orange sweet potato',local: 'Wulijɛɣu',    group: 'vita',    tier: 'Market',         why: 'Vitamin A & energy; in season and cheap now.' },
-      { name: 'Dawadawa',           local: 'Dawadawa',     group: 'legumes', tier: 'Low cost',       why: 'Iron-rich condiment used in most local dishes.' },
-    ],
-    alternates: [
-      { name: 'Boiled egg',   local: 'Gala',   group: 'eggs', tier: 'Market',        why: 'Extra protein & iron when affordable this week.' },
-      { name: 'Baobab fruit', local: 'Tuisim', group: 'veg',  tier: 'Free / garden', why: 'Vitamin C to boost iron absorption from greens.' },
-    ],
-    adequacy: [
-      { label: 'Iron',      pct: 94 },
-      { label: 'Folate',    pct: 88 },
-      { label: 'Vitamin C', pct: 76 },
-      { label: 'Energy',    pct: 82 },
-      { label: 'Protein',   pct: 90 },
-    ],
-    rationale: [
-      'Hb of 9.6 g/dL is mild anaemia, above the severe threshold — so nutrition counselling is appropriate rather than referral.',
-      'Every food is locally available and affordable in Kukuo this month; none rely on the market price of meat.',
-      'Pairing zogale and beans with an orange fruit or sweet potato improves how much iron the body absorbs.',
-    ],
-    voiceEn:  'Good morning, Amina. Your blood level has dropped a little this month, so it is important to eat iron-rich foods often. Cook zogale leaves, beans and groundnut most days, and add orange sweet potato for strength. All of these foods are in the market now and cost very little. Please come to the clinic for your next check-up.',
-    voiceDag: 'Dasiba, Amina. A ʒim maa siɣindi bɛla goli ŋɔ, dinzuɣu di simdi ni a dirila bindira din mali ʒim yɛlni. Dim zogale, tuya ni sinkpaŋ dabsili kam, ka pahi wulijɛɣu ni a mali yaa. Bindira ŋɔ zaa bela daa ni pumpɔŋɔ ka bi mali daa. Labmi na ti nya alaafee kariti.',
-  },
-  rahim: {
-    seasonNote: 'In season · November · Sagnarigu',
-    targetNote: "Rahim's weight has been flat for two months on only 2 food groups. This plan adds energy, protein and diet diversity from foods available now.",
-    foods: [
-      { name: 'Enriched koko',    local: 'Koko + sinkpaŋ', group: 'grains',  tier: 'Low cost',       why: 'Millet porridge with groundnut paste for extra energy.' },
-      { name: 'Egg',              local: 'Gala',            group: 'eggs',    tier: 'Market',         why: 'Complete protein; one a day supports steady growth.' },
-      { name: 'Mashed cowpea',    local: 'Tuya',            group: 'legumes', tier: 'Low cost',       why: 'Protein & iron, softened for a young child.' },
-      { name: 'Moringa leaves',   local: 'Zogale',          group: 'vita',    tier: 'Free / garden',  why: 'Adds vitamins A & C and a whole new food group.' },
-      { name: 'Small dried fish', local: 'Amani',           group: 'flesh',   tier: 'Low cost',       why: 'Protein, iron & zinc; ground into powder over food.' },
-    ],
-    alternates: [
-      { name: 'Ripe pawpaw',    local: 'Boɣu', group: 'vita',    tier: 'Market',   why: 'Soft vitamin-A fruit babies accept easily.' },
-      { name: 'Bambara beans',  local: 'Suya', group: 'legumes', tier: 'Low cost', why: 'Another protein source to rotate through the week.' },
-    ],
-    adequacy: [
-      { label: 'Energy',         pct: 86 },
-      { label: 'Protein',        pct: 92 },
-      { label: 'Iron',           pct: 80 },
-      { label: 'Vitamin A',      pct: 88 },
-      { label: 'Diet diversity', pct: 70 },
-    ],
-    rationale: [
-      'No weight gain over two months with a diet of only 2 food groups is growth faltering, not a severe case — nutrition support is the right response.',
-      'The plan lifts Rahim from 2 to 5 food groups, crossing the WHO minimum diet-diversity mark.',
-      'All items are low cost and available in Sagnarigu now; dried-fish powder and egg add protein without the price of fresh meat.',
-    ],
-    voiceEn:  "Good morning. Rahim's weight has stayed the same for two months, so he needs more variety in his meals. Give him enriched koko with groundnut paste, mashed beans, egg and zogale every day, and a little dried-fish powder over his food. These foods are available now and low cost. Please bring him back next month so we can weigh him again.",
-    voiceDag: 'Dasiba. Rahim tibigginsim maa bi paɣi chira ayi ŋɔ, dinzuɣu o bɔri bindira balibu balibu. Tim o koko din mali sinkpaŋ, tuya din nyɔɣisi, gala ni zogale dabsili kam, ka pahi amani zim o bindirigu zuɣu. Bindira ŋɔ bela daa ni ka bi mali daa. Labmi na ti mali o kariti biɛɣu.',
-  },
-};
+function serverReferralToDemoReferral(
+  r: ServerReferral,
+  clientMap: Map<string, DemoClient>,
+): DemoReferral {
+  const client = clientMap.get(r.clientId);
+  const isActive = r.status === 'issued' || r.status === 'in_transit';
+  return {
+    id: r.id,
+    clientId: r.clientId,
+    name: client?.name ?? 'Unknown client',
+    type: client?.type ?? 'child',
+    reason: r.reason,
+    facility: r.facilityTo ?? 'Referral facility',
+    status: isActive ? 'issued' : 'seen',
+    at: new Date(r.issuedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+  };
+}
 
 // ─── Store state shape ────────────────────────────────────────────────────────
 
 export interface CurrentUser {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  otherNames: string | null;
   phone: string;
   role: Role;
+  facilityName: string | null;
+  facilityDistrict: string | null;
+  facilityRegion: string | null;
+  avatarUri: string | null;
+}
+
+export type ProfileEditable = Pick<CurrentUser, 'firstName' | 'lastName' | 'otherNames' | 'phone' | 'avatarUri'>;
+
+/** Display-friendly full name: First [Other] Last */
+export function displayName(user: Pick<CurrentUser, 'firstName' | 'lastName' | 'otherNames'>): string {
+  return [user.firstName, user.otherNames, user.lastName].filter(Boolean).join(' ');
 }
 
 interface StoreState {
@@ -339,9 +297,16 @@ interface StoreState {
   clients: DemoClient[];
   referrals: DemoReferral[];
   notifications: AppNotification[];
+  dataLoading: boolean;
+
+  // Supervisor
+  choActivity: ChoActivity[];
+  supervisorLoading: boolean;
 
   // Plan edits (removed / added alternates per client)
   planEdits: Record<string, { removed: string[]; added: string[] }>;
+  // AI-generated plans per client (keyed by clientId)
+  plans: Record<string, PlanData>;
 
   // Voice / audio
   voiceLang: UiLang;
@@ -358,6 +323,7 @@ interface StoreState {
   // Device / sync
   offline: boolean;
   syncing: boolean;
+  lastSyncAt: string | null;     // ISO string of most recent completed sync
   adaptiveSync: boolean;
   battery: number;
   storageUsed: number;
@@ -373,6 +339,9 @@ interface StoreState {
   logout: () => void;
   setSessionExpired: (v: boolean) => void;
   setUiLang: (lang: UiLang) => void;
+  loadUserData: (accessToken: string) => Promise<void>;
+  loadSupervisorData: () => Promise<void>;
+  updateProfile: (fields: Partial<ProfileEditable>) => void;
 
   // Actions — clients
   addClient: (c: DemoClient) => void;
@@ -402,9 +371,13 @@ interface StoreState {
   setRecorded: (v: boolean) => void;
   setRecordT: (t: number) => void;
 
+  // Immunization records
+  immunizations: Record<string, VaccineRecord[]>;
+  saveVaccineRecord: (clientId: string, record: VaccineRecord) => void;
+
   // Actions — referrals
   issueReferral: (clientId: string) => void;
-  confirmReferralSeen: (clientId: string) => void;
+  confirmReferralSeen: (clientId: string, details?: { seenAt: string; confirmSource: string; outcome: string; nextFollowUp?: string }) => void;
 
   // Actions — notifications
   markAllRead: () => void;
@@ -414,12 +387,43 @@ interface StoreState {
   sync: () => void;
   toggleOffline: () => void;
   toggleAdaptive: () => void;
+  refreshDeviceStats: () => Promise<void>;
+
+  // Demo
+  seedDemoData: () => void;
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
-const emptyVisitForm: VisitForm = { weight: '', hb: '', muac: '', diet: [], danger: [] };
-const emptyRegForm: RegForm = { type: 'child', name: '', community: 'Kukuo', dob: '', consent: false };
+const emptyVisitForm: VisitForm = {
+  weight: '', hb: '', muac: '', diet: [], danger: [],
+  heightCm: '', oedema: '',
+  bpSystolic: '', bpDiastolic: '', ancVisited: '', supplementGiven: '',
+  exclusiveBreastfeeding: '', feedingDifficulty: '',
+  mealFreqPerDay: '', feedingTexture: '', feedingDuringIllness: '',
+  vitaminAGiven: '',
+  cordCondition: '', jaundice: '', breastfeedInitiated: '',
+};
+const emptyRegForm: RegForm = {
+  type: 'child',
+  name: '',
+  sex: '',
+  community: '',
+  dob: '',
+  consent: false,
+  phone: '',
+  landmark: '',
+  edd: '',
+  lmp: '',
+  ancFolderNumber: '',
+  gravida: '',
+  parity: '',
+  cwcCardNumber: '',
+  caregiverName: '',
+  caregiverRelationship: '',
+  lifestage: '',
+  linkedClientId: '',
+};
 
 export const useAppStore = create<StoreState>((set, get) => ({
   // Initial state
@@ -429,11 +433,16 @@ export const useAppStore = create<StoreState>((set, get) => ({
   uiLang: 'en',
   currentUser: null,
 
-  clients: SEED_CLIENTS,
-  referrals: SEED_REFERRALS,
-  notifications: SEED_NOTIFICATIONS,
+  clients: [],
+  referrals: [],
+  notifications: [],
+  dataLoading: false,
+
+  choActivity: [],
+  supervisorLoading: false,
 
   planEdits: {},
+  plans: {},
 
   voiceLang: 'en',
   audioPlaying: false,
@@ -448,8 +457,10 @@ export const useAppStore = create<StoreState>((set, get) => ({
     if (bundle) set({ referenceBundle: bundle });
   },
 
+  immunizations: {},
   offline: true,
   syncing: false,
+  lastSyncAt: null,
   adaptiveSync: true,
   battery: 62,
   storageUsed: 148,
@@ -463,10 +474,78 @@ export const useAppStore = create<StoreState>((set, get) => ({
   login: (user) => set({ isLoggedIn: true, role: user.role, currentUser: user, sessionExpired: false }),
   logout: () => {
     clearSession().catch(() => {});
-    set({ isLoggedIn: false, currentUser: null, sessionExpired: false });
+    set({ isLoggedIn: false, currentUser: null, clients: [], referrals: [], notifications: [], sessionExpired: false });
   },
   setSessionExpired: (v) => set({ sessionExpired: v }),
   setUiLang: (lang) => set({ uiLang: lang }),
+  updateProfile: (fields) => set((s) => ({
+    currentUser: s.currentUser ? { ...s.currentUser, ...fields } : s.currentUser,
+  })),
+
+  loadUserData: async (accessToken: string) => {
+    set({ dataLoading: true });
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    try {
+      const [clientsRes, referralsRes] = await Promise.all([
+        fetch(`${API_URL}/clients`, { headers }),
+        fetch(`${API_URL}/referrals`, { headers }),
+      ]);
+
+      const clientsJson = clientsRes.ok ? await clientsRes.json() : { clients: [] };
+      const referralsJson = referralsRes.ok ? await referralsRes.json() : { referrals: [] };
+
+      const serverClients: ServerClient[] = clientsJson.clients ?? [];
+      const serverReferrals: ServerReferral[] = referralsJson.referrals ?? [];
+
+      const clientMap = new Map<string, DemoClient>();
+      const demoClients: DemoClient[] = serverClients.map((c) => {
+        const dc = serverClientToDemoClient(c);
+        clientMap.set(c.id, dc);
+        return dc;
+      });
+
+      // Mark clients that have an active referral
+      const referredIds = new Set(
+        serverReferrals
+          .filter((r) => r.status === 'issued' || r.status === 'in_transit')
+          .map((r) => r.clientId),
+      );
+      for (const dc of demoClients) {
+        if (referredIds.has(dc.id)) dc.referred = true;
+      }
+
+      const demoReferrals: DemoReferral[] = serverReferrals.map((r) =>
+        serverReferralToDemoReferral(r, clientMap),
+      );
+
+      set({ clients: demoClients, referrals: demoReferrals, dataLoading: false, offline: false, pendingRecords: 0 });
+    } catch (e) {
+      console.warn('[Store] loadUserData error:', e);
+      set({ dataLoading: false });
+    }
+  },
+
+  loadSupervisorData: async () => {
+    set({ supervisorLoading: true });
+    try {
+      const token = await getToken();
+      if (!token || token.startsWith('demo.')) {
+        set({ supervisorLoading: false });
+        return;
+      }
+      const res = await fetch(`${API_URL}/supervisor/chos`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        set({ choActivity: json.chos ?? [] });
+      }
+    } catch (e) {
+      console.warn('[Store] loadSupervisorData error:', e);
+    } finally {
+      set({ supervisorLoading: false });
+    }
+  },
 
   // ── Clients ──
   addClient: (c) => set((s) => ({ clients: [...s.clients, c] })),
@@ -546,6 +625,15 @@ export const useAppStore = create<StoreState>((set, get) => ({
     // Persist visit + flag to SQLite + outbox (fire-and-forget)
     const visitId = uuidv4();
     const flagId = uuidv4();
+    // Serialize type-specific clinical fields into notes JSON
+    const clinicalExtras: Record<string, string> = {};
+    for (const k of ['heightCm','oedema','bpSystolic','bpDiastolic','ancVisited',
+      'supplementGiven','exclusiveBreastfeeding','feedingDifficulty','mealFreqPerDay',
+      'feedingTexture','feedingDuringIllness','vitaminAGiven',
+      'cordCondition','jaundice','breastfeedInitiated'] as const) {
+      const v = visitForm[k as keyof VisitForm] as string;
+      if (v) clinicalExtras[k] = v;
+    }
     persistVisit(
       {
         visitId,
@@ -556,7 +644,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         muacMm: muac || null,
         dietRecall: visitForm.diet,
         dangerSigns: visitForm.danger,
-        notes: null,
+        notes: Object.keys(clinicalExtras).length > 0 ? JSON.stringify(clinicalExtras) : null,
       },
       { flagId, clientId, visitId, severity, reasons: flagReasons },
     ).catch((e) => console.warn('[Store] persistVisit error:', e));
@@ -577,7 +665,9 @@ export const useAppStore = create<StoreState>((set, get) => ({
       type: regForm.type,
       age: regForm.type === 'child' ? 'new' : '—',
       community: regForm.community,
-      caregiver: regForm.name.trim(),
+      caregiver: regForm.type === 'child'
+        ? (regForm.caregiverName.trim() || regForm.name.trim())
+        : regForm.name.trim(),
       priority: 'new',
       metric: 'weight',
       severe: false,
@@ -588,8 +678,14 @@ export const useAppStore = create<StoreState>((set, get) => ({
       trendArrow: 'flat',
       trendColor: '#427CAF',
       visits: [],
+      lifestage: regForm.lifestage || undefined,
+      linkedClientId: regForm.linkedClientId || undefined,
     };
     get().addClient(nc);
+    // Bidirectional link: update the linked mother/child to point back
+    if (regForm.linkedClientId) {
+      get().patchClient(regForm.linkedClientId, { linkedClientId: id });
+    }
     set({ regForm: emptyRegForm });
 
     // Persist to SQLite + outbox (fire-and-forget)
@@ -597,9 +693,20 @@ export const useAppStore = create<StoreState>((set, get) => ({
       clientId: id,
       name: nc.name,
       type: nc.type,
+      sex: regForm.sex || null,
       community: nc.community,
       dob: regForm.dob || null,
+      edd: regForm.edd || null,
+      lmp: regForm.lmp || null,
       consentAt: now,
+      phone: regForm.phone.trim() || null,
+      landmark: regForm.landmark.trim() || null,
+      ancFolderNumber: regForm.ancFolderNumber.trim() || null,
+      gravida: regForm.gravida.trim() || null,
+      parity: regForm.parity.trim() || null,
+      cwcCardNumber: regForm.cwcCardNumber.trim() || null,
+      caregiverName: regForm.caregiverName.trim() || null,
+      caregiverRelationship: regForm.caregiverRelationship || null,
     }).catch((e) => console.warn('[Store] persistClient error:', e));
 
     return nc;
@@ -612,9 +719,9 @@ export const useAppStore = create<StoreState>((set, get) => ({
       return { planEdits: { ...s.planEdits, [clientId]: { ...e, removed: [...e.removed, name] } } };
     }),
   addPlanAlternate: (clientId) => {
-    const { planEdits } = get();
+    const { planEdits, plans } = get();
     const e = planEdits[clientId] ?? { removed: [], added: [] };
-    const plan = PLANS[clientId];
+    const plan = plans[clientId] ?? PLANS[clientId];
     if (!plan) return null;
     const next = plan.alternates.find((a) => !e.added.includes(a.name));
     if (!next) return null;
@@ -664,11 +771,32 @@ export const useAppStore = create<StoreState>((set, get) => ({
       .then(() => syncNow('referral_emergency'))
       .catch((e) => console.warn('[Store] issueReferral persist error:', e));
   },
-  confirmReferralSeen: (clientId) =>
+  confirmReferralSeen: (clientId, details) =>
     set((s) => ({
       referrals: s.referrals.map((r) =>
-        r.clientId === clientId ? { ...r, status: 'seen', seenAt: '12th Nov, 2026' } : r,
+        r.clientId === clientId
+          ? {
+              ...r,
+              status: 'seen',
+              seenAt: details?.seenAt ?? new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+              confirmSource: details?.confirmSource,
+              outcome: details?.outcome,
+              nextFollowUp: details?.nextFollowUp,
+            }
+          : r,
       ),
+    })),
+
+  // ── Immunizations ──
+  saveVaccineRecord: (clientId, record) =>
+    set((s) => ({
+      immunizations: {
+        ...s.immunizations,
+        [clientId]: [
+          ...(s.immunizations[clientId] ?? []).filter((r) => r.vaccineId !== record.vaccineId),
+          record,
+        ],
+      },
     })),
 
   // ── Notifications ──
@@ -684,21 +812,220 @@ export const useAppStore = create<StoreState>((set, get) => ({
     const { syncing } = get();
     if (syncing) return;
     set({ syncing: true });
-    setTimeout(() => {
-      set((s) => ({
-        syncing: false,
-        offline: false,
-        telemetryCount: 0,
-        pendingRecords: 0,
-        clients: s.clients.map((c) => ({
-          ...c,
-          visits: c.visits.map((v) => ({ ...v, synced: true })),
-        })),
-      }));
-    }, 1900);
+    syncNow('foreground')
+      .catch((err) => console.error('[Store] Sync error', err))
+      .finally(() => {
+        set({ syncing: false, lastSyncAt: new Date().toISOString() });
+      });
   },
   toggleOffline: () => set((s) => ({ offline: !s.offline })),
   toggleAdaptive: () => set((s) => ({ adaptiveSync: !s.adaptiveSync })),
+
+  refreshDeviceStats: async () => {
+    try {
+      const [batteryLevel, dirInfo] = await Promise.all([
+        Battery.getBatteryLevelAsync(),
+        FileSystem.getInfoAsync(FileSystem.documentDirectory ?? '', { size: true }),
+      ]);
+      const batteryPct = Math.round(batteryLevel * 100);
+      const usedBytes = dirInfo.exists ? (dirInfo as { size?: number }).size ?? 0 : 0;
+      const usedMB = Math.round(usedBytes / (1024 * 1024));
+      set({ battery: batteryPct, storageUsed: Math.min(usedMB, 250) });
+    } catch {
+      // Leave existing values if device APIs are unavailable (e.g. web/simulator)
+    }
+  },
+
+  seedDemoData: () => {
+    const demoUser: CurrentUser = {
+      id: 'demo-cho-001',
+      firstName: 'Abubakari',
+      lastName: 'Sulemana',
+      otherNames: null,
+      phone: '+233244000001',
+      role: 'cho',
+      facilityName: 'Kukuo CHPS Compound',
+      facilityDistrict: 'Sagnarigu Municipal',
+      facilityRegion: 'Northern Region',
+      avatarUri: null,
+    };
+
+    // Client IDs match RANK_SIGNALS keys in ClientScreen for explainable ranking demo
+    const demoClients: DemoClient[] = [
+      {
+        id: 'amina',
+        name: 'Amina Yakubu',
+        type: 'pregnant',
+        age: 24,
+        community: 'Kukuo',
+        caregiver: 'Amina Yakubu',
+        priority: 'urgent',
+        metric: 'hb',
+        severe: false,
+        referred: false,
+        flag: 'Haemoglobin falling — anaemia risk',
+        flagDetail: 'Hb dropped from 11.2 to 9.6 g/dL across 3 visits',
+        trendNote: 'Declining Hb — risk of moderate anaemia',
+        trendArrow: 'down',
+        trendColor: '#C81E1E',
+        lifestage: 'pregnant',
+        visits: [
+          { date: '3rd Jun, 2026',  weight: 64.5, hb: 11.2, muac: 242, diet: ['grains','legumes','vita','veg'],        danger: [], synced: true,  owner: 'You' },
+          { date: '28th Jun, 2026', weight: 66.1, hb: 10.4, muac: 238, diet: ['grains','legumes'],                     danger: [], synced: true,  owner: 'You' },
+          { date: '18th Jul, 2026', weight: 68.3, hb: 9.6,  muac: 235, diet: ['grains'],                              danger: [], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'rahim',
+        name: 'Rahimatu Issah',
+        type: 'child',
+        age: '18 mo',
+        community: 'Choggu',
+        caregiver: 'Issah Fuseini',
+        priority: 'high',
+        metric: 'weight',
+        severe: false,
+        referred: false,
+        flag: 'Slow weight gain — nutrition gap',
+        flagDetail: 'No weight gain in 2 consecutive months. Diet restricted to 2 food groups.',
+        trendNote: 'Flat weight trend — expected growth not achieved',
+        trendArrow: 'flat',
+        trendColor: '#B54000',
+        visits: [
+          { date: '20th May, 2026', weight: 9.8, hb: null, muac: 126, diet: ['grains','breast'],         danger: [], synced: true,  owner: 'You' },
+          { date: '19th Jun, 2026', weight: 9.8, hb: null, muac: 122, diet: ['grains'],                  danger: [], synced: true,  owner: 'You' },
+          { date: '17th Jul, 2026', weight: 9.9, hb: null, muac: 124, diet: ['grains','breast'],         danger: [], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'latif',
+        name: 'Abdul Latif Mahama',
+        type: 'child',
+        age: '11 mo',
+        community: 'Katariga',
+        caregiver: 'Fatimatu Mahama',
+        priority: 'urgent',
+        metric: 'muac',
+        severe: true,
+        referred: true,
+        flag: 'Danger sign — referral needed',
+        flagDetail: 'MUAC 108 mm — below severe-wasting threshold (115 mm)',
+        trendNote: 'Danger-zone measurement — needs urgent clinical care',
+        trendArrow: 'down',
+        trendColor: '#C81E1E',
+        visits: [
+          { date: '1st Jul, 2026',  weight: 6.4, hb: null, muac: 115, diet: ['grains','breast'],   danger: [],         synced: true,  owner: 'You' },
+          { date: '22nd Jul, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'],            danger: ['oedema'], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'zeinab',
+        name: 'Zeinab Alhassan',
+        type: 'pregnant',
+        age: 27,
+        community: 'Lamashegu',
+        caregiver: 'Zeinab Alhassan',
+        priority: 'stable',
+        metric: 'hb',
+        severe: false,
+        referred: false,
+        flag: 'Stable · Hb within normal range',
+        flagDetail: 'Hb stable at 11.8–11.9 g/dL. Good diet diversity across 5 food groups.',
+        trendNote: 'Hb holding steady — continue iron/folate supplementation',
+        trendArrow: 'up',
+        trendColor: '#057A55',
+        lifestage: 'pregnant',
+        visits: [
+          { date: '10th Jun, 2026', weight: 71.2, hb: 11.8, muac: 256, diet: ['grains','legumes','dairy','flesh','vita','veg'], danger: [], synced: true,  owner: 'You' },
+          { date: '8th Jul, 2026',  weight: 73.6, hb: 11.9, muac: 258, diet: ['grains','legumes','eggs','vita','veg'],          danger: [], synced: false, owner: 'You' },
+        ],
+      },
+      {
+        id: 'sadia',
+        name: 'Sadia Mohammed',
+        type: 'child',
+        age: '36 mo',
+        community: 'Voggu',
+        caregiver: 'Mohammed Alhassan',
+        priority: 'stable',
+        metric: 'weight',
+        severe: false,
+        referred: false,
+        flag: 'Good progress · diet improving',
+        flagDetail: 'Weight gaining consistently. Diet improved from 3 to 5 food groups.',
+        trendNote: 'Positive weight trajectory',
+        trendArrow: 'up',
+        trendColor: '#057A55',
+        visits: [
+          { date: '5th May, 2026',  weight: 10.2, hb: null, muac: 148, diet: ['grains','legumes','vita'],               danger: [], synced: true,  owner: 'You' },
+          { date: '2nd Jun, 2026',  weight: 10.6, hb: null, muac: 151, diet: ['grains','legumes','vita','veg'],          danger: [], synced: true,  owner: 'You' },
+          { date: '30th Jun, 2026', weight: 10.9, hb: null, muac: 153, diet: ['grains','legumes','flesh','vita','veg'], danger: [], synced: false, owner: 'You' },
+        ],
+      },
+    ];
+
+    const demoReferrals: DemoReferral[] = [
+      {
+        id: 'ref-latif-001',
+        clientId: 'latif',
+        name: 'Abdul Latif Mahama',
+        type: 'child',
+        reason: 'MUAC 108 mm — below severe-wasting threshold (115 mm). Bilateral oedema present.',
+        facility: 'Tamale West Hospital',
+        status: 'issued',
+        at: '22nd Jul, 2026',
+        due: '25th Jul, 2026',
+      },
+    ];
+
+    const demoNotifications: AppNotification[] = [
+      {
+        id: 'notif-latif',
+        kind: 'risk',
+        title: 'Urgent: Abdul Latif Mahama',
+        body: 'MUAC 108 mm recorded — referral issued to Tamale West Hospital.',
+        time: '22nd Jul, 14:22',
+        read: false,
+        group: 'today',
+        target: 'latif',
+      },
+      {
+        id: 'notif-amina',
+        kind: 'risk',
+        title: 'Amina Yakubu — Hb declining',
+        body: 'Hb dropped to 9.6 g/dL. Follow-up recommended within 7 days.',
+        time: '18th Jul, 10:05',
+        read: false,
+        group: 'today',
+        target: 'amina',
+      },
+      {
+        id: 'notif-bundle',
+        kind: 'bundle',
+        title: 'Reference bundle updated',
+        body: 'Seasonal food data v2.1 downloaded. Rainy-season foods now available.',
+        time: '15th Jul, 08:30',
+        read: true,
+        group: 'earlier',
+        target: '',
+      },
+    ];
+
+    set({
+      isLoggedIn: true,
+      role: 'cho',
+      currentUser: demoUser,
+      sessionExpired: false,
+      clients: demoClients,
+      referrals: demoReferrals,
+      notifications: demoNotifications,
+      offline: true,
+      syncing: false,
+      lastSyncAt: null,
+      pendingRecords: 3, // 3 unsynced visits across the caseload
+      dataLoading: false,
+    });
+  },
 }));
 
 // ─── Selector helpers ─────────────────────────────────────────────────────────
@@ -738,4 +1065,30 @@ export function metricLabel(metric: 'hb' | 'weight' | 'muac'): string {
   if (metric === 'hb')   return 'Haemoglobin (g/dL)';
   if (metric === 'muac') return 'MUAC (mm)';
   return 'Weight (kg)';
+}
+
+/**
+ * Derives a human-readable NurtureLink client ID from list position.
+ * Format: NL-{COM}-{YEAR}-{SEQ}  e.g. NL-KUK-2026-00003
+ * Note: position-based, not stable if clients are reordered.
+ */
+export function clientHumanId(client: DemoClient, allClients: DemoClient[]): string {
+  const prefix = client.community
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 3)
+    .toUpperCase()
+    .padEnd(3, 'X');
+  const idx = allClients.findIndex((c) => c.id === client.id);
+  const seq = String(Math.max(idx, 0) + 1).padStart(5, '0');
+  return `NL-${prefix}-${new Date().getFullYear()}-${seq}`;
+}
+
+/** Derives a household display ID from community prefix and index. */
+export function householdHumanId(community: string, idx: number): string {
+  const prefix = community
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 3)
+    .toUpperCase()
+    .padEnd(3, 'X');
+  return `HH-${prefix}-${String(idx + 1).padStart(4, '0')}`;
 }

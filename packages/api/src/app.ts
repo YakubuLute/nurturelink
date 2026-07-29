@@ -7,6 +7,8 @@ import rateLimit from 'express-rate-limit';
 import { authRouter } from './routes/auth';
 import { aiRouter } from './routes/ai';
 import { clientsRouter } from './routes/clients';
+import { facilitiesRouter } from './routes/facilities';
+import { supervisorRouter } from './routes/supervisor';
 import { visitsRouter } from './routes/visits';
 import { plansRouter } from './routes/plans';
 import { referralsRouter } from './routes/referrals';
@@ -18,10 +20,17 @@ import { errorMiddleware } from './middleware/error';
 export function createApp(): Application {
   const app = express();
 
+  // ── Request logging ─────────────────────────────────────────────────────────
+  app.use((req, _res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+  });
+
   // ── Security & parsing ──────────────────────────────────────────────────────
   app.use(helmet());
   app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));
-  app.use(compression());
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.use(compression() as any);
   app.use(express.json({ limit: '2mb' }));
 
   // ── Rate limiting ───────────────────────────────────────────────────────────
@@ -35,6 +44,8 @@ export function createApp(): Application {
 
   // ── Routes ──────────────────────────────────────────────────────────────────
   app.use('/auth', authRouter);
+  app.use('/facilities', facilitiesRouter);
+  app.use('/supervisor', supervisorRouter);
   app.use('/ai', aiRouter);
   app.use('/clients', clientsRouter);
   app.use('/visits', visitsRouter);

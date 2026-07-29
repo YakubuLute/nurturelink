@@ -18,8 +18,12 @@ import {
   priorityStyle,
   formatMetric,
   metricLabel,
+  clientHumanId,
 } from '../store';
-import { ChevronLeft, TrendingUp, TrendingDown, Minus, Check, AlertTriangle, BarChart2, ClipboardList } from 'lucide-react-native';
+import {
+  ChevronLeft, TrendingUp, TrendingDown, Minus, Check, AlertTriangle,
+  BarChart2, ClipboardList, ShieldCheck, ChevronRight, Link,
+} from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -65,14 +69,68 @@ const FOOD_GROUPS = [
   { id: 'breast',  label: 'Breast',   color: '#559FE0' },
 ];
 
-// ─── Ranking signals per client ───────────────────────────────────────────────
-const RANK_SIGNALS: Record<string, string[]> = {
-  amina:  ['Hb fell from 11.2 → 9.6 g/dL across 3 visits', 'MUAC declining: 242 → 235 mm', 'Diet of only 2 food groups last visit'],
-  rahim:  ['No weight gain in 2 consecutive months', 'Diet restricted to only 2 food groups', 'MUAC below expected range for age'],
-  latif:  ['MUAC 108 mm — below severe-wasting threshold (115 mm)', 'Weight falling: 6.4 → 6.1 kg', 'Danger-zone measurement at last visit'],
-  zeinab: ['Hb stable at 11.8 g/dL across 2 visits', 'Good diet diversity: 5 food groups', 'Weight gaining appropriately'],
-  sadia:  ['Diet improved from 3 to 5 food groups', 'Weight gaining: 10.2 → 10.9 kg', 'MUAC stable at healthy range'],
-};
+// ─── Computed ranking signals from visit history ──────────────────────────────
+function computeRankSignals(client: DemoClient): string[] {
+  const { visits, metric, type, flagDetail } = client;
+  if (visits.length === 0) return [flagDetail || 'No visits recorded yet'];
+
+  const signals: string[] = [];
+  const first = visits[0];
+  const last = visits[visits.length - 1];
+
+  // Metric trend
+  if (metric === 'hb' && first.hb !== null && last.hb !== null) {
+    const direction = last.hb < first.hb ? 'fell' : last.hb > first.hb ? 'rose' : 'stable';
+    signals.push(`Hb ${direction} from ${first.hb} → ${last.hb} g/dL across ${visits.length} visit${visits.length !== 1 ? 's' : ''}`);
+  } else if (metric === 'weight') {
+    const diff = last.weight - first.weight;
+    if (Math.abs(diff) < 0.15 && visits.length >= 2) {
+      signals.push(`No weight gain in ${visits.length} consecutive visit${visits.length !== 1 ? 's' : ''}`);
+    } else if (diff > 0) {
+      signals.push(`Weight gaining: ${first.weight} → ${last.weight} kg`);
+    } else {
+      signals.push(`Weight falling: ${first.weight} → ${last.weight} kg`);
+    }
+  } else if (metric === 'muac') {
+    const mFirst = first.muac;
+    const mLast = last.muac;
+    if (visits.length >= 2) {
+      signals.push(`MUAC ${mFirst > mLast ? 'falling' : 'improving'}: ${mFirst} → ${mLast} mm across ${visits.length} visit${visits.length !== 1 ? 's' : ''}`);
+    }
+    // Severe threshold (child: < 115 mm)
+    if (type === 'child' && mLast < 115) {
+      signals.push(`MUAC ${mLast} mm — below severe-wasting threshold (115 mm)`);
+    }
+  }
+
+  // Diet diversity at last visit
+  const lastDiet = last.diet;
+  if (lastDiet.length <= 2) {
+    signals.push(`Diet restricted to only ${lastDiet.length} food group${lastDiet.length !== 1 ? 's' : ''} at last visit`);
+  } else if (lastDiet.length >= 5) {
+    signals.push(`Good diet diversity: ${lastDiet.length} food groups at last visit`);
+  } else if (visits.length >= 2) {
+    const firstDiet = first.diet.length;
+    if (lastDiet.length > firstDiet) {
+      signals.push(`Diet improved from ${firstDiet} to ${lastDiet.length} food groups`);
+    }
+  }
+
+  // Danger signs at last visit
+  if (last.danger.length > 0) {
+    signals.push(`Danger sign${last.danger.length > 1 ? 's' : ''} present: ${last.danger.join(', ')}`);
+  }
+
+  // MUAC trend for children (even if not primary metric)
+  if (metric !== 'muac' && type === 'child' && visits.length >= 2) {
+    const muacDiff = last.muac - first.muac;
+    if (muacDiff < -5) {
+      signals.push(`MUAC declining: ${first.muac} → ${last.muac} mm`);
+    }
+  }
+
+  return signals.length > 0 ? signals : [flagDetail || 'Assessed across multiple visits'];
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getMetricValues(visits: DemoVisit[], metric: 'hb' | 'weight' | 'muac'): (number | null)[] {
@@ -195,7 +253,7 @@ function DietDiversityCard({ lastVisit }: { lastVisit: DemoVisit }) {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export function ClientScreen({ navigation, route }: Props) {
   const { clientId } = route.params;
-  const { clients, referrals, confirmReferralSeen } = useAppStore();
+  const { clients, referrals, confirmReferralSeen, role, immunizations } = useAppStore();
   const client = clients.find((c) => c.id === clientId);
   const referral = referrals.find((r) => r.clientId === clientId);
 
@@ -213,6 +271,15 @@ export function ClientScreen({ navigation, route }: Props) {
   const aStyle = avatarStyle(client.type);
   const abbrev = initials(client.name);
   const label = metricLabel(client.metric);
+
+  const humanId      = clientHumanId(client, clients);
+  const isSupervisor = role === 'sup';
+  const isChild      = client.type === 'child';
+  const linkedClient = client.linkedClientId
+    ? clients.find((c) => c.id === client.linkedClientId) ?? null
+    : null;
+  const vaccinationCount = (immunizations[clientId] ?? []).length;
+  const TOTAL_VACCINES   = 17; // Ghana EPI schedule total
   const currentValue = lastVisit
     ? formatMetric(client.metric, client.metric === 'hb' ? lastVisit.hb : client.metric === 'weight' ? lastVisit.weight : lastVisit.muac)
     : '—';
@@ -233,7 +300,7 @@ export function ClientScreen({ navigation, route }: Props) {
     }
   }
 
-  const rankSignals = RANK_SIGNALS[client.id] ?? ['No historical signals yet'];
+  const rankSignals = computeRankSignals(client);
 
   // priority flag styles
   let flagBg = C.successBg;
@@ -246,8 +313,12 @@ export function ClientScreen({ navigation, route }: Props) {
     flagBg = C.highPriorityBg; flagBorder = '#FFCAA8'; flagTextColor = C.highPriority; flagWarn = true;
   }
 
+  const lifecycleLabel =
+    client.lifestage === 'postpartum' ? 'Postpartum'
+    : client.lifestage === 'lactating' ? 'Lactating'
+    : 'Pregnant';
   const subLine = client.type === 'pregnant'
-    ? `Pregnant · ${client.age} yrs · ${client.community}`
+    ? `${lifecycleLabel} · ${client.age} yrs · ${client.community}`
     : `Child · ${client.age} · ${client.community}`;
 
   function handlePlanPress() {
@@ -275,6 +346,7 @@ export function ClientScreen({ navigation, route }: Props) {
           <View style={{ flex: 1 }}>
             <Text style={styles.clientName}>{client.name}</Text>
             <Text style={styles.clientSub}>{subLine}</Text>
+            <Text style={styles.clientId}>{humanId}</Text>
           </View>
         </View>
       </View>
@@ -284,6 +356,35 @@ export function ClientScreen({ navigation, route }: Props) {
         style={{ flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 16, borderTopRightRadius: 16, marginTop: -8 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       >
+        {/* Supervisor read-only banner */}
+        {isSupervisor && (
+          <View style={[styles.card, { backgroundColor: C.lb50, borderColor: C.lb200, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+            <ShieldCheck size={16} color={C.lb700} />
+            <Text style={{ fontSize: 13, color: C.lb700, fontWeight: '600', flex: 1 }}>
+              Supervisor view — you can review records but not edit them.
+            </Text>
+          </View>
+        )}
+
+        {/* Linked mother / child card */}
+        {linkedClient && (
+          <TouchableOpacity
+            style={[styles.card, { marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+            onPress={() => navigation.navigate('Client', { clientId: linkedClient.id })}
+            accessibilityLabel={`View linked ${linkedClient.type === 'pregnant' ? 'mother' : 'child'} record`}
+          >
+            <Link size={16} color={C.fg3} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, color: C.fg3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 }}>
+                {isChild ? 'Linked mother' : 'Linked child'}
+              </Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>{linkedClient.name}</Text>
+              <Text style={{ fontSize: 12, color: C.fg3, marginTop: 1 }}>{linkedClient.community}</Text>
+            </View>
+            <ChevronRight size={16} color={C.fg4} />
+          </TouchableOpacity>
+        )}
+
         {/* Referral banner */}
         {client.referred && referral && (
           <View style={[styles.card, { backgroundColor: C.errorBg, borderColor: C.errorBorder, marginBottom: 12 }]}>
@@ -374,6 +475,26 @@ export function ClientScreen({ navigation, route }: Props) {
         {/* Diet diversity card */}
         {lastVisit && <DietDiversityCard lastVisit={lastVisit} />}
 
+        {/* Immunization tracker card — children only */}
+        {isChild && (
+          <TouchableOpacity
+            style={[styles.card, { marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+            onPress={() => navigation.navigate('Immunization', { clientId })}
+            accessibilityLabel="View immunization record"
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: C.lb50, alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldCheck size={18} color={C.lb700} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Immunization record</Text>
+              <Text style={{ fontSize: 12, color: C.fg3, marginTop: 2 }}>
+                {vaccinationCount}/{TOTAL_VACCINES} vaccines recorded · Ghana EPI
+              </Text>
+            </View>
+            <ChevronRight size={16} color={C.fg4} />
+          </TouchableOpacity>
+        )}
+
         {/* Visit history */}
         <Text style={styles.sectionHeader}>Visit history</Text>
         {visits.length === 0 ? (
@@ -426,13 +547,15 @@ export function ClientScreen({ navigation, route }: Props) {
 
       {/* ── Bottom action bar ── */}
       <View style={styles.actionBar}>
-        <TouchableOpacity
-          style={styles.actionBtnOutline}
-          onPress={() => navigation.navigate('Visit', { clientId })}
-          accessibilityLabel="Record visit"
-        >
-          <Text style={{ fontSize: 14, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
-        </TouchableOpacity>
+        {!isSupervisor && (
+          <TouchableOpacity
+            style={styles.actionBtnOutline}
+            onPress={() => navigation.navigate('Visit', { clientId })}
+            accessibilityLabel="Record visit"
+          >
+            <Text style={{ fontSize: 14, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
+          </TouchableOpacity>
+        )}
 
         {visits.length > 0 && (
           <TouchableOpacity
@@ -487,6 +610,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: C.lb300,
     marginTop: 2,
+  },
+  clientId: {
+    fontSize: 11,
+    color: 'rgba(180,218,251,0.65)',
+    marginTop: 3,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.3,
   },
   card: {
     backgroundColor: C.surface,

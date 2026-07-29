@@ -1,71 +1,25 @@
 /**
  * SupervisorScreen — district-level overview for supervisors.
- * Shows aggregate caseload stats, referral pipeline, sync health,
- * and a list of CHO activity for the supervisor's zone.
- *
+ * All data comes from the store (loaded via /supervisor/chos API).
  * Supervisor role (Role = 'sup') is checked from the store; CHO-role users
  * should not see this screen in navigation.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
-import { useAppStore } from '../store';
-import { ChevronLeft, AlertTriangle } from 'lucide-react-native';
+import { useAppStore, ChoActivity } from '../store';
+import { ChevronLeft, AlertTriangle, Users, RefreshCw } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Supervisor'>;
-
-// ─── Demo district data ───────────────────────────────────────────────────────
-
-const CHO_ACTIVITY = [
-  {
-    id: 'cho1',
-    name: 'Yakubu Lute',
-    zone: 'Kukuo CHPS',
-    clients: 12,
-    visited: 9,
-    pending: 2,
-    lastSync: '11:01 am',
-    synced: true,
-  },
-  {
-    id: 'cho2',
-    name: 'Fati Abdulai',
-    zone: 'Sagnarigu CHPS',
-    clients: 15,
-    visited: 11,
-    pending: 0,
-    lastSync: '9:45 am',
-    synced: true,
-  },
-  {
-    id: 'cho3',
-    name: 'Issah Tahiru',
-    zone: 'Gizaa CHPS',
-    clients: 8,
-    visited: 4,
-    pending: 5,
-    lastSync: '3 days ago',
-    synced: false,
-  },
-  {
-    id: 'cho4',
-    name: 'Mariama Seidu',
-    zone: 'Kpalsi CHPS',
-    clients: 10,
-    visited: 10,
-    pending: 0,
-    lastSync: 'Yesterday',
-    synced: true,
-  },
-];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -88,7 +42,7 @@ function StatCard({
   );
 }
 
-function ChoRow({ cho }: { cho: (typeof CHO_ACTIVITY)[0] }) {
+function ChoRow({ cho }: { cho: ChoActivity }) {
   const coverage = cho.clients > 0 ? Math.round((cho.visited / cho.clients) * 100) : 0;
   return (
     <View style={styles.choCard}>
@@ -136,20 +90,36 @@ function ChoRow({ cho }: { cho: (typeof CHO_ACTIVITY)[0] }) {
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export function SupervisorScreen({ navigation }: Props) {
-  const { clients, referrals } = useAppStore();
+  const {
+    referrals,
+    choActivity,
+    supervisorLoading,
+    loadSupervisorData,
+    referenceBundle,
+    currentUser,
+  } = useAppStore();
   const [tab, setTab] = useState<'overview' | 'chos'>('overview');
 
-  const totalClients = clients.length + CHO_ACTIVITY.reduce((s, c) => s + c.clients, 0);
-  const urgentCount = clients.filter((c) => c.priority === 'urgent').length + 1; // demo
-  const totalReferrals = referrals.length + 2; // demo
-  const pendingReferrals = referrals.filter((r) => r.status === 'issued').length + 1;
-  const syncBehind = CHO_ACTIVITY.filter((c) => !c.synced).length;
+  useEffect(() => {
+    loadSupervisorData();
+  }, []);
+
+  const totalClients = choActivity.reduce((s, c) => s + c.clients, 0);
+  const totalReferrals = referrals.length;
+  const pendingReferrals = referrals.filter((r) => r.status === 'issued').length;
+  const syncBehind = choActivity.filter((c) => !c.synced).length;
+  const totalVisited = choActivity.reduce((s, c) => s + c.visited, 0);
+
+  const district = currentUser?.facilityDistrict ?? 'District';
 
   const today = new Date().toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
+
+  const bundleVersion = referenceBundle?.version ?? '—';
+  const devicesOnLatest = choActivity.filter((c) => c.synced).length;
 
   return (
     <View style={styles.root}>
@@ -166,9 +136,16 @@ export function SupervisorScreen({ navigation }: Props) {
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>District overview</Text>
-            <Text style={styles.headerDate}>East Dagbon · {today}</Text>
+            <Text style={styles.headerDate}>{district} · {today}</Text>
           </View>
-          <View style={{ width: 36 }} />
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => loadSupervisorData()}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh CHO data"
+          >
+            <RefreshCw size={18} color="#FDFDFD" />
+          </TouchableOpacity>
         </View>
 
         {/* Tab bar */}
@@ -188,7 +165,7 @@ export function SupervisorScreen({ navigation }: Props) {
             accessibilityRole="button"
           >
             <Text style={[styles.tabText, tab === 'chos' && styles.tabTextActive]}>
-              CHOs ({CHO_ACTIVITY.length})
+              CHOs ({choActivity.length})
             </Text>
           </TouchableOpacity>
         </View>
@@ -219,10 +196,10 @@ export function SupervisorScreen({ navigation }: Props) {
             <View style={styles.statGrid}>
               <StatCard value={totalClients} label="Total clients" />
               <StatCard
-                value={urgentCount}
-                label="Urgent"
-                color="#C81E1E"
-                bg="#FDF2F2"
+                value={pendingReferrals}
+                label="Awaiting care"
+                color="#B48700"
+                bg="#FFF9E6"
               />
               <StatCard
                 value={totalReferrals}
@@ -231,33 +208,50 @@ export function SupervisorScreen({ navigation }: Props) {
                 bg="#FFEFE6"
               />
               <StatCard
-                value={pendingReferrals}
-                label="Awaiting care"
-                color="#B48700"
-                bg="#FFF9E6"
+                value={syncBehind}
+                label="CHOs behind"
+                color={syncBehind > 0 ? '#C81E1E' : '#057A55'}
+                bg={syncBehind > 0 ? '#FDF2F2' : '#F3FAF7'}
               />
             </View>
 
             {/* Coverage */}
-            <Text style={styles.sectionTitle}>Visit coverage this month</Text>
-            <View style={styles.coverageCard}>
-              {CHO_ACTIVITY.map((cho) => {
-                const pct = Math.round((cho.visited / cho.clients) * 100);
-                return (
-                  <View key={cho.id} style={styles.coverageRow}>
-                    <Text style={styles.coverageName} numberOfLines={1}>
-                      {cho.name.split(' ')[0]}
-                    </Text>
-                    <View style={styles.coverageBarWrap}>
-                      <View style={styles.coverageBarBg}>
-                        <View style={[styles.coverageBarFill, { width: `${pct}%` }]} />
+            {choActivity.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>Visit coverage this month</Text>
+                <View style={styles.coverageCard}>
+                  {choActivity.map((cho) => {
+                    const pct = cho.clients > 0 ? Math.round((cho.visited / cho.clients) * 100) : 0;
+                    return (
+                      <View key={cho.id} style={styles.coverageRow}>
+                        <Text style={styles.coverageName} numberOfLines={1}>
+                          {cho.name.split(' ')[0]}
+                        </Text>
+                        <View style={styles.coverageBarWrap}>
+                          <View style={styles.coverageBarBg}>
+                            <View style={[styles.coverageBarFill, { width: `${pct}%` }]} />
+                          </View>
+                        </View>
+                        <Text style={styles.coveragePct}>{pct}%</Text>
                       </View>
+                    );
+                  })}
+                  {choActivity.length > 0 && (
+                    <View style={[styles.coverageRow, { marginTop: 8, borderTopWidth: 1, borderTopColor: '#F0F1F3', paddingTop: 8 }]}>
+                      <Text style={[styles.coverageName, { color: '#374151' }]}>Total</Text>
+                      <View style={styles.coverageBarWrap}>
+                        <View style={styles.coverageBarBg}>
+                          <View style={[styles.coverageBarFill, { width: `${totalClients > 0 ? Math.round((totalVisited / totalClients) * 100) : 0}%` }]} />
+                        </View>
+                      </View>
+                      <Text style={[styles.coveragePct, { color: '#374151' }]}>
+                        {totalClients > 0 ? Math.round((totalVisited / totalClients) * 100) : 0}%
+                      </Text>
                     </View>
-                    <Text style={styles.coveragePct}>{pct}%</Text>
-                  </View>
-                );
-              })}
-            </View>
+                  )}
+                </View>
+              </>
+            )}
 
             {/* Referral pipeline */}
             <Text style={styles.sectionTitle}>Referral pipeline</Text>
@@ -275,9 +269,15 @@ export function SupervisorScreen({ navigation }: Props) {
               </View>
               <View style={styles.divider} />
               <View style={styles.pipelineRow}>
-                <View style={[styles.pipelineDot, { backgroundColor: '#C81E1E' }]} />
-                <Text style={styles.pipelineLabel}>{'Overdue (> 7 days)'}</Text>
-                <Text style={[styles.pipelineValue, { color: '#C81E1E' }]}>1</Text>
+                <View style={[styles.pipelineDot, { backgroundColor: '#9CA3AF' }]} />
+                <Text style={styles.pipelineLabel}>Overdue ({'>'} 7 days)</Text>
+                <Text style={styles.pipelineValue}>
+                  {referrals.filter((r) => {
+                    if (r.status !== 'issued') return false;
+                    const issued = new Date(r.at);
+                    return !isNaN(issued.getTime()) && Date.now() - issued.getTime() > 7 * 86400000;
+                  }).length}
+                </Text>
               </View>
             </View>
 
@@ -286,17 +286,14 @@ export function SupervisorScreen({ navigation }: Props) {
             <View style={styles.bundleCard}>
               <View style={styles.bundleRow}>
                 <Text style={styles.bundleLabel}>Active version</Text>
-                <Text style={styles.bundleValue}>v2.4.1</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.bundleRow}>
-                <Text style={styles.bundleLabel}>Published</Text>
-                <Text style={styles.bundleValue}>14 Nov 2026</Text>
+                <Text style={styles.bundleValue}>{bundleVersion}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.bundleRow}>
                 <Text style={styles.bundleLabel}>Devices on latest</Text>
-                <Text style={styles.bundleValue}>3 / 4</Text>
+                <Text style={styles.bundleValue}>
+                  {devicesOnLatest} / {choActivity.length}
+                </Text>
               </View>
               <View style={styles.divider} />
               <TouchableOpacity style={styles.bundlePushBtn} accessibilityRole="button">
@@ -307,9 +304,32 @@ export function SupervisorScreen({ navigation }: Props) {
         ) : (
           <>
             <Text style={styles.sectionTitle}>Community health officers</Text>
-            {CHO_ACTIVITY.map((cho) => (
-              <ChoRow key={cho.id} cho={cho} />
-            ))}
+
+            {supervisorLoading ? (
+              <View style={styles.loadingState}>
+                <ActivityIndicator size="large" color="#427CAF" />
+                <Text style={styles.loadingText}>Loading CHO data…</Text>
+              </View>
+            ) : choActivity.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Users size={40} color="#D1D5DB" />
+                <Text style={styles.emptyTitle}>No CHOs in district</Text>
+                <Text style={styles.emptyBody}>
+                  CHOs will appear here once they register and sync their first visit.
+                </Text>
+                <TouchableOpacity
+                  style={styles.retryBtn}
+                  onPress={() => loadSupervisorData()}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.retryBtnText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              choActivity.map((cho) => (
+                <ChoRow key={cho.id} cho={cho} />
+              ))
+            )}
           </>
         )}
 
@@ -544,4 +564,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   pendingBadgeText: { fontSize: 10, fontWeight: '600', color: '#B54000' },
+
+  // Loading / empty states
+  loadingState: { alignItems: 'center', paddingVertical: 48 },
+  loadingText: { fontSize: 14, color: '#9CA3AF', marginTop: 12 },
+  emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#374151', marginTop: 16, marginBottom: 6 },
+  emptyBody: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 },
+  retryBtn: {
+    marginTop: 18,
+    backgroundColor: '#08283B',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+  },
+  retryBtnText: { fontSize: 14, fontWeight: '600', color: '#FDFDFD' },
 });

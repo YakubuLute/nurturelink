@@ -12,7 +12,36 @@ function sha256(token: string): string {
 
 export class AuthRepository {
   async findByPhone(phone: string) {
-    return prisma.user.findUnique({ where: { phone } });
+    return prisma.user.findUnique({
+      where: { phone },
+      include: { facility: { select: { name: true, district: true, region: true } } },
+    });
+  }
+
+  async createUser(data: {
+    firstName: string;
+    lastName: string;
+    otherNames?: string | null;
+    phone: string;
+    passwordHash: string;
+    role: 'CHO' | 'supervisor';
+    facilityId: string | null;
+  }) {
+    return prisma.user.create({
+      data: {
+        firstName:  data.firstName,
+        lastName:   data.lastName,
+        otherNames: data.otherNames ?? null,
+        phone:      data.phone,
+        passwordHash: data.passwordHash,
+        role:       data.role,
+        facilityId: data.facilityId,
+      },
+    });
+  }
+
+  async updatePasswordHash(phone: string, passwordHash: string) {
+    return prisma.user.update({ where: { phone }, data: { passwordHash } });
   }
 
   async createRefreshToken(userId: string): Promise<string> {

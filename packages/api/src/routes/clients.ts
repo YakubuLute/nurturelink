@@ -22,7 +22,7 @@ clientsRouter.get('/', authenticate, async (req, res, next) => {
   try {
     const { facilityId } = req.user;
     if (!facilityId) {
-      res.status(400).json({ error: 'User is not assigned to a facility' });
+      res.json({ clients: [], cursor: null, hasMore: false });
       return;
     }
     const result = await svc.listByFacility(facilityId);
@@ -35,7 +35,7 @@ clientsRouter.get('/', authenticate, async (req, res, next) => {
 // GET /clients/:id — get a single client by UUID
 clientsRouter.get('/:id', authenticate, async (req, res, next) => {
   try {
-    const client = await svc.findById(req.params.id);
+    const client = await svc.findById(String(req.params.id));
     if (!client) {
       res.status(404).json({ error: 'Client not found' });
       return;

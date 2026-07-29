@@ -16,10 +16,12 @@ export const LoginSchema = z.object({
 export type LoginInput = z.infer<typeof LoginSchema>;
 
 export const RegisterSchema = z.object({
-  name: z.string().min(2),
-  phone: z.string().min(10),
-  password: z.string().min(8),
-  role: z.enum(['CHO', 'supervisor']),
+  firstName:  z.string().min(1, 'First name is required'),
+  lastName:   z.string().min(1, 'Last name is required'),
+  otherNames: z.string().optional(),
+  phone:      z.string().min(10),
+  password:   z.string().min(8),
+  role:       z.enum(['CHO', 'supervisor']),
   facilityId: z.string().uuid().optional(),
 });
 export type RegisterInput = z.infer<typeof RegisterSchema>;
@@ -44,10 +46,15 @@ export const ResetPasswordSchema = z.object({
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 
 export const AuthUserSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  role: UserRoleSchema,
-  facilityId: z.string().uuid().nullable(),
+  id:               z.string().uuid(),
+  firstName:        z.string(),
+  lastName:         z.string(),
+  otherNames:       z.string().nullable(),
+  role:             UserRoleSchema,
+  facilityId:       z.string().uuid().nullable(),
+  facilityName:     z.string().nullable(),
+  facilityDistrict: z.string().nullable(),
+  facilityRegion:   z.string().nullable(),
 });
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 
