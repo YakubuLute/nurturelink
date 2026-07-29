@@ -3,6 +3,8 @@
 > **Offline-first nutrition decision support for CHPS Community Health Officers in rural Northern Ghana.**
 > Built for the [UNICEF AI for Nurturing Care Hackathon](https://www.unicef.org) (KOICA / MEST StartUp Lab), Tamale 2026.
 
+> **Application pitch (evaluators):** [docs/pitch.md](docs/pitch.md) — problem statement, app screenshots, what's built, and bootcamp roadmap.
+
 ---
 
 ## The Problem
