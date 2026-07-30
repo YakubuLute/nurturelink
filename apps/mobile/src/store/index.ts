@@ -162,6 +162,8 @@ export interface RegForm {
   type: ClientType;
   name: string;
   sex: string;          // 'Male' | 'Female' | ''
+  region: string;
+  district: string;
   community: string;
   dob: string;          // child's DOB or mother's DOB (YYYY-MM-DD)
   consent: boolean;
@@ -506,6 +508,8 @@ const emptyRegForm: RegForm = {
   type: 'child',
   name: '',
   sex: '',
+  region: '',
+  district: '',
   community: '',
   dob: '',
   consent: false,

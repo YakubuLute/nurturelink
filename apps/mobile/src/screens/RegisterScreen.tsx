@@ -19,19 +19,114 @@ import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
 import {
   ChevronLeft, ChevronRight, Check, WifiOff, Baby, User, CalendarDays,
-  Phone, MapPin, FileText, Info, ChevronDown, X, Search, MapPinned,
+  Phone, MapPin, FileText, Info, ChevronDown, X, Search, MapPinned, Globe,
 } from 'lucide-react-native';
 import { syncNow } from '../sync/orchestrator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
-// Communities in Sagnarigu Municipal District, Northern Region, Ghana
-const SAGNARIGU_COMMUNITIES = [
-  'Barugu', 'Choggu', 'Dohigu', 'Gizaa', 'Gurugu',
-  'Kakpayili', 'Kanvili', 'Kasalgu', 'Katariga', 'Kpinkpanaa',
-  'Kpuyangli', 'Kukuo', 'Kumbuyili', 'Lamashegu', 'Nyanshegu',
-  'Sagnarigu', 'Teshie', 'Voggu', 'Zagyuri',
-] as const;
+// Ghana Northern Regions → Districts → Communities
+const GHANA_LOCATION_DATA: Record<string, Record<string, string[]>> = {
+  'Northern Region': {
+    'Sagnarigu Municipal': [
+      'Barugu', 'Choggu', 'Dohigu', 'Gizaa', 'Gurugu',
+      'Kakpayili', 'Kanvili', 'Kasalgu', 'Katariga', 'Kpinkpanaa',
+      'Kpuyangli', 'Kukuo', 'Kumbuyili', 'Lamashegu', 'Nyanshegu',
+      'Sagnarigu', 'Teshie', 'Voggu', 'Zagyuri',
+    ],
+    'Tamale Metropolitan': [
+      'Aboabo', 'Bamvim', 'Choggu Naa', 'Dichemso', 'Jisonayili',
+      'Kalpohin', 'Kpobigu', 'Lamashegu', 'Nyohini', 'Sabonjida',
+      'Sakasaka', 'Tishigu', 'Vittin', 'Wamale',
+    ],
+    'Kumbungu': [
+      'Gupanarigu', 'Kumbungu', 'Kpene', 'Nyankpala', 'Tunayili', 'Zuo',
+    ],
+    'Tolon': [
+      'Bamvim', 'Dibila', 'Kpalbe', 'Kpene', 'Tolon', 'Wuba', 'Zuo',
+    ],
+    'Savelugu': [
+      'Diari', 'Nanton', 'Pong Tamale', 'Savelugu', 'Tampion',
+    ],
+    'Nanton': [
+      'Gbullung', 'Karaga', 'Nanton', 'Wulensi',
+    ],
+    'Mion': [
+      'Bimbila', 'Demon', 'Gushegu', 'Salaga', 'Sang',
+    ],
+  },
+  'North East Region': {
+    'East Mamprusi': [
+      'Gambaga', 'Langbinsi', 'Nalerigu', 'Nakpayili', 'Yagaba',
+    ],
+    'West Mamprusi': [
+      'Janga', 'Nakpayili', 'Walewale',
+    ],
+    'Mamprugu Moagduri': [
+      'Kubori', 'Soo', 'Yagaba',
+    ],
+    'Bunkpurugu Nyankpala': [
+      'Bunkpurugu', 'Nakpayili', 'Nyankpala',
+    ],
+    'Yunyoo-Nasuan': [
+      'Nasuan', 'Yunyoo',
+    ],
+  },
+  'Savannah Region': {
+    'West Gonja': [
+      'Bole', 'Damongo', 'Larabanga', 'Murugu', 'Yapei',
+    ],
+    'East Gonja': [
+      'Buipe', 'Busunu', 'Salaga', 'Tuluwe',
+    ],
+    'Sawla-Tuna-Kalba': [
+      'Bole', 'Kalba', 'Sawla', 'Tuna',
+    ],
+    'Bole': [
+      'Bamboi', 'Bole', 'Tinga',
+    ],
+    'North East Gonja': [
+      'Canteen', 'Karaga', 'Kpandai',
+    ],
+  },
+  'Upper East Region': {
+    'Bolgatanga Municipal': [
+      'Bolgatanga', 'Kalbeo', 'Sumbrungu', 'Yorogo',
+    ],
+    'Kassena-Nankana Municipal': [
+      'Navrongo', 'Nayorigo', 'Paga', 'Sirigu',
+    ],
+    'Bawku Municipal': [
+      'Bawku', 'Pusiga', 'Widana',
+    ],
+    'Builsa North': [
+      'Fumbisi', 'Kanjarga', 'Sandema',
+    ],
+    'Talensi': [
+      'Tongo', 'Vea', 'Worikambo',
+    ],
+    'Binduri': [
+      'Binduri', 'Garu',
+    ],
+  },
+  'Upper West Region': {
+    'Wa Municipal': [
+      'Busa', 'Kpongu', 'Wa', 'Yipala',
+    ],
+    'Sissala East': [
+      'Gwollu', 'Tumu', 'Wellembelle',
+    ],
+    'Sissala West': [
+      'Hamile', 'Jeffisi', 'Leo',
+    ],
+    'Lawra': [
+      'Lawra', 'Nandom', 'Piina',
+    ],
+    'Jirapa': [
+      'Hamile', 'Jirapa', 'Ko',
+    ],
+  },
+};
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Grandparent', 'Guardian'] as const;
 
@@ -229,6 +324,75 @@ const cp = StyleSheet.create({
   empty: { textAlign: 'center', color: '#9CA3AF', fontSize: 14, marginTop: 32 },
 });
 
+// Simple picker modal (no custom-entry option) — used for Region and District
+function SelectPicker({
+  title, placeholder, value, options, onChange, icon: Icon, disabled,
+}: {
+  title: string;
+  placeholder: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  icon: React.ComponentType<{ size: number; color: string }>;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+  }, [query, options]);
+
+  function select(v: string) { onChange(v); setQuery(''); setOpen(false); }
+
+  return (
+    <>
+      <TouchableOpacity
+        style={[cp.trigger, disabled && sp.disabled]}
+        onPress={() => !disabled && setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled }}
+      >
+        <Icon size={18} color={value ? '#08283B' : '#9CA3AF'} />
+        <Text style={[cp.triggerText, !value && cp.triggerPlaceholder]}>{value || placeholder}</Text>
+        <ChevronDown size={16} color="#9CA3AF" />
+      </TouchableOpacity>
+      <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
+        <View style={cp.modal}>
+          <View style={cp.modalHeader}>
+            <Text style={cp.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={() => { setQuery(''); setOpen(false); }} style={cp.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
+              <X size={20} color="#374151" />
+            </TouchableOpacity>
+          </View>
+          {options.length > 6 && (
+            <View style={cp.searchWrap}>
+              <Search size={16} color="#9CA3AF" style={cp.searchIcon} />
+              <TextInput style={cp.searchInput} placeholder={`Search ${title.toLowerCase()}…`} placeholderTextColor="#9CA3AF" value={query} onChangeText={setQuery} autoFocus autoCapitalize="words" clearButtonMode="while-editing" />
+            </View>
+          )}
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <TouchableOpacity style={[cp.row, value === item && cp.rowSelected]} onPress={() => select(item)} accessibilityRole="button" accessibilityLabel={item}>
+                <Text style={[cp.rowText, value === item && cp.rowTextSelected]}>{item}</Text>
+                {value === item && <Check size={16} color="#08283B" strokeWidth={2.5} />}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={<Text style={cp.empty}>No results.</Text>}
+          />
+        </View>
+      </Modal>
+    </>
+  );
+}
+const sp = StyleSheet.create({
+  disabled: { opacity: 0.45 },
+});
+
 function DateField({
   label, value, onChange, isFuture, hint,
 }: { label: string; value: string; onChange: (iso: string) => void; isFuture?: boolean; hint?: string }) {
@@ -253,18 +417,18 @@ function DateField({
           </Pressable>
           {showPicker && (
             <DateTimePicker value={pickerValue} mode="date" display="spinner" maximumDate={maxDate}
-              onValueChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} style={{ marginTop: 4 }} />
+              onChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} style={{ marginTop: 4 }} />
           )}
         </>
       )}
       {Platform.OS === 'android' && showPicker && (
         <DateTimePicker value={pickerValue} mode="date" display="default" maximumDate={maxDate}
-          onValueChange={(_, date) => { setShowPicker(false); if (date) onChange(date.toISOString().slice(0, 10)); }}
+          onChange={(_, date) => { setShowPicker(false); if (date) onChange(date.toISOString().slice(0, 10)); }}
           onDismiss={() => setShowPicker(false)} />
       )}
       {Platform.OS === 'web' && (
         <DateTimePicker value={pickerValue} mode="date" display="default" maximumDate={maxDate}
-          onValueChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} />
+          onChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} />
       )}
       {hint ? <Text style={dp.hint}>{hint}</Text> : null}
     </View>
@@ -582,30 +746,46 @@ export function RegisterScreen({ navigation }: Props) {
             {/* Location */}
             <View style={styles.section}>
               <SectionHeader label="Location" />
-              <View style={styles.row2}>
-                <View style={[styles.fieldGroup, styles.flex1]}>
-                  <Text style={styles.fieldLabel}>Region</Text>
-                  <View style={styles.readOnlyField}>
-                    <Text style={styles.readOnlyText} numberOfLines={1}>
-                      {currentUser?.facilityRegion ?? 'Northern Region'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={[styles.fieldGroup, styles.flex1]}>
-                  <Text style={styles.fieldLabel}>District</Text>
-                  <View style={styles.readOnlyField}>
-                    <Text style={styles.readOnlyText} numberOfLines={1}>
-                      {currentUser?.facilityDistrict ?? 'Sagnarigu Municipal'}
-                    </Text>
-                  </View>
-                </View>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Region</Text>
+                <SelectPicker
+                  title="Select region"
+                  placeholder="Select region"
+                  value={regForm.region}
+                  options={Object.keys(GHANA_LOCATION_DATA)}
+                  icon={Globe}
+                  onChange={(r) => {
+                    setRegField('region', r);
+                    setRegField('district', '');
+                    setRegField('community', '');
+                  }}
+                />
+              </View>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>District</Text>
+                <SelectPicker
+                  title="Select district"
+                  placeholder={regForm.region ? 'Select district' : 'Select region first'}
+                  value={regForm.district}
+                  options={regForm.region ? Object.keys(GHANA_LOCATION_DATA[regForm.region] ?? {}) : []}
+                  icon={MapPin}
+                  disabled={!regForm.region}
+                  onChange={(d) => {
+                    setRegField('district', d);
+                    setRegField('community', '');
+                  }}
+                />
               </View>
               <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>Community / Town</Text>
                 <CommunityPicker
                   value={regForm.community}
                   onChange={(c) => setRegField('community', c)}
-                  communities={SAGNARIGU_COMMUNITIES}
+                  communities={
+                    regForm.district
+                      ? (GHANA_LOCATION_DATA[regForm.region]?.[regForm.district] ?? [])
+                      : []
+                  }
                 />
               </View>
             </View>
