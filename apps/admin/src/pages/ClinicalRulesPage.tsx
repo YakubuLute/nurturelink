@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { adminApi } from '../api/client';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Severity = 'ok' | 'watch' | 'refer';
+type Severity  = 'ok' | 'watch' | 'refer';
 type Direction = 'lt' | 'lte' | 'gte' | 'gt';
 
 interface Threshold {
@@ -11,32 +11,12 @@ interface Threshold {
   metric: string;
   condition: string;
   severity: Severity;
-  value: number;
+  thresholdValue: number;
   direction: Direction;
   unit: string;
   source: string;
   pendingChange?: { value: number; justification: string };
 }
-
-// ── Seed thresholds (WHO/GHS guidance) ────────────────────────────────────────
-
-const SEED_THRESHOLDS: Threshold[] = [
-  // ── MUAC ──
-  { id: 'ct001', metric: 'muac_mm', condition: 'Child severe acute malnutrition', severity: 'refer', value: 115, direction: 'lt', unit: 'mm', source: 'WHO/UNICEF CMAM Guidelines 2023' },
-  { id: 'ct002', metric: 'muac_mm', condition: 'Child moderate acute malnutrition', severity: 'watch', value: 125, direction: 'lt', unit: 'mm', source: 'WHO/UNICEF CMAM Guidelines 2023' },
-  { id: 'ct003', metric: 'muac_mm', condition: 'Child at risk', severity: 'ok', value: 135, direction: 'lt', unit: 'mm', source: 'WHO/UNICEF CMAM Guidelines 2023' },
-
-  // ── Haemoglobin ──
-  { id: 'ct004', metric: 'hb_g_dl', condition: 'Severe anaemia (pregnant)', severity: 'refer', value: 7.0, direction: 'lt', unit: 'g/dL', source: 'WHO Haemoglobin for Diagnosis of Anaemia 2011' },
-  { id: 'ct005', metric: 'hb_g_dl', condition: 'Moderate anaemia (pregnant)', severity: 'watch', value: 10.0, direction: 'lt', unit: 'g/dL', source: 'WHO Haemoglobin for Diagnosis of Anaemia 2011' },
-  { id: 'ct006', metric: 'hb_g_dl', condition: 'Mild anaemia (pregnant)', severity: 'watch', value: 11.0, direction: 'lt', unit: 'g/dL', source: 'WHO Haemoglobin for Diagnosis of Anaemia 2011' },
-  { id: 'ct007', metric: 'hb_g_dl', condition: 'Severe anaemia (child < 5 yr)', severity: 'refer', value: 7.0, direction: 'lt', unit: 'g/dL', source: 'WHO Haemoglobin for Diagnosis of Anaemia 2011' },
-  { id: 'ct008', metric: 'hb_g_dl', condition: 'Moderate anaemia (child < 5 yr)', severity: 'watch', value: 10.0, direction: 'lt', unit: 'g/dL', source: 'WHO Haemoglobin for Diagnosis of Anaemia 2011' },
-
-  // ── Weight-for-age ──
-  { id: 'ct009', metric: 'wfa_z', condition: 'Severe underweight', severity: 'refer', value: -3, direction: 'lt', unit: 'SD', source: 'WHO Child Growth Standards 2006' },
-  { id: 'ct010', metric: 'wfa_z', condition: 'Moderate underweight', severity: 'watch', value: -2, direction: 'lt', unit: 'SD', source: 'WHO Child Growth Standards 2006' },
-];
 
 const SEVERITY_STYLES: Record<Severity, { bg: string; fg: string; label: string }> = {
   refer: { bg: '#fee2e2', fg: '#b91c1c', label: 'Refer' },
@@ -57,7 +37,7 @@ interface ModalProps {
 }
 
 function EditModal({ threshold: t, onSave, onClose }: ModalProps) {
-  const [value, setValue] = useState(String(t.value));
+  const [value, setValue] = useState(String(t.thresholdValue));
   const [justification, setJustification] = useState('');
 
   return (
@@ -72,7 +52,7 @@ function EditModal({ threshold: t, onSave, onClose }: ModalProps) {
           <div style={{ flex: 1 }}>
             <label style={m.label}>Current value</label>
             <input
-              value={`${DIR_LABELS[t.direction]} ${t.value} ${t.unit}`}
+              value={`${DIR_LABELS[t.direction]} ${t.thresholdValue} ${t.unit}`}
               disabled
               style={{ ...m.input, background: '#f5f5f5', color: '#888' }}
             />
@@ -103,17 +83,15 @@ function EditModal({ threshold: t, onSave, onClose }: ModalProps) {
           />
         </div>
 
-        <div
-          style={{
-            background: '#fff3cd',
-            borderLeft: '4px solid #e6a817',
-            padding: '10px 14px',
-            borderRadius: 4,
-            color: '#856404',
-            marginBottom: 20,
-            fontSize: 13,
-          }}
-        >
+        <div style={{
+          background: '#fff3cd',
+          borderLeft: '4px solid #e6a817',
+          padding: '10px 14px',
+          borderRadius: 4,
+          color: '#856404',
+          marginBottom: 20,
+          fontSize: 13,
+        }}>
           This proposal requires a second-admin sign-off before it takes effect on field devices.
           Changes are immutably logged in the audit trail.
         </div>
@@ -124,10 +102,7 @@ function EditModal({ threshold: t, onSave, onClose }: ModalProps) {
           </button>
           <button
             onClick={() => {
-              if (!justification.trim()) {
-                alert('Justification is required.');
-                return;
-              }
+              if (!justification.trim()) { alert('Justification is required.'); return; }
               onSave(t, parseFloat(value), justification);
             }}
             style={{ ...m.btn, background: '#08283B', color: '#fff' }}
@@ -180,20 +155,27 @@ const m = {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function ClinicalRulesPage() {
-  const [thresholds, setThresholds] = useState<Threshold[]>(SEED_THRESHOLDS);
+  const [thresholds, setThresholds] = useState<Threshold[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Threshold | null>(null);
   const [saved, setSaved] = useState('');
+
+  useEffect(() => {
+    adminApi.get<Threshold[]>('/admin/clinical-thresholds')
+      .then(setThresholds)
+      .catch(() => {/* API not connected */})
+      .finally(() => setLoading(false));
+  }, []);
 
   async function handleSave(t: Threshold, newValue: number, justification: string) {
     try {
       await adminApi.post('/admin/clinical-thresholds/propose', {
-        id: t.id,
-        newValue,
+        thresholdId: t.id,
+        proposedValue: newValue,
         justification,
       });
-    } catch {
-      // Demo mode — apply locally
-    }
+    } catch {/* apply locally on error */}
+
     setThresholds((prev) =>
       prev.map((r) =>
         r.id === t.id ? { ...r, pendingChange: { value: newValue, justification } } : r,
@@ -219,6 +201,8 @@ export function ClinicalRulesPage() {
         are sent to clinical facilities. A nutrition officer or UDS contact must review all proposed
         changes against WHO/GHS guidance before sign-off.
       </div>
+
+      {loading && <p style={{ color: '#888' }}>Loading thresholds…</p>}
 
       {saved && (
         <div style={{ background: '#f0fdf4', borderLeft: '4px solid #057A55', padding: '10px 16px', borderRadius: 4, color: '#057A55', marginBottom: 16, fontWeight: 600 }}>
@@ -247,8 +231,9 @@ export function ClinicalRulesPage() {
                 {thresholds
                   .filter((t) => t.metric === metric)
                   .map((t, i) => {
-                    const sv = SEVERITY_STYLES[t.severity];
+                    const sv = SEVERITY_STYLES[t.severity] ?? SEVERITY_STYLES.ok;
                     const hasPending = !!t.pendingChange;
+                    const dir = DIR_LABELS[t.direction] ?? t.direction;
                     return (
                       <tr key={t.id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                         <td style={s.td}>{t.condition}</td>
@@ -256,13 +241,15 @@ export function ClinicalRulesPage() {
                           <span style={{ ...s.badge, background: sv.bg, color: sv.fg }}>{sv.label}</span>
                         </td>
                         <td style={{ ...s.td, textAlign: 'center', fontFamily: 'monospace', fontWeight: 600 }}>
-                          {DIR_LABELS[t.direction]} {t.pendingChange ? (
+                          {dir}{' '}
+                          {hasPending ? (
                             <>
-                              <span style={{ textDecoration: 'line-through', color: '#999' }}>{t.value}</span>
+                              <span style={{ textDecoration: 'line-through', color: '#999' }}>{t.thresholdValue}</span>
                               {' → '}
-                              <span style={{ color: '#b91c1c' }}>{t.pendingChange.value}</span>
+                              <span style={{ color: '#b91c1c' }}>{t.pendingChange!.value}</span>
                             </>
-                          ) : t.value} {t.unit}
+                          ) : t.thresholdValue}{' '}
+                          {t.unit}
                         </td>
                         <td style={{ ...s.td, color: '#6b7280', fontSize: 12 }}>{t.source}</td>
                         <td style={{ ...s.td, textAlign: 'center' }}>
@@ -307,7 +294,7 @@ export function ClinicalRulesPage() {
 }
 
 const s = {
-  h1: { fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8 } as const,
+  h1:   { fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8 } as const,
   desc: { color: '#555', marginBottom: 20, lineHeight: 1.6 } as const,
   th: {
     padding: '10px 14px',
@@ -319,7 +306,7 @@ const s = {
     textTransform: 'uppercase' as const,
     letterSpacing: '0.05em',
   },
-  td: { padding: '10px 14px', borderBottom: '1px solid #f3f4f6' } as const,
+  td:    { padding: '10px 14px', borderBottom: '1px solid #f3f4f6' } as const,
   badge: {
     display: 'inline-block',
     padding: '2px 9px',

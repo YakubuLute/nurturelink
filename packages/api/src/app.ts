@@ -15,6 +15,7 @@ import { referralsRouter } from './routes/referrals';
 import { syncRouter } from './routes/sync';
 import { referenceRouter } from './routes/reference';
 import { exportRouter } from './routes/export';
+import { adminRouter } from './routes/admin';
 import { errorMiddleware } from './middleware/error';
 
 export function createApp(): Application {
@@ -54,6 +55,7 @@ export function createApp(): Application {
   app.use('/sync', syncRouter);
   app.use('/reference', referenceRouter);
   app.use('/export', exportRouter);
+  app.use('/admin', adminRouter);
 
   // ── Error handler (must be last) ────────────────────────────────────────────
   app.use(errorMiddleware);
