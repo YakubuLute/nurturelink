@@ -243,7 +243,7 @@ function DietDiversityCard({ lastVisit }: { lastVisit: DemoVisit }) {
           );
         })}
       </View>
-      <Text style={{ fontSize: 11.5, color: met ? C.success : C.warning, fontWeight: '600' }}>
+      <Text style={{ fontSize: 12, color: met ? C.success : C.warning, fontWeight: '600' }}>
         {met ? 'Minimum diet diversity \u2713 met' : 'Below minimum diet diversity'}
       </Text>
     </View>
@@ -391,7 +391,7 @@ export function ClientScreen({ navigation, route }: Props) {
             <Text style={{ fontSize: 14, fontWeight: '700', color: C.error, marginBottom: 4 }}>
               Referral issued · {referral.facility}
             </Text>
-            <Text style={{ fontSize: 12.5, color: C.errorDark, marginBottom: referral.status === 'issued' ? 12 : 0 }}>
+            <Text style={{ fontSize: 13, color: C.errorDark, marginBottom: referral.status === 'issued' ? 12 : 0 }}>
               {referral.reason}
             </Text>
             {referral.status === 'issued' && (
@@ -417,7 +417,7 @@ export function ClientScreen({ navigation, route }: Props) {
               <Text style={{ fontSize: 14, fontWeight: '700', color: flagTextColor, marginBottom: 3 }}>
                 {client.flag}
               </Text>
-              <Text style={{ fontSize: 12.5, color: C.fg2, lineHeight: 18 }}>{client.flagDetail}</Text>
+              <Text style={{ fontSize: 13, color: C.fg2, lineHeight: 18 }}>{client.flagDetail}</Text>
             </View>
           </View>
         </View>
@@ -434,7 +434,7 @@ export function ClientScreen({ navigation, route }: Props) {
             </View>
           </View>
           {rankSignals.map((s, i) => (
-            <Text key={i} style={{ fontSize: 12.5, color: C.fg2, marginBottom: 4 }}>
+            <Text key={i} style={{ fontSize: 13, color: C.fg2, marginBottom: 4 }}>
               {'● '}{s}
             </Text>
           ))}
@@ -464,7 +464,7 @@ export function ClientScreen({ navigation, route }: Props) {
               ) : null}
             </View>
           </View>
-          <Text style={{ fontSize: 11.5, color: client.trendColor, fontWeight: '500', marginBottom: 10 }}>
+          <Text style={{ fontSize: 12, color: client.trendColor, fontWeight: '500', marginBottom: 10 }}>
             {client.trendNote}
           </Text>
           {visits.length > 0 && (
@@ -514,10 +514,10 @@ export function ClientScreen({ navigation, route }: Props) {
                 key={i}
                 style={[styles.visitRow, { borderColor: isLast ? C.borderStrong : C.border }]}
               >
-                <View style={{ width: 9, height: 9, borderRadius: 4.5, backgroundColor: client.trendColor, marginTop: 3 }} />
+                <View style={{ width: 9, height: 9, borderRadius: 4, backgroundColor: client.trendColor, marginTop: 3 }} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1 }}>{v.date}</Text>
-                  <Text style={{ fontSize: 11.5, color: C.fg3, marginTop: 2 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>{v.date}</Text>
+                  <Text style={{ fontSize: 12, color: C.fg3, marginTop: 2 }}>
                     {`Wt: ${v.weight.toFixed(1)} kg · Hb: ${v.hb !== null ? v.hb.toFixed(1) + ' g/dL' : '—'} · MUAC: ${v.muac} mm`}
                   </Text>
                 </View>
@@ -533,7 +533,7 @@ export function ClientScreen({ navigation, route }: Props) {
                   }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                       {v.synced && <Check size={10} color={C.success} strokeWidth={3} />}
-                      <Text style={{ fontSize: 10.5, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
                         {v.synced ? 'Synced' : 'Draft — offline'}
                       </Text>
                     </View>

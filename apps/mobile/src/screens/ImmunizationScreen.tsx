@@ -298,8 +298,8 @@ const vr = StyleSheet.create({
     paddingVertical: 13,
   },
   dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  label: { fontSize: 13.5, color: C.fg2, fontWeight: '400' },
-  givenDate: { fontSize: 11.5, color: C.success, marginTop: 2 },
+  label: { fontSize: 14, color: C.fg2, fontWeight: '400' },
+  givenDate: { fontSize: 12, color: C.success, marginTop: 2 },
   aefiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
   aefiLabel: { fontSize: 11, color: C.warning, fontWeight: '600' },
   form: {
@@ -351,7 +351,7 @@ const vr = StyleSheet.create({
   sevMild: { backgroundColor: C.successBg, borderColor: C.successBorder },
   sevMod:  { backgroundColor: C.warningBg, borderColor: C.warningBorder },
   sevSev:  { backgroundColor: C.errorBg,   borderColor: C.errorBorder },
-  sevText: { fontSize: 12.5, color: C.fg2, fontWeight: '500' },
+  sevText: { fontSize: 13, color: C.fg2, fontWeight: '500' },
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -424,7 +424,7 @@ export function ImmunizationScreen({ navigation, route }: Props) {
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: pctColor }]} />
           </View>
-          <Text style={{ fontSize: 11.5, color: C.fg3, marginTop: 6 }}>
+          <Text style={{ fontSize: 12, color: C.fg3, marginTop: 6 }}>
             {givenCount} of {TOTAL_VACCINES} doses recorded · tap any row to record
           </Text>
         </View>
@@ -460,7 +460,7 @@ export function ImmunizationScreen({ navigation, route }: Props) {
                   <Text style={{ fontSize: 13, fontWeight: '600', color: C.fg1, marginBottom: 3 }}>
                     {vax?.label ?? r.vaccineId}
                   </Text>
-                  <Text style={{ fontSize: 12.5, color: C.fg2 }}>{r.aefi}</Text>
+                  <Text style={{ fontSize: 13, color: C.fg2 }}>{r.aefi}</Text>
                   {r.aefiSeverity && (
                     <View style={[
                       styles.sevPill,

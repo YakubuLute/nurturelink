@@ -434,8 +434,8 @@ const banner = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  titleDark: { fontSize: 13.5, fontWeight: '700', color: '#08283B' },
-  subWarn: { fontSize: 11.5, color: '#8C6900', marginTop: 2 },
+  titleDark: { fontSize: 14, fontWeight: '700', color: '#08283B' },
+  subWarn: { fontSize: 12, color: '#8C6900', marginTop: 2 },
   warnBtn: {
     backgroundColor: '#FFE18A',
     paddingVertical: 7,
@@ -469,8 +469,8 @@ const banner = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  titleGreen: { fontSize: 13.5, fontWeight: '700', color: '#057A55' },
-  subGreen: { fontSize: 11.5, color: '#057A55', marginTop: 2, opacity: 0.8 },
+  titleGreen: { fontSize: 14, fontWeight: '700', color: '#057A55' },
+  subGreen: { fontSize: 12, color: '#057A55', marginTop: 2, opacity: 0.8 },
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   greetingLeft: { flex: 1, paddingRight: 12 },
   greetingTime: { fontSize: 13, color: '#6B7280', marginBottom: 2 },
   greetingName: { fontSize: 22, fontWeight: '700', color: '#08283B', lineHeight: 28 },
-  greetingDate: { fontSize: 12.5, color: '#6B7280', marginTop: 3 },
+  greetingDate: { fontSize: 13, color: '#6B7280', marginTop: 3 },
   greetingActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     color: '#B54000',
   },
   sectionSub: {
-    fontSize: 11.5,
+    fontSize: 12,
     color: '#9CA3AF',
     marginBottom: 12,
     lineHeight: 16,
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   priorityText: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   flagText: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#374151',
     flex: 1,
   },

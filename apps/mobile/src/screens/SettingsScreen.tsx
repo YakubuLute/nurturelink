@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   profileRole: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#92C9F9',
   },
 
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     borderColor: '#FCA5A5',
   },
   errorText: {
-    fontSize: 10.5,
+    fontSize: 11,
     color: '#FCA5A5',
     marginTop: 2,
   },
@@ -656,12 +656,12 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   settingTitle: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '700',
     color: '#08283B',
   },
   settingDesc: {
-    fontSize: 11.5,
+    fontSize: 12,
     color: '#6B7280',
     lineHeight: 16,
   },
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   langBtnText: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontWeight: '600',
   },
   langBtnTextActive: {

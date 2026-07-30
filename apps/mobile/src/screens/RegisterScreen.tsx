@@ -443,7 +443,7 @@ const dp = StyleSheet.create({
   btnOpen: { borderColor: '#08283B' },
   btnText: { fontSize: 15, color: '#08283B', flex: 1 },
   btnPlaceholder: { color: '#9CA3AF' },
-  hint: { fontSize: 11.5, color: '#6B7280', marginTop: 5, marginLeft: 2 },
+  hint: { fontSize: 12, color: '#6B7280', marginTop: 5, marginLeft: 2 },
 });
 
 function ConsentRow({
@@ -482,7 +482,7 @@ const ct = StyleSheet.create({
   boxChecked: { backgroundColor: '#FF5A00', borderColor: '#FF5A00' },
   boxUnchecked: { backgroundColor: '#FFFFFF', borderColor: '#D1D5DB' },
   body: { flex: 1 },
-  title: { fontSize: 13.5, fontWeight: '700', color: '#08283B', marginBottom: 4 },
+  title: { fontSize: 14, fontWeight: '700', color: '#08283B', marginBottom: 4 },
   desc: { fontSize: 12, color: '#6B7280', lineHeight: 17 },
 });
 
@@ -1014,7 +1014,7 @@ const styles = StyleSheet.create({
   readOnlyText: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
 
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: -4, marginBottom: 4 },
-  infoText: { fontSize: 11.5, color: '#427CAF', flex: 1, lineHeight: 16 },
+  infoText: { fontSize: 12, color: '#427CAF', flex: 1, lineHeight: 16 },
 
   // Step 2 summary banner
   summaryBanner: {
@@ -1042,7 +1042,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF9E6', borderWidth: 1, borderColor: '#FFE18A',
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 16,
   },
-  offlineText: { fontSize: 12.5, color: '#8C6900', fontWeight: '500', flex: 1 },
+  offlineText: { fontSize: 13, color: '#8C6900', fontWeight: '500', flex: 1 },
 
   saveWrap: {
     backgroundColor: '#FDFDFD', borderTopWidth: 1, borderTopColor: '#E5E7EB',

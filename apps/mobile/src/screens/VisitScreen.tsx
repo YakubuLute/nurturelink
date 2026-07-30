@@ -530,7 +530,7 @@ export function VisitScreen({ navigation, route }: Props) {
                 <View style={[styles.chipBox, { backgroundColor: sel ? g.color : '#ECECEB' }]}>
                   {sel && <Check size={13} color="#FFFFFF" strokeWidth={3} />}
                 </View>
-                <Text style={{ fontSize: 12.5, color: sel ? C.fg1 : C.fg2, fontWeight: sel ? '600' : '400', flexShrink: 1 }}>
+                <Text style={{ fontSize: 13, color: sel ? C.fg1 : C.fg2, fontWeight: sel ? '600' : '400', flexShrink: 1 }}>
                   {g.label}
                 </Text>
               </TouchableOpacity>
@@ -539,7 +539,7 @@ export function VisitScreen({ navigation, route }: Props) {
         </View>
 
         <View style={[styles.diversityRow, { backgroundColor: scoreBg(dietScore) }]}>
-          <Text style={{ fontSize: 12.5, color: C.fg2 }}>Diet diversity score</Text>
+          <Text style={{ fontSize: 13, color: C.fg2 }}>Diet diversity score</Text>
           <Text style={{ fontSize: 13, fontWeight: '700', color: scoreColor(dietScore) }}>{dietScore}/8</Text>
         </View>
 
@@ -606,7 +606,7 @@ export function VisitScreen({ navigation, route }: Props) {
         {hasDanger && (
           <View style={styles.dangerBanner}>
             <AlertTriangle size={16} color={C.errorDark} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 12.5, color: C.errorDark, flex: 1, lineHeight: 18 }}>
+            <Text style={{ fontSize: 13, color: C.errorDark, flex: 1, lineHeight: 18 }}>
               Saving will route to referral — counselling is bypassed
             </Text>
           </View>
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     borderColor: C.lb200,
   },
   textureChipText: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: C.fg3,
     fontWeight: '500',
   },
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
   },
   infoBannerText: {
     flex: 1,
-    fontSize: 12.5,
+    fontSize: 13,
     color: C.infoText,
     lineHeight: 18,
   },

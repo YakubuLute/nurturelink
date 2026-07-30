@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   dataLabel: {
-    fontSize: 13.5,
+    fontSize: 14,
     color: '#374151',
     fontWeight: '500',
   },
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
   },
 
   infoText: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#6B7280',
     lineHeight: 18,
     paddingVertical: 12,

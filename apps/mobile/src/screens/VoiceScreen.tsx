@@ -78,12 +78,12 @@ function DeliveryCard({
         {icon}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1, marginBottom: 2 }}>{title}</Text>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1, marginBottom: 2 }}>{title}</Text>
         <Text style={{ fontSize: 12, color: C.fg3, lineHeight: 17 }}>{sub}</Text>
       </View>
       {badge && (
         <View style={{ backgroundColor: badgeBg ?? C.successBg, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-          <Text style={{ fontSize: 10.5, fontWeight: '700', color: badgeColor ?? C.success }}>{badge}</Text>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: badgeColor ?? C.success }}>{badge}</Text>
         </View>
       )}
     </View>
@@ -233,7 +233,7 @@ export function VoiceScreen({ navigation, route }: Props) {
         <View style={styles.playerCard}>
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1 }}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>
               {isDag ? 'Dagbani' : 'EN'} counselling note
             </Text>
             {isAiPlan ? (
@@ -281,7 +281,7 @@ export function VoiceScreen({ navigation, route }: Props) {
                 <View style={{ width: `${progressPct}%`, height: '100%', backgroundColor: C.accent, borderRadius: 3 }} />
               </View>
               {/* Time */}
-              <Text style={{ fontSize: 11.5, color: C.fg4 }}>
+              <Text style={{ fontSize: 12, color: C.fg4 }}>
                 {formatTime(audioT)} / {formatTime(AUDIO_DURATION)}
               </Text>
             </View>
@@ -295,7 +295,7 @@ export function VoiceScreen({ navigation, route }: Props) {
         </View>
         {isDag && (
           <View style={[styles.warningBanner]}>
-            <Text style={{ fontSize: 12.5, color: C.warningDark, fontWeight: '500' }}>
+            <Text style={{ fontSize: 13, color: C.warningDark, fontWeight: '500' }}>
               Draft translation · pending native-speaker review
             </Text>
           </View>
@@ -360,7 +360,7 @@ export function VoiceScreen({ navigation, route }: Props) {
               </Text>
               {recorded && (
                 <View style={{ backgroundColor: C.successBg, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text style={{ fontSize: 10.5, fontWeight: '700', color: C.success }}>READY</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: C.success }}>READY</Text>
                 </View>
               )}
             </View>
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   langPillText: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '700',
     color: 'rgba(255,255,255,0.7)',
   },

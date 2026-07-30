@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   headingBody: {
-    fontSize: 13.5,
+    fontSize: 14,
     color: '#374151',
     textAlign: 'center',
     maxWidth: 290,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   eyebrow: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
     color: '#C81E1E',
     letterSpacing: 0.7,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   bulletDot: {
     width: 9,
     height: 9,
-    borderRadius: 4.5,
+    borderRadius: 4,
     backgroundColor: '#C81E1E',
     marginTop: 4,
     flexShrink: 0,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   facilityEyebrow: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
     color: '#92C9F9',
     letterSpacing: 0.7,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   facilityMeta: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#8D9CA5',
   },
 
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   followText: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#08283B',
     flex: 1,
     lineHeight: 18,

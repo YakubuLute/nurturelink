@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   syncBadgeText: { fontSize: 11, fontWeight: '600' },
-  choZone: { fontSize: 11.5, color: '#9CA3AF', marginBottom: 8 },
+  choZone: { fontSize: 12, color: '#9CA3AF', marginBottom: 8 },
   choCovRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   choProgressBg: {
     flex: 1,

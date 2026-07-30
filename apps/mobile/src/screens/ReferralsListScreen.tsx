@@ -258,13 +258,13 @@ const modalStyles = StyleSheet.create({
     borderBottomColor: '#F0F1F3',
   },
   headerTitle: { fontSize: 16, fontWeight: '700', color: '#08283B' },
-  headerSub: { fontSize: 12.5, color: '#6B7280', marginTop: 2 },
+  headerSub: { fontSize: 13, color: '#6B7280', marginTop: 2 },
   closeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1 },
   bodyContent: { paddingHorizontal: 20, paddingTop: 16 },
 
   sectionLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
     color: '#9CA3AF',
     letterSpacing: 0.8,
@@ -285,7 +285,7 @@ const modalStyles = StyleSheet.create({
     marginBottom: 4,
     alignSelf: 'flex-start',
   },
-  dateBtnText: { fontSize: 13.5, fontWeight: '600', color: '#08283B' },
+  dateBtnText: { fontSize: 14, fontWeight: '600', color: '#08283B' },
 
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -302,7 +302,7 @@ const modalStyles = StyleSheet.create({
     borderColor: '#FF5A00',
     backgroundColor: 'rgba(255,90,0,0.06)',
   },
-  chipText: { fontSize: 12.5, color: '#6B7280', fontWeight: '500' },
+  chipText: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   chipTextActive: { color: '#FF5A00', fontWeight: '600' },
 
   outcomeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
@@ -584,8 +584,8 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
   statCard: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 14, alignItems: 'center' },
   statCount: { fontSize: 22, fontWeight: '700', marginBottom: 3 },
-  statLabel: { fontSize: 11.5, fontWeight: '500', textAlign: 'center' },
-  statsNote: { fontSize: 11.5, color: '#9CA3AF', textAlign: 'center', marginBottom: 18, lineHeight: 16 },
+  statLabel: { fontSize: 12, fontWeight: '500', textAlign: 'center' },
+  statsNote: { fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginBottom: 18, lineHeight: 16 },
 
   card: {
     backgroundColor: '#FDFDFD',
@@ -600,9 +600,9 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 14, fontWeight: '700' },
   cardTopMid: { flex: 1 },
   clientName: { fontSize: 15, fontWeight: '700', color: '#08283B', marginBottom: 2 },
-  facilityText: { fontSize: 11.5, color: '#6B7280' },
+  facilityText: { fontSize: 12, color: '#6B7280' },
   statusBadge: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, flexShrink: 0 },
-  statusBadgeText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4 },
+  statusBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
 
   reasonBox: {
     backgroundColor: '#F9FAFB',
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginBottom: 8,
   },
-  outcomePillText: { fontSize: 11.5, fontWeight: '700' },
+  outcomePillText: { fontSize: 12, fontWeight: '700' },
 
   followUpRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -652,15 +652,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8, paddingHorizontal: 13,
     flexDirection: 'row', alignItems: 'center', gap: 5,
   },
-  callBtnText: { fontSize: 12.5, fontWeight: '600', color: '#08283B' },
+  callBtnText: { fontSize: 13, fontWeight: '600', color: '#08283B' },
   confirmBtn: {
     backgroundColor: '#057A55', borderRadius: 9,
     paddingVertical: 8, paddingHorizontal: 13,
   },
-  confirmBtnText: { fontSize: 12.5, fontWeight: '700', color: '#FFFFFF' },
+  confirmBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 
   emptyState: { alignItems: 'center', paddingVertical: 64, paddingHorizontal: 32 },
   emptyIcon: { marginBottom: 16 },
   emptyTitle: { fontSize: 17, fontWeight: '700', color: '#374151', marginBottom: 8 },
-  emptyBody: { fontSize: 13.5, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
+  emptyBody: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
 });

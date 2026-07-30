@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   colorBar: { width: 5, alignSelf: 'stretch' },
   tallyBody: { flex: 1, paddingVertical: 14, paddingLeft: 14 },
   tallyLabel: { fontSize: 15, fontWeight: '700', color: '#08283B' },
-  tallySub: { fontSize: 11.5, color: '#9CA3AF', marginTop: 2 },
+  tallySub: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
   counterRow: {
     flexDirection: 'row',
     alignItems: 'center',

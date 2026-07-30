@@ -127,7 +127,7 @@ function FoodCard({
       </View>
       {/* text */}
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontSize: 14.5, fontWeight: '700', color: C.fg1 }}>{food.name}</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg1 }}>{food.name}</Text>
         <Text style={{ fontSize: 12, fontStyle: 'italic', color: C.fg3 }}>{food.local}</Text>
         <Text style={{ fontSize: 12, color: C.fg2, lineHeight: 17 }}>{food.why}</Text>
         <View style={{ flexDirection: 'row', marginTop: 4 }}>
@@ -225,7 +225,7 @@ export function PlanScreen({ navigation, route }: Props) {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <RefreshCw size={13} color={C.lb700} />
-              <Text style={{ fontSize: 12.5, fontWeight: '600', color: C.lb700 }}>Regenerate</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: C.lb700 }}>Regenerate</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -255,8 +255,8 @@ export function PlanScreen({ navigation, route }: Props) {
             return (
               <View key={row.label} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={{ fontSize: 12.5, color: C.fg2 }}>{row.label}</Text>
-                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: col }}>{row.pct}%</Text>
+                  <Text style={{ fontSize: 13, color: C.fg2 }}>{row.label}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: col }}>{row.pct}%</Text>
                 </View>
                 <View style={{ height: 8, backgroundColor: '#ECECEB', borderRadius: 8, overflow: 'hidden' }}>
                   <View style={{ width: `${Math.min(row.pct, 100)}%`, height: '100%', backgroundColor: col, borderRadius: 8 }} />
@@ -278,7 +278,7 @@ export function PlanScreen({ navigation, route }: Props) {
           {basePlan.rationale.map((item, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 10, marginBottom: i < basePlan.rationale.length - 1 ? 10 : 0 }}>
               <Check size={14} color={C.lb700} strokeWidth={3} />
-              <Text style={{ flex: 1, fontSize: 12.5, color: C.fg1, lineHeight: 18 }}>{item}</Text>
+              <Text style={{ flex: 1, fontSize: 13, color: C.fg1, lineHeight: 18 }}>{item}</Text>
             </View>
           ))}
         </View>
@@ -289,7 +289,7 @@ export function PlanScreen({ navigation, route }: Props) {
         {/* Responsible AI note */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
           <Shield size={14} color={C.warningDark} />
-          <Text style={{ flex: 1, fontSize: 11.5, color: C.warningDark, lineHeight: 17 }}>
+          <Text style={{ flex: 1, fontSize: 12, color: C.warningDark, lineHeight: 17 }}>
             You remain responsible for this advice — edit it, then approve before sending.
           </Text>
         </View>

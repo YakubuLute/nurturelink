@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionLabel: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '700',
     color: '#6B7280',
     letterSpacing: 0.6,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   notifBody: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#374151',
     lineHeight: 18,
     marginBottom: 5,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   emptyBody: {
-    fontSize: 13.5,
+    fontSize: 14,
     color: '#9CA3AF',
     textAlign: 'center',
   },
