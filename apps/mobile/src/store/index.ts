@@ -161,7 +161,7 @@ export interface VisitForm {
 export interface RegForm {
   type: ClientType;
   name: string;
-  sex: string;          // 'male' | 'female' | ''
+  sex: string;          // 'Male' | 'Female' | ''
   community: string;
   dob: string;          // child's DOB or mother's DOB (YYYY-MM-DD)
   consent: boolean;

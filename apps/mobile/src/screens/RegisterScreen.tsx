@@ -563,7 +563,7 @@ export function RegisterScreen({ navigation }: Props) {
                   <ChipSelector
                     options={['Male', 'Female'] as const}
                     value={regForm.sex}
-                    onChange={(v) => setRegField('sex', v.toLowerCase())}
+                    onChange={(v) => setRegField('sex', v)}
                   />
                 </View>
               )}
