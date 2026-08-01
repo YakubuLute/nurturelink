@@ -974,8 +974,8 @@ const styles = StyleSheet.create({
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   backBtnPlaceholder: { width: 36 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  headerStepLabel: { fontSize: 11, color: '#92C9F9', marginTop: 2 },
+  headerTitle: { fontSize: 16, fontFamily: fonts.bold, fontWeight: '700', color: '#FFFFFF' },
+  headerStepLabel: { fontSize: 11, fontFamily: fonts.regular, color: '#92C9F9', marginTop: 2 },
 
   progressTrack: { height: 3, backgroundColor: '#1D4060' },
   progressFill: { height: 3, backgroundColor: '#FF5A00' },
@@ -989,13 +989,13 @@ const styles = StyleSheet.create({
 
   fieldGroup: { marginBottom: 16 },
   fieldLabel: {
-    fontSize: 12, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase',
+    fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase',
     color: '#6B7280', marginBottom: 8,
   },
 
   textInput: {
     backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB',
-    borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, fontSize: 15, color: '#08283B', height: 52,
+    borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, fontSize: 15, fontFamily: fonts.regular, color: '#08283B', height: 52,
   },
 
   iconInput: {
@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, paddingHorizontal: 14, height: 52,
   },
   iconInputIcon: { marginRight: 10 },
-  iconInputText: { flex: 1, fontSize: 15, color: '#08283B', paddingVertical: 13 },
+  iconInputText: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B', paddingVertical: 13 },
 
   row2: { flexDirection: 'row', gap: 12 },
   flex1: { flex: 1 },
@@ -1012,10 +1012,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB',
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52, justifyContent: 'center',
   },
-  readOnlyText: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
+  readOnlyText: { fontSize: 14, fontFamily: fonts.medium, color: '#6B7280', fontWeight: '500' },
 
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: -4, marginBottom: 4 },
-  infoText: { fontSize: 12, color: '#427CAF', flex: 1, lineHeight: 16 },
+  infoText: { fontSize: 12, fontFamily: fonts.regular, color: '#427CAF', flex: 1, lineHeight: 16 },
 
   // Step 2 summary banner
   summaryBanner: {
@@ -1028,22 +1028,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center',
   },
   summaryBody: { flex: 1 },
-  summaryName: { fontSize: 15, fontWeight: '700', color: '#1E3A5F' },
-  summaryMeta: { fontSize: 12, color: '#427CAF', marginTop: 2 },
+  summaryName: { fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: '#1E3A5F' },
+  summaryMeta: { fontSize: 12, fontFamily: fonts.regular, color: '#427CAF', marginTop: 2 },
 
   optionalNote: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#F9FAFB', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14,
     marginBottom: 16,
   },
-  optionalNoteText: { fontSize: 12, color: '#6B7280', flex: 1, lineHeight: 17 },
+  optionalNoteText: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280', flex: 1, lineHeight: 17 },
 
   offlineNote: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#FFF9E6', borderWidth: 1, borderColor: '#FFE18A',
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 16,
   },
-  offlineText: { fontSize: 13, color: '#8C6900', fontWeight: '500', flex: 1 },
+  offlineText: { fontSize: 13, fontFamily: fonts.medium, color: '#8C6900', fontWeight: '500', flex: 1 },
 
   saveWrap: {
     backgroundColor: '#FDFDFD', borderTopWidth: 1, borderTopColor: '#E5E7EB',
@@ -1055,5 +1055,5 @@ const styles = StyleSheet.create({
   },
   saveBtnActive: { backgroundColor: '#08283B' },
   saveBtnDisabled: { backgroundColor: '#B2BCC2' },
-  saveBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  saveBtnText: { fontSize: 15, fontFamily: fonts.semiBold, fontWeight: '600', color: '#FFFFFF' },
 });

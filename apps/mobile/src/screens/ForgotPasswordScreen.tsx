@@ -231,12 +231,14 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: '#FDFDFD',
     padding: 0,
   },
 
   errorText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FC8181',
     marginBottom: 12,
     lineHeight: 18,
@@ -255,6 +257,7 @@ const styles = StyleSheet.create({
   },
   sendBtnText: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
@@ -269,10 +272,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
   },
   footerLink: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     color: BRAND,
     fontWeight: '600',
   },

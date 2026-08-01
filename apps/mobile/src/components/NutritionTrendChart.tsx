@@ -72,13 +72,13 @@ export function NutritionTrendChart({ visits, clientType }: Props) {
 
 const styles = StyleSheet.create({
   container: { backgroundColor: '#fff', borderRadius: 8, padding: 16, elevation: 1 },
-  metricLabel: { fontSize: 13, color: '#666', marginBottom: 10 },
+  metricLabel: { fontSize: 13, fontFamily: fonts.regular, color: '#666', marginBottom: 10 },
   valuesRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', marginBottom: 10 },
   valueItem: { alignItems: 'center' },
-  valueText: { fontSize: 18, fontWeight: '700', color: '#111' },
-  visitLabel: { fontSize: 11, color: '#888', marginTop: 2 },
+  valueText: { fontSize: 18, fontFamily: fonts.bold, fontWeight: '700', color: '#111' },
+  visitLabel: { fontSize: 11, fontFamily: fonts.regular, color: '#888', marginTop: 2 },
   trendRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  trend: { fontSize: 15, fontWeight: '600' },
+  trend: { fontSize: 15, fontFamily: fonts.semiBold, fontWeight: '600' },
   placeholder: { backgroundColor: '#fff', borderRadius: 8, padding: 16, alignItems: 'center' },
-  placeholderText: { color: '#888', fontSize: 14, textAlign: 'center' },
+  placeholderText: { color: '#888', fontSize: 14, fontFamily: fonts.regular, textAlign: 'center' },
 });

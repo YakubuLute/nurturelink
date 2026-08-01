@@ -31,5 +31,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 8,
   },
-  text: { fontSize: 12, fontWeight: '600' },
+  text: { fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600' },
 });

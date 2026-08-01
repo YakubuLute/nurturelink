@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backArrow: { fontSize: 28, color: '#FDFDFD', lineHeight: 32 },
+  backArrow: { fontSize: 28, fontFamily: fonts.regular, color: '#FDFDFD', lineHeight: 32 },
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 17, fontFamily: fonts.bold, fontWeight: '700', color: '#FDFDFD' },
   headerDate: { fontSize: 11, fontFamily: fonts.regular, color: '#8D9CA5', marginTop: 2 },

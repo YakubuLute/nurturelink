@@ -18,6 +18,7 @@ import { BottomTabBar } from '../components/BottomTabBar';
 import {
   ChevronLeft, Check, Phone, Shield, Clock, CalendarDays, X,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralsList'>;
 
@@ -257,14 +258,15 @@ const modalStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F1F3',
   },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#08283B' },
-  headerSub: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  headerTitle: { fontSize: 16, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
+  headerSub: { fontSize: 13, fontFamily: fonts.regular, color: '#6B7280', marginTop: 2 },
   closeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1 },
   bodyContent: { paddingHorizontal: 20, paddingTop: 16 },
 
   sectionLabel: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#9CA3AF',
     letterSpacing: 0.8,
@@ -285,7 +287,7 @@ const modalStyles = StyleSheet.create({
     marginBottom: 4,
     alignSelf: 'flex-start',
   },
-  dateBtnText: { fontSize: 14, fontWeight: '600', color: '#08283B' },
+  dateBtnText: { fontSize: 14, fontFamily: fonts.semiBold, fontWeight: '600', color: '#08283B' },
 
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -302,7 +304,7 @@ const modalStyles = StyleSheet.create({
     borderColor: '#FF5A00',
     backgroundColor: 'rgba(255,90,0,0.06)',
   },
-  chipText: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
+  chipText: { fontSize: 13, fontFamily: fonts.medium, color: '#6B7280', fontWeight: '500' },
   chipTextActive: { color: '#FF5A00', fontWeight: '600' },
 
   outcomeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
@@ -315,7 +317,7 @@ const modalStyles = StyleSheet.create({
     minWidth: '40%',
     alignItems: 'center',
   },
-  outcomeBtnText: { fontSize: 13, fontWeight: '600' },
+  outcomeBtnText: { fontSize: 13, fontFamily: fonts.semiBold, fontWeight: '600' },
 
   footer: {
     position: 'absolute',
@@ -337,7 +339,7 @@ const modalStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  cancelBtnText: { fontSize: 14, fontFamily: fonts.semiBold, fontWeight: '600', color: '#374151' },
   confirmBtn: {
     flex: 2,
     height: 48,
@@ -349,7 +351,7 @@ const modalStyles = StyleSheet.create({
     gap: 7,
   },
   confirmBtnDisabled: { opacity: 0.4 },
-  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#FDFDFD' },
+  confirmBtnText: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#FDFDFD' },
 });
 
 // ─── Referral card ────────────────────────────────────────────────────────────
@@ -575,17 +577,17 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, height: 36, justifyContent: 'center' },
   headerCenter: { alignItems: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  headerSub: { fontSize: 12, color: '#92C9F9', marginTop: 2 },
+  headerTitle: { fontSize: 16, fontFamily: fonts.bold, fontWeight: '700', color: '#FFFFFF' },
+  headerSub: { fontSize: 12, fontFamily: fonts.regular, color: '#92C9F9', marginTop: 2 },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 20 },
 
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
   statCard: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 14, alignItems: 'center' },
-  statCount: { fontSize: 22, fontWeight: '700', marginBottom: 3 },
-  statLabel: { fontSize: 12, fontWeight: '500', textAlign: 'center' },
-  statsNote: { fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginBottom: 18, lineHeight: 16 },
+  statCount: { fontSize: 22, fontFamily: fonts.bold, fontWeight: '700', marginBottom: 3 },
+  statLabel: { fontSize: 12, fontFamily: fonts.medium, fontWeight: '500', textAlign: 'center' },
+  statsNote: { fontSize: 12, fontFamily: fonts.regular, color: '#9CA3AF', textAlign: 'center', marginBottom: 18, lineHeight: 16 },
 
   card: {
     backgroundColor: '#FDFDFD',
@@ -597,12 +599,12 @@ const styles = StyleSheet.create({
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  avatarText: { fontSize: 14, fontWeight: '700' },
+  avatarText: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700' },
   cardTopMid: { flex: 1 },
-  clientName: { fontSize: 15, fontWeight: '700', color: '#08283B', marginBottom: 2 },
-  facilityText: { fontSize: 12, color: '#6B7280' },
+  clientName: { fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B', marginBottom: 2 },
+  facilityText: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280' },
   statusBadge: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, flexShrink: 0 },
-  statusBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+  statusBadgeText: { fontSize: 10, fontFamily: fonts.bold, fontWeight: '700', letterSpacing: 0.4 },
 
   reasonBox: {
     backgroundColor: '#F9FAFB',
@@ -611,7 +613,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 10,
   },
-  reasonText: { fontSize: 12, color: '#374151', lineHeight: 18 },
+  reasonText: { fontSize: 12, fontFamily: fonts.regular, color: '#374151', lineHeight: 18 },
 
   stripIssued: {
     flexDirection: 'row', alignItems: 'center', gap: 7,
@@ -624,9 +626,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8, paddingHorizontal: 11, marginBottom: 8,
     flexWrap: 'wrap',
   },
-  stripTextIssued: { fontSize: 12, color: '#8C6900', fontWeight: '600' },
-  stripTextSeen: { fontSize: 12, color: '#057A55', fontWeight: '600' },
-  stripTextSeenSub: { fontSize: 12, color: '#6B7280' },
+  stripTextIssued: { fontSize: 12, fontFamily: fonts.semiBold, color: '#8C6900', fontWeight: '600' },
+  stripTextSeen: { fontSize: 12, fontFamily: fonts.semiBold, color: '#057A55', fontWeight: '600' },
+  stripTextSeenSub: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280' },
 
   outcomePill: {
     alignSelf: 'flex-start',
@@ -636,31 +638,31 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginBottom: 8,
   },
-  outcomePillText: { fontSize: 12, fontWeight: '700' },
+  outcomePillText: { fontSize: 12, fontFamily: fonts.bold, fontWeight: '700' },
 
   followUpRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginBottom: 8,
   },
-  followUpText: { fontSize: 12, color: '#6B7280' },
+  followUpText: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280' },
 
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  issuedAt: { fontSize: 11, color: '#9CA3AF', flex: 1 },
+  issuedAt: { fontSize: 11, fontFamily: fonts.regular, color: '#9CA3AF', flex: 1 },
   footerActions: { flexDirection: 'row', gap: 8 },
   callBtn: {
     backgroundColor: '#F2F4F5', borderRadius: 9,
     paddingVertical: 8, paddingHorizontal: 13,
     flexDirection: 'row', alignItems: 'center', gap: 5,
   },
-  callBtnText: { fontSize: 13, fontWeight: '600', color: '#08283B' },
+  callBtnText: { fontSize: 13, fontFamily: fonts.semiBold, fontWeight: '600', color: '#08283B' },
   confirmBtn: {
     backgroundColor: '#057A55', borderRadius: 9,
     paddingVertical: 8, paddingHorizontal: 13,
   },
-  confirmBtnText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
+  confirmBtnText: { fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: '#FFFFFF' },
 
   emptyState: { alignItems: 'center', paddingVertical: 64, paddingHorizontal: 32 },
   emptyIcon: { marginBottom: 16 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#374151', marginBottom: 8 },
-  emptyBody: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 17, fontFamily: fonts.bold, fontWeight: '700', color: '#374151', marginBottom: 8 },
+  emptyBody: { fontSize: 14, fontFamily: fonts.regular, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 },
 });

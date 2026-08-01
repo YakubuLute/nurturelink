@@ -54,8 +54,8 @@ const styles = StyleSheet.create({
     borderLeftColor: '#1a7c4e',
   },
   nameRow: { marginBottom: 8 },
-  localName: { fontSize: 18, fontWeight: '700', color: '#111' },
-  engName: { fontSize: 13, color: '#666', marginTop: 2 },
+  localName: { fontSize: 18, fontFamily: fonts.bold, fontWeight: '700', color: '#111' },
+  engName: { fontSize: 13, fontFamily: fonts.regular, color: '#666', marginTop: 2 },
   reasons: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   reasonChip: {
     backgroundColor: '#e8f5ee',
@@ -63,5 +63,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  reasonText: { fontSize: 12, color: '#1a7c4e', fontWeight: '500' },
+  reasonText: { fontSize: 12, fontFamily: fonts.medium, color: '#1a7c4e', fontWeight: '500' },
 });

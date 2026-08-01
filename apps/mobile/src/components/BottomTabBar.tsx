@@ -123,12 +123,15 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
+    fontFamily: fonts.regular,
   },
   labelActive: {
+    fontFamily: fonts.bold,
     color: BRAND,
     fontWeight: '700',
   },
   labelInactive: {
+    fontFamily: fonts.medium,
     color: '#9CA3AF',
     fontWeight: '500',
   },
@@ -147,6 +150,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 9,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     lineHeight: 13,
   },

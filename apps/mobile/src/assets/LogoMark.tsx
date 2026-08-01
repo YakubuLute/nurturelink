@@ -15,7 +15,7 @@ interface Props {
 
 export function LogoMark({ size = 54, onDark = false }: Props) {
   const heartFill = onDark ? '#FDFDFD' : '#08283B';
-  const s = size / 54; // scale factor
+  // const s = size / 54; // scale factor
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>

@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  choAvatarText: { fontSize: 15, fontWeight: '700', color: '#08283B' },
+  choAvatarText: { fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
   choBody: { flex: 1 },
   choTopRow: {
     flexDirection: 'row',
@@ -537,14 +537,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 2,
   },
-  choName: { fontSize: 15, fontWeight: '700', color: '#08283B', flex: 1, marginRight: 8 },
+  choName: { fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B', flex: 1, marginRight: 8 },
   syncBadge: {
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: 20,
   },
-  syncBadgeText: { fontSize: 11, fontWeight: '600' },
-  choZone: { fontSize: 12, color: '#9CA3AF', marginBottom: 8 },
+  syncBadgeText: { fontSize: 11, fontFamily: fonts.semiBold, fontWeight: '600' },
+  choZone: { fontSize: 12, fontFamily: fonts.regular, color: '#9CA3AF', marginBottom: 8 },
   choCovRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   choProgressBg: {
     flex: 1,
@@ -558,21 +558,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#08283B',
     borderRadius: 3,
   },
-  choProgressLabel: { fontSize: 11, fontWeight: '600', color: '#374151' },
+  choProgressLabel: { fontSize: 11, fontFamily: fonts.semiBold, fontWeight: '600', color: '#374151' },
   pendingBadge: {
     backgroundColor: '#FFEFE6',
     paddingVertical: 2,
     paddingHorizontal: 7,
     borderRadius: 10,
   },
-  pendingBadgeText: { fontSize: 10, fontWeight: '600', color: '#B54000' },
+  pendingBadgeText: { fontSize: 10, fontFamily: fonts.semiBold, fontWeight: '600', color: '#B54000' },
 
   // Loading / empty states
   loadingState: { alignItems: 'center', paddingVertical: 48 },
-  loadingText: { fontSize: 14, color: '#9CA3AF', marginTop: 12 },
+  loadingText: { fontSize: 14, fontFamily: fonts.regular, color: '#9CA3AF', marginTop: 12 },
   emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#374151', marginTop: 16, marginBottom: 6 },
-  emptyBody: { fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 },
+  emptyTitle: { fontSize: 16, fontFamily: fonts.semiBold, fontWeight: '600', color: '#374151', marginTop: 16, marginBottom: 6 },
+  emptyBody: { fontSize: 13, fontFamily: fonts.regular, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 },
   retryBtn: {
     marginTop: 18,
     backgroundColor: '#08283B',
@@ -580,5 +580,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 24,
   },
-  retryBtnText: { fontSize: 14, fontWeight: '600', color: '#FDFDFD' },
+  retryBtnText: { fontSize: 14, fontFamily: fonts.semiBold, fontWeight: '600', color: '#FDFDFD' },
 });
