@@ -100,10 +100,10 @@ function DarkPickerModal({
       transparent
       animationType="slide"
       onRequestClose={handleDismiss}
-      presentationStyle="pageSheet"
     >
-      <Pressable style={pickerStyles.backdrop} onPress={handleDismiss} />
-      <View style={pickerStyles.sheet}>
+      <View style={pickerStyles.overlay}>
+        <Pressable style={pickerStyles.backdrop} onPress={handleDismiss} />
+        <View style={pickerStyles.sheet}>
         {/* Handle */}
         <View style={pickerStyles.handle} />
 
@@ -168,21 +168,26 @@ function DarkPickerModal({
             <Text style={pickerStyles.emptyText}>No results</Text>
           }
         />
+        </View>
       </View>
     </Modal>
   );
 }
 
 const pickerStyles = StyleSheet.create({
-  backdrop: {
+  overlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   sheet: {
     backgroundColor: '#0E3550',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '70%',
+    maxHeight: '75%',
     paddingBottom: 32,
   },
   handle: {
@@ -235,7 +240,7 @@ const pickerStyles = StyleSheet.create({
     padding: 0,
   },
   searchClear: { padding: 4 },
-  list: { flex: 1 },
+  list: { flexGrow: 1, maxHeight: 320 },
   listContent: { paddingHorizontal: 12, paddingVertical: 4 },
   listItem: {
     flexDirection: 'row',
@@ -379,13 +384,18 @@ export function SignUpScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[SignUp] Fetching facilities from:', `${API_URL}/facilities`);
     fetch(`${API_URL}/facilities`)
-      .then((r) => r.json())
-      .then((data: { facilities: Facility[] }) => {
-        setFacilities(data.facilities ?? []);
+      .then((r) => {
+        console.log('[SignUp] Facilities response status:', r.status, r.ok);
+        return r.json();
+      })
+      .then((data) => {
+        console.log('[SignUp] Facilities data received:', JSON.stringify(data));
+        setFacilities((data as { facilities: Facility[] }).facilities ?? []);
       })
       .catch((err) => {
-        console.warn('[SignUp] Failed to load facilities:', err);
+        console.warn('[SignUp] Failed to load facilities:', err?.message ?? String(err));
         setError('Could not load facilities. Check your connection and try again.');
       })
       .finally(() => setFacilitiesLoading(false));

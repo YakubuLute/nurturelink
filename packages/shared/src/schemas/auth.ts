@@ -10,8 +10,8 @@ export const UserRoleSchema = z.enum([
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
 export const LoginSchema = z.object({
-  phone: z.string().min(10),
-  pin: z.string().length(4).regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
+  phone:    z.string().min(10),
+  password: z.string().min(8),
 });
 export type LoginInput = z.infer<typeof LoginSchema>;
 

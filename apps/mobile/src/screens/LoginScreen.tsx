@@ -33,18 +33,18 @@ export function LoginScreen({ navigation }: Props) {
   const seedDemoData = useAppStore((s) => s.seedDemoData);
 
   const [phone, setPhone] = useState('');
-  const [pin, setPin] = useState('');
-  const [showPin, setShowPin] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
-    if (!phone.trim() || !pin.trim()) {
-      setError('Phone number and PIN are required.');
+    if (!phone.trim() || !password.trim()) {
+      setError('Phone number and password are required.');
       return;
     }
-    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      setError('PIN must be exactly 4 digits.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
     setError(null);
@@ -54,7 +54,7 @@ export function LoginScreen({ navigation }: Props) {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim(), pin }),
+        body: JSON.stringify({ phone: phone.trim(), password }),
       });
 
       if (res.ok) {
@@ -97,7 +97,7 @@ export function LoginScreen({ navigation }: Props) {
         );
         navigation.replace(role === 'sup' ? 'Supervisor' : 'Home');
       } else if (res.status === 401) {
-        setError('Incorrect phone number or PIN.');
+        setError('Incorrect phone number or password.');
       } else if (res.status === 403) {
         setError('Account not verified. Check your SMS for a verification code.');
       } else {
@@ -168,44 +168,42 @@ export function LoginScreen({ navigation }: Props) {
             </View>
           </View>
 
-          {/* PIN */}
+          {/* Password */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>PIN (4 digits)</Text>
+            <Text style={styles.fieldLabel}>Password</Text>
             <View style={styles.inputRow}>
               <Lock size={18} color="#8D9CA5" style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, styles.inputFlex]}
-                value={pin}
-                onChangeText={(v) => { setPin(v.replace(/\D/g, '').slice(0, 4)); setError(null); }}
-                placeholder="• • • •"
+                value={password}
+                onChangeText={(v) => { setPassword(v); setError(null); }}
+                placeholder="Min. 8 characters"
                 placeholderTextColor="#5A6F7C"
-                secureTextEntry={!showPin}
-                keyboardType="number-pad"
-                maxLength={4}
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
               />
               <Pressable
-                onPress={() => setShowPin((v) => !v)}
+                onPress={() => setShowPassword((v) => !v)}
                 style={styles.eyeBtn}
-                accessibilityLabel={showPin ? 'Hide PIN' : 'Show PIN'}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPin
+                {showPassword
                   ? <EyeOff size={18} color="#8D9CA5" />
                   : <Eye size={18} color="#8D9CA5" />}
               </Pressable>
             </View>
           </View>
 
-          {/* Forgot PIN */}
+          {/* Forgot password */}
           <Pressable
             onPress={() => navigation.navigate('ForgotPassword')}
             style={styles.forgotRow}
             accessibilityRole="link"
           >
-            <Text style={styles.forgotText}>Forgot PIN?</Text>
+            <Text style={styles.forgotText}>Forgot password?</Text>
           </Pressable>
 
           {/* Error */}
