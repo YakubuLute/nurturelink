@@ -231,6 +231,7 @@ const styles = StyleSheet.create({
   // Section
   sectionTitle: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#9CA3AF',
     letterSpacing: 0.5,
@@ -251,8 +252,8 @@ const styles = StyleSheet.create({
   },
   colorBar: { width: 5, alignSelf: 'stretch' },
   tallyBody: { flex: 1, paddingVertical: 14, paddingLeft: 14 },
-  tallyLabel: { fontSize: 15, fontWeight: '700', color: '#08283B' },
-  tallySub: { fontSize: 12, color: '#9CA3AF', marginTop: 2 },
+  tallyLabel: { fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
+  tallySub: { fontSize: 12, fontFamily: fonts.regular, color: '#9CA3AF', marginTop: 2 },
   counterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -275,12 +276,14 @@ const styles = StyleSheet.create({
   },
   counterBtnText: {
     fontSize: 20,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
     lineHeight: 24,
   },
   counterValue: {
     fontSize: 22,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#08283B',
     minWidth: 36,
@@ -296,5 +299,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#B4DAFB',
   },
-  noteText: { fontSize: 12, color: '#427CAF', lineHeight: 17 },
+  noteText: { fontSize: 12, fontFamily: fonts.regular, color: '#427CAF', lineHeight: 17 },
 });

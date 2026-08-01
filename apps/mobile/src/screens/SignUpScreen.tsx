@@ -854,12 +854,14 @@ const styles = StyleSheet.create({
 
   heading: {
     fontSize: 26,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 6,
   },
   headingSub: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     marginBottom: 28,
   },
@@ -873,6 +875,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#C2D0D9',
     marginBottom: 8,
@@ -897,6 +900,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: '#FDFDFD',
     padding: 0,
   },
@@ -956,6 +960,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#8D9CA5',
     marginBottom: 2,
@@ -965,6 +970,7 @@ const styles = StyleSheet.create({
   },
   optionSub: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     lineHeight: 16,
   },
@@ -987,6 +993,7 @@ const styles = StyleSheet.create({
   facilitySummaryText: {
     flex: 1,
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#A7F3D0',
     lineHeight: 16,
   },
@@ -1002,16 +1009,19 @@ const styles = StyleSheet.create({
   },
   facilitiesLoadingText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
   },
   facilitiesEmpty: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     paddingVertical: 8,
   },
 
   errorText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FC8181',
     marginBottom: 12,
     lineHeight: 18,
@@ -1031,6 +1041,7 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
@@ -1045,10 +1056,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
   },
   footerLink: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     color: BRAND,
     fontWeight: '600',
   },

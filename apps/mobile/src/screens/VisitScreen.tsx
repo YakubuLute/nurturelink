@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, VisitForm } from '../store';
 import { ChevronLeft, Check, AlertTriangle, Droplets, Baby, Info } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Visit'>;
 
@@ -644,11 +645,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#fff',
   },
   headerSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#92C9F9',
     marginTop: 2,
   },
@@ -661,6 +664,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg4,
     letterSpacing: 0.8,
@@ -670,6 +674,7 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: C.fg4,
     marginBottom: 10,
   },
@@ -682,11 +687,13 @@ const styles = StyleSheet.create({
   },
   measureLabel: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: C.fg3,
     marginBottom: 4,
   },
   measureInput: {
     fontSize: 22,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg1,
     padding: 0,
@@ -694,6 +701,7 @@ const styles = StyleSheet.create({
   },
   measureUnit: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: C.fg4,
     marginTop: 2,
   },

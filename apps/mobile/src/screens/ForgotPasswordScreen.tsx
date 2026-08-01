@@ -13,6 +13,7 @@ import { ChevronLeft, Phone, MessageCircle } from 'lucide-react-native';
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
+import { fonts } from '../theme';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
@@ -188,12 +189,14 @@ const styles = StyleSheet.create({
 
   heading: {
     fontSize: 26,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 8,
   },
   headingSub: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     lineHeight: 20,
     marginBottom: 32,
@@ -207,6 +210,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#C2D0D9',
     marginBottom: 8,

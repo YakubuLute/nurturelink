@@ -517,13 +517,13 @@ export function ClientScreen({ navigation, route }: Props) {
               >
                 <View style={{ width: 9, height: 9, borderRadius: 4, backgroundColor: client.trendColor, marginTop: 3 }} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>{v.date}</Text>
-                  <Text style={{ fontSize: 12, color: C.fg3, marginTop: 2 }}>
+                  <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>{v.date}</Text>
+                  <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, marginTop: 2 }}>
                     {`Wt: ${v.weight.toFixed(1)} kg · Hb: ${v.hb !== null ? v.hb.toFixed(1) + ' g/dL' : '—'} · MUAC: ${v.muac} mm`}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg1 }}>
+                  <Text style={{ fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>
                     {formatMetric(client.metric, metricVal)}
                   </Text>
                   <View style={{
@@ -534,7 +534,7 @@ export function ClientScreen({ navigation, route }: Props) {
                   }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                       {v.synced && <Check size={10} color={C.success} strokeWidth={3} />}
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
+                      <Text style={{ fontSize: 11, fontFamily: fonts.semiBold, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
                         {v.synced ? 'Synced' : 'Draft — offline'}
                       </Text>
                     </View>
@@ -554,7 +554,7 @@ export function ClientScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate('Visit', { clientId })}
             accessibilityLabel="Record visit"
           >
-            <Text style={{ fontSize: 14, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
           </TouchableOpacity>
         )}
 
@@ -567,7 +567,7 @@ export function ClientScreen({ navigation, route }: Props) {
             onPress={handlePlanPress}
             accessibilityLabel={client.severe ? 'Referral required' : 'View plan'}
           >
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#fff' }}>
               {client.severe ? 'Referral required' : visits.length > 0 ? 'View plan' : 'Generate plan'}
             </Text>
           </TouchableOpacity>
@@ -592,6 +592,7 @@ const styles = StyleSheet.create({
   },
   headerLabel: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     marginTop: 2,
   },
@@ -604,16 +605,19 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: 20,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#fff',
   },
   clientSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: C.lb300,
     marginTop: 2,
   },
   clientId: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: 'rgba(180,218,251,0.65)',
     marginTop: 3,
     fontVariant: ['tabular-nums'],
@@ -629,6 +633,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 13,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg3,
     textTransform: 'uppercase',

@@ -22,6 +22,7 @@ import {
   Phone, MapPin, FileText, Info, ChevronDown, X, Search, MapPinned, Globe,
 } from 'lucide-react-native';
 import { syncNow } from '../sync/orchestrator';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -150,7 +151,7 @@ function SectionHeader({ label }: { label: string }) {
 }
 const sh = StyleSheet.create({
   label: {
-    fontSize: 11, fontWeight: '700', color: '#6B7280',
+    fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: '#6B7280',
     letterSpacing: 0.7, textTransform: 'uppercase',
     marginBottom: 12, marginTop: 4,
   },
@@ -188,7 +189,7 @@ const ts = StyleSheet.create({
   },
   btnActive: { backgroundColor: '#08283B', borderColor: '#08283B' },
   btnInactive: { backgroundColor: '#FDFDFD', borderColor: '#D1D5DB' },
-  label: { fontSize: 14, fontWeight: '600' },
+  label: { fontSize: 14, fontFamily: fonts.semiBold, fontWeight: '600' },
   textActive: { color: '#FFFFFF' },
   textInactive: { color: '#08283B' },
 });
@@ -218,7 +219,7 @@ const chip = StyleSheet.create({
   item: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1.5 },
   itemActive: { backgroundColor: '#08283B', borderColor: '#08283B' },
   itemInactive: { backgroundColor: '#FDFDFD', borderColor: '#D1D5DB' },
-  text: { fontSize: 14, fontWeight: '500' },
+  text: { fontSize: 14, fontFamily: fonts.medium, fontWeight: '500' },
   textActive: { color: '#FFFFFF' },
   textInactive: { color: '#08283B' },
 });
@@ -290,7 +291,7 @@ const cp = StyleSheet.create({
     backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB',
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52,
   },
-  triggerText: { flex: 1, fontSize: 15, color: '#08283B' },
+  triggerText: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B' },
   triggerPlaceholder: { color: '#9CA3AF' },
   modal: { flex: 1, backgroundColor: '#FDFDFD' },
   modalHeader: {
@@ -298,30 +299,30 @@ const cp = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12,
     borderBottomWidth: 1, borderBottomColor: '#F0F1F3',
   },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: '#08283B' },
+  modalTitle: { fontSize: 17, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
   closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', margin: 16,
     backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 14, height: 48,
   },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 15, color: '#08283B' },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B' },
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: '#F9FAFB',
   },
   rowSelected: { backgroundColor: '#F0F7FF' },
-  rowText: { fontSize: 15, color: '#374151' },
+  rowText: { fontSize: 15, fontFamily: fonts.regular, color: '#374151' },
   rowTextSelected: { color: '#08283B', fontWeight: '600' },
   customRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#F0F7FF',
     margin: 16, borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE',
   },
-  customText: { fontSize: 14, color: '#1D4ED8', flex: 1 },
+  customText: { fontSize: 14, fontFamily: fonts.regular, color: '#1D4ED8', flex: 1 },
   customBold: { fontWeight: '700' },
-  empty: { textAlign: 'center', color: '#9CA3AF', fontSize: 14, marginTop: 32 },
+  empty: { textAlign: 'center', color: '#9CA3AF', fontSize: 14, fontFamily: fonts.regular, marginTop: 32 },
 });
 
 // Simple picker modal (no custom-entry option) — used for Region and District
@@ -441,9 +442,9 @@ const dp = StyleSheet.create({
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52,
   },
   btnOpen: { borderColor: '#08283B' },
-  btnText: { fontSize: 15, color: '#08283B', flex: 1 },
+  btnText: { fontSize: 15, fontFamily: fonts.regular, color: '#08283B', flex: 1 },
   btnPlaceholder: { color: '#9CA3AF' },
-  hint: { fontSize: 12, color: '#6B7280', marginTop: 5, marginLeft: 2 },
+  hint: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280', marginTop: 5, marginLeft: 2 },
 });
 
 function ConsentRow({
@@ -482,8 +483,8 @@ const ct = StyleSheet.create({
   boxChecked: { backgroundColor: '#FF5A00', borderColor: '#FF5A00' },
   boxUnchecked: { backgroundColor: '#FFFFFF', borderColor: '#D1D5DB' },
   body: { flex: 1 },
-  title: { fontSize: 14, fontWeight: '700', color: '#08283B', marginBottom: 4 },
-  desc: { fontSize: 12, color: '#6B7280', lineHeight: 17 },
+  title: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B', marginBottom: 4 },
+  desc: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280', lineHeight: 17 },
 });
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
@@ -546,7 +547,7 @@ function MotherPicker({ candidates, value, onChange }: MotherPickerProps) {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[cp.rowText, value === item.id && cp.rowTextSelected]}>{item.name}</Text>
-                  <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>{item.community}</Text>
+                  <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: '#9CA3AF', marginTop: 1 }}>{item.community}</Text>
                 </View>
                 {value === item.id && <Check size={16} color="#08283B" strokeWidth={2.5} />}
               </TouchableOpacity>
@@ -564,7 +565,7 @@ const mp = StyleSheet.create({
     backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB',
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52,
   },
-  triggerText: { flex: 1, fontSize: 15, color: '#08283B' },
+  triggerText: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B' },
   placeholder: { color: '#9CA3AF' },
 });
 

@@ -353,8 +353,8 @@ const stat = StyleSheet.create({
     margin: 4,
     minWidth: '45%',
   },
-  value: { fontSize: 28, fontWeight: '800', lineHeight: 34 },
-  label: { fontSize: 11, color: '#9CA3AF', marginTop: 2, textAlign: 'center' },
+  value: { fontSize: 28, fontFamily: fonts.bold, fontWeight: '800', lineHeight: 34 },
+  label: { fontSize: 11, fontFamily: fonts.regular, color: '#9CA3AF', marginTop: 2, textAlign: 'center' },
 });
 
 const styles = StyleSheet.create({
@@ -372,8 +372,8 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#FDFDFD' },
-  headerDate: { fontSize: 11, color: '#8D9CA5', marginTop: 2 },
+  headerTitle: { fontSize: 17, fontFamily: fonts.bold, fontWeight: '700', color: '#FDFDFD' },
+  headerDate: { fontSize: 11, fontFamily: fonts.regular, color: '#8D9CA5', marginTop: 2 },
 
   // Tabs
   tabRow: {
@@ -390,8 +390,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: { borderBottomColor: '#FF5A00' },
-  tabText: { fontSize: 14, fontWeight: '500', color: '#8D9CA5' },
-  tabTextActive: { color: '#FDFDFD', fontWeight: '700' },
+  tabText: { fontSize: 14, fontFamily: fonts.medium, fontWeight: '500', color: '#8D9CA5' },
+  tabTextActive: { fontFamily: fonts.bold, color: '#FDFDFD', fontWeight: '700' },
 
   // Scroll
   scroll: { flex: 1 },
@@ -410,12 +410,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   alertBody: { flex: 1 },
-  alertTitle: { fontSize: 14, fontWeight: '700', color: '#08283B' },
-  alertSub: { fontSize: 12, color: '#8C6900', marginTop: 2 },
+  alertTitle: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
+  alertSub: { fontSize: 12, fontFamily: fonts.regular, color: '#8C6900', marginTop: 2 },
 
   // Section
   sectionTitle: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#9CA3AF',
     letterSpacing: 0.5,
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  coverageName: { width: 60, fontSize: 12, fontWeight: '600', color: '#374151' },
+  coverageName: { width: 60, fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600', color: '#374151' },
   coverageBarWrap: { flex: 1 },
   coverageBarBg: {
     height: 8,
@@ -460,7 +461,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#427CAF',
     borderRadius: 4,
   },
-  coveragePct: { width: 36, fontSize: 12, fontWeight: '600', color: '#374151', textAlign: 'right' },
+  coveragePct: { width: 36, fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600', color: '#374151', textAlign: 'right' },
 
   // Pipeline
   pipelineCard: {
@@ -478,8 +479,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   pipelineDot: { width: 10, height: 10, borderRadius: 5 },
-  pipelineLabel: { flex: 1, fontSize: 14, color: '#374151' },
-  pipelineValue: { fontSize: 16, fontWeight: '700', color: '#08283B' },
+  pipelineLabel: { flex: 1, fontSize: 14, fontFamily: fonts.regular, color: '#374151' },
+  pipelineValue: { fontSize: 16, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
   divider: { height: 1, backgroundColor: '#F0F1F3', marginVertical: 10 },
 
   // Bundle
@@ -497,8 +498,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 2,
   },
-  bundleLabel: { fontSize: 14, color: '#374151' },
-  bundleValue: { fontSize: 14, fontWeight: '600', color: '#08283B' },
+  bundleLabel: { fontSize: 14, fontFamily: fonts.regular, color: '#374151' },
+  bundleValue: { fontSize: 14, fontFamily: fonts.semiBold, fontWeight: '600', color: '#08283B' },
   bundlePushBtn: {
     marginTop: 14,
     backgroundColor: '#08283B',
@@ -506,7 +507,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  bundlePushBtnText: { fontSize: 14, fontWeight: '700', color: '#FDFDFD' },
+  bundlePushBtnText: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#FDFDFD' },
 
   // CHO cards
   choCard: {
