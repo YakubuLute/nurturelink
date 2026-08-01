@@ -384,8 +384,9 @@ export function SignUpScreen({ navigation }: Props) {
       .then((data: { facilities: Facility[] }) => {
         setFacilities(data.facilities ?? []);
       })
-      .catch(() => {
-        // Non-fatal — user can still register without a facility
+      .catch((err) => {
+        console.warn('[SignUp] Failed to load facilities:', err);
+        setError('Could not load facilities. Check your connection and try again.');
       })
       .finally(() => setFacilitiesLoading(false));
   }, []);
