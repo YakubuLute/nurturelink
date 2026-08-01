@@ -258,11 +258,13 @@ const pickerStyles = StyleSheet.create({
   listItemLabelActive: { color: '#FDFDFD' },
   listItemSub: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     marginTop: 2,
   },
   emptyText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     textAlign: 'center',
     paddingVertical: 24,
@@ -311,6 +313,7 @@ const pkBtnStyles = StyleSheet.create({
   group: { marginBottom: 10 },
   label: {
     fontSize: 12,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#8D9CA5',
     marginBottom: 6,
@@ -336,11 +339,13 @@ const pkBtnStyles = StyleSheet.create({
   valueText: {
     flex: 1,
     fontSize: 14,
+    fontFamily: fonts.medium,
     color: '#FDFDFD',
     fontWeight: '500',
   },
   placeholderText: {
     color: '#5A6F7C',
+    fontFamily: fonts.regular,
     fontWeight: '400',
   },
 });

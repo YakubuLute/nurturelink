@@ -448,11 +448,11 @@ export function ClientScreen({ navigation, route }: Props) {
         <View style={[styles.card, { marginBottom: 12 }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
             <View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>{label}</Text>
-              <Text style={{ fontSize: 11, color: C.fg3 }}>across {visits.length} visits</Text>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>{label}</Text>
+              <Text style={{ fontSize: 11, fontFamily: fonts.regular, color: C.fg3 }}>across {visits.length} visits</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 26, fontWeight: '700', color: C.fg1, lineHeight: 30 }}>{currentValue}</Text>
+              <Text style={{ fontSize: 26, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1, lineHeight: 30 }}>{currentValue}</Text>
               {trendDelta ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                   {client.trendArrow === 'up'
@@ -460,12 +460,12 @@ export function ClientScreen({ navigation, route }: Props) {
                     : client.trendArrow === 'down'
                     ? <TrendingDown size={13} color={client.trendColor} />
                     : <Minus size={13} color={client.trendColor} />}
-                  <Text style={{ fontSize: 13, color: client.trendColor, fontWeight: '600' }}>{trendDelta}</Text>
+                  <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, color: client.trendColor, fontWeight: '600' }}>{trendDelta}</Text>
                 </View>
               ) : null}
             </View>
           </View>
-          <Text style={{ fontSize: 12, color: client.trendColor, fontWeight: '500', marginBottom: 10 }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.medium, color: client.trendColor, fontWeight: '500', marginBottom: 10 }}>
             {client.trendNote}
           </Text>
           {visits.length > 0 && (
@@ -487,8 +487,8 @@ export function ClientScreen({ navigation, route }: Props) {
               <ShieldCheck size={18} color={C.lb700} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Immunization record</Text>
-              <Text style={{ fontSize: 12, color: C.fg3, marginTop: 2 }}>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>Immunization record</Text>
+              <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, marginTop: 2 }}>
                 {vaccinationCount}/{TOTAL_VACCINES} vaccines recorded · Ghana EPI
               </Text>
             </View>
@@ -501,8 +501,8 @@ export function ClientScreen({ navigation, route }: Props) {
         {visits.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 36 }}>
             <ClipboardList size={32} color={C.fg4} style={{ marginBottom: 12 }} />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg2, marginBottom: 6 }}>No visits yet</Text>
-            <Text style={{ fontSize: 13, color: C.fg3, textAlign: 'center', lineHeight: 20 }}>
+            <Text style={{ fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: C.fg2, marginBottom: 6 }}>No visits yet</Text>
+            <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg3, textAlign: 'center', lineHeight: 20 }}>
               Record a visit to start tracking nutrition trends for this client.
             </Text>
           </View>

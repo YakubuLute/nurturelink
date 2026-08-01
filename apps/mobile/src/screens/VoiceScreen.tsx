@@ -11,6 +11,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, PLANS } from '../store';
 import { ChevronLeft, Check, Volume2, Bluetooth, MessageCircle, Square, Mic } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Voice'>;
 
@@ -78,12 +79,12 @@ function DeliveryCard({
         {icon}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1, marginBottom: 2 }}>{title}</Text>
-        <Text style={{ fontSize: 12, color: C.fg3, lineHeight: 17 }}>{sub}</Text>
+        <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1, marginBottom: 2 }}>{title}</Text>
+        <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, lineHeight: 17 }}>{sub}</Text>
       </View>
       {badge && (
         <View style={{ backgroundColor: badgeBg ?? C.successBg, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: badgeColor ?? C.success }}>{badge}</Text>
+          <Text style={{ fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: badgeColor ?? C.success }}>{badge}</Text>
         </View>
       )}
     </View>
@@ -225,7 +226,7 @@ export function VoiceScreen({ navigation, route }: Props) {
         <View style={[styles.approvedBadge]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Check size={13} color={C.success} strokeWidth={3} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: C.success }}>Plan approved by you</Text>
+            <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, fontWeight: '600', color: C.success }}>Plan approved by you</Text>
           </View>
         </View>
 
@@ -233,7 +234,7 @@ export function VoiceScreen({ navigation, route }: Props) {
         <View style={styles.playerCard}>
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>
               {isDag ? 'Dagbani' : 'EN'} counselling note
             </Text>
             {isAiPlan ? (

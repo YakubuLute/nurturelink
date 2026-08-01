@@ -763,11 +763,13 @@ const styles = StyleSheet.create({
   },
   betaBadgeText: {
     fontSize: 10,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#8C6900',
   },
   betaNote: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#8C6900',
     flex: 1,
     lineHeight: 15,
@@ -798,6 +800,7 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#C81E1E',
   },

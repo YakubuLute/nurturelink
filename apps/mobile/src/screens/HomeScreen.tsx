@@ -719,6 +719,7 @@ const styles = StyleSheet.create({
   },
   flagText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#374151',
     flex: 1,
   },
@@ -730,12 +731,14 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: 16,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#374151',
     marginBottom: 6,
   },
   emptyStateSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
   },
 });
