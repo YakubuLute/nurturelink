@@ -22,6 +22,7 @@ import {
   ChevronLeft, BarChart2, BatteryMedium, HardDrive, Zap, TrendingUp,
   LayoutGrid, ChevronRight, Pencil, X, Check, Camera,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -504,6 +505,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -540,6 +542,7 @@ const styles = StyleSheet.create({
   },
   profileAvatarText: {
     fontSize: 20,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -560,12 +563,14 @@ const styles = StyleSheet.create({
   // View mode name/role
   profileName: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 2,
   },
   profileRole: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#92C9F9',
   },
 
@@ -585,6 +590,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -596,6 +602,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FFFFFF',
     marginTop: 4,
   },
@@ -604,6 +611,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#FCA5A5',
     marginTop: 2,
   },

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Home, Shield, RefreshCw, User } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 const BRAND = '#FF5A00';
 const INACTIVE = '#9CA3AF';

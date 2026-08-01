@@ -16,6 +16,7 @@ import {
   priorityStyle,
 } from '../store';
 import { ChevronLeft, X, RefreshCw, Check, Shield, Info } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Plan'>;
 
@@ -127,12 +128,12 @@ function FoodCard({
       </View>
       {/* text */}
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg1 }}>{food.name}</Text>
-        <Text style={{ fontSize: 12, fontStyle: 'italic', color: C.fg3 }}>{food.local}</Text>
-        <Text style={{ fontSize: 12, color: C.fg2, lineHeight: 17 }}>{food.why}</Text>
+        <Text style={{ fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>{food.name}</Text>
+        <Text style={{ fontSize: 12, fontFamily: fonts.regular, fontStyle: 'italic', color: C.fg3 }}>{food.local}</Text>
+        <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg2, lineHeight: 17 }}>{food.why}</Text>
         <View style={{ flexDirection: 'row', marginTop: 4 }}>
           <View style={{ backgroundColor: ts.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 }}>
-            <Text style={{ fontSize: 10, fontWeight: '700', color: ts.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Text style={{ fontSize: 10, fontFamily: fonts.bold, fontWeight: '700', color: ts.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               {food.tier}
             </Text>
           </View>
@@ -196,22 +197,22 @@ export function PlanScreen({ navigation, route }: Props) {
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
           {isAiPlan ? (
             <View style={{ backgroundColor: C.successBg, borderWidth: 1, borderColor: C.successBorder, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: C.success }}>AI enriched</Text>
+              <Text style={{ fontSize: 12, fontFamily: fonts.bold, fontWeight: '700', color: C.success }}>AI enriched</Text>
             </View>
           ) : (
             <View style={{ backgroundColor: C.lb50, borderWidth: 1, borderColor: C.lb200, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: C.lb700 }}>Deterministic</Text>
+              <Text style={{ fontSize: 12, fontFamily: fonts.bold, fontWeight: '700', color: C.lb700 }}>Deterministic</Text>
             </View>
           )}
           <View style={{ backgroundColor: C.successBg, borderWidth: 1, borderColor: C.successBorder, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: C.success }}>
+            <Text style={{ fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600', color: C.success }}>
               {basePlan.seasonNote}
             </Text>
           </View>
         </View>
 
         {/* Target note */}
-        <Text style={{ fontSize: 14, color: C.fg2, lineHeight: 21, marginBottom: 18 }}>
+        <Text style={{ fontSize: 14, fontFamily: fonts.regular, color: C.fg2, lineHeight: 21, marginBottom: 18 }}>
           {basePlan.targetNote}
         </Text>
 
@@ -225,7 +226,7 @@ export function PlanScreen({ navigation, route }: Props) {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <RefreshCw size={13} color={C.lb700} />
-              <Text style={{ fontSize: 13, fontWeight: '600', color: C.lb700 }}>Regenerate</Text>
+              <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, fontWeight: '600', color: C.lb700 }}>Regenerate</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -244,7 +245,7 @@ export function PlanScreen({ navigation, route }: Props) {
           onPress={() => store.addPlanAlternate(clientId)}
           accessibilityLabel="Add another local food"
         >
-          <Text style={{ fontSize: 13, color: '#395362', fontWeight: '600' }}>+ Add another local food</Text>
+          <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, color: '#395362', fontWeight: '600' }}>+ Add another local food</Text>
         </TouchableOpacity>
 
         {/* ── Nutrient adequacy ── */}
@@ -255,8 +256,8 @@ export function PlanScreen({ navigation, route }: Props) {
             return (
               <View key={row.label} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={{ fontSize: 13, color: C.fg2 }}>{row.label}</Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: col }}>{row.pct}%</Text>
+                  <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg2 }}>{row.label}</Text>
+                  <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: col }}>{row.pct}%</Text>
                 </View>
                 <View style={{ height: 8, backgroundColor: '#ECECEB', borderRadius: 8, overflow: 'hidden' }}>
                   <View style={{ width: `${Math.min(row.pct, 100)}%`, height: '100%', backgroundColor: col, borderRadius: 8 }} />
@@ -264,7 +265,7 @@ export function PlanScreen({ navigation, route }: Props) {
               </View>
             );
           })}
-          <Text style={{ fontSize: 11, color: C.fg4, marginTop: 4 }}>
+          <Text style={{ fontSize: 11, fontFamily: fonts.regular, color: C.fg4, marginTop: 4 }}>
             Against WHO/IYCF targets · computed on-device
           </Text>
         </View>

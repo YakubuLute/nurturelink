@@ -27,6 +27,7 @@ import {
   XCircle,
   CloudUpload,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Sync'>;
 

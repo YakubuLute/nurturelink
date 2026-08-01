@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Visit } from '@nurturelink/shared';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 interface Props {
   visits: Visit[];

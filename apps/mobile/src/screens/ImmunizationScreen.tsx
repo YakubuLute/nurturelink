@@ -17,6 +17,7 @@ import { useAppStore, VaccineRecord } from '../store';
 import {
   ChevronLeft, Check, AlertTriangle, ShieldCheck, CalendarDays, ChevronDown,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Immunization'>;
 

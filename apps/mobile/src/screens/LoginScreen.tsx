@@ -14,6 +14,7 @@ import { Eye, EyeOff, Phone, Lock, WifiOff } from 'lucide-react-native';
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
 import { useAppStore } from '../store';
+import { fonts } from '../theme';
 import { storeTokens, storeSession } from '../auth/session';
 import type { Role } from '../store';
 
@@ -298,6 +299,7 @@ const styles = StyleSheet.create({
   },
   logoLabel: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.1,
@@ -305,12 +307,14 @@ const styles = StyleSheet.create({
 
   heading: {
     fontSize: 26,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 6,
   },
   headingSub: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     marginBottom: 32,
   },
@@ -324,6 +328,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#C2D0D9',
     marginBottom: 8,
@@ -344,6 +349,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: '#FDFDFD',
     padding: 0,
   },
@@ -362,12 +368,14 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
+    fontFamily: fonts.medium,
     color: BRAND,
     fontWeight: '500',
   },
 
   errorText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FC8181',
     marginBottom: 12,
     lineHeight: 18,
@@ -386,6 +394,7 @@ const styles = StyleSheet.create({
   },
   loginBtnText: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
@@ -411,12 +420,14 @@ const styles = StyleSheet.create({
   },
   demoBadgeText: {
     fontSize: 10,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   demoBtnText: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     color: '#FF8040',
     fontWeight: '600',
   },
@@ -433,6 +444,7 @@ const styles = StyleSheet.create({
   },
   offlineBtnText: {
     fontSize: 14,
+    fontFamily: fonts.medium,
     color: '#8D9CA5',
     fontWeight: '500',
   },
