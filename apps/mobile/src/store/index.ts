@@ -57,6 +57,7 @@ export interface DemoClient {
   age: string | number;
   community: string;
   caregiver: string;
+  phone?: string;
   priority: Priority;
   metric: 'hb' | 'weight' | 'muac';
   severe: boolean;
@@ -88,6 +89,7 @@ export interface DemoReferral {
   type: ClientType;
   reason: string;
   facility: string;
+  phone?: string;
   status: ReferralStatus;
   at: string;
   seenAt?: string;
@@ -897,6 +899,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
       type: client.type,
       reason: client.flagDetail,
       facility: 'Tamale West Hospital',
+      phone: client.phone,
       status: 'issued',
       at: atLabel,
       due: dueLabel,
@@ -1004,6 +1007,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: 24,
         community: 'Kukuo',
         caregiver: 'Amina Yakubu',
+        phone: '+233241234567',
         priority: 'urgent',
         metric: 'hb',
         severe: false,
@@ -1027,6 +1031,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: '18 mo',
         community: 'Choggu',
         caregiver: 'Issah Fuseini',
+        phone: '+233209876543',
         priority: 'high',
         metric: 'weight',
         severe: false,
@@ -1049,6 +1054,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: '11 mo',
         community: 'Katariga',
         caregiver: 'Fatimatu Mahama',
+        phone: '+233552345678',
         priority: 'urgent',
         metric: 'muac',
         severe: true,
@@ -1070,6 +1076,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: 27,
         community: 'Lamashegu',
         caregiver: 'Zeinab Alhassan',
+        phone: '+233243456789',
         priority: 'stable',
         metric: 'hb',
         severe: false,
@@ -1092,6 +1099,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: '36 mo',
         community: 'Voggu',
         caregiver: 'Mohammed Alhassan',
+        phone: '+233204567890',
         priority: 'stable',
         metric: 'weight',
         severe: false,
@@ -1117,6 +1125,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         type: 'child',
         reason: 'MUAC 108 mm — below severe-wasting threshold (115 mm). Bilateral oedema present.',
         facility: 'Tamale West Hospital',
+        phone: '+233552345678',
         status: 'issued',
         at: '22nd Jul, 2026',
         due: '25th Jul, 2026',

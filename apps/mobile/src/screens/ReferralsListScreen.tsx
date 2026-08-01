@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  Alert,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -438,6 +440,13 @@ function ReferralCard({
               style={styles.callBtn}
               accessibilityRole="button"
               accessibilityLabel="Call client"
+              onPress={() => {
+                if (referral.phone) {
+                  Linking.openURL(`tel:${referral.phone}`);
+                } else {
+                  Alert.alert('No phone number', 'No phone number is recorded for this client.');
+                }
+              }}
             >
               <Phone size={14} color="#08283B" />
               <Text style={styles.callBtnText}>Call</Text>
