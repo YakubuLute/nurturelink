@@ -428,18 +428,18 @@ export function ClientScreen({ navigation, route }: Props) {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <BarChart2 size={14} color={C.fg3} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Why NurtureLink ranked this client</Text>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>Why NurtureLink ranked this client</Text>
             </View>
             <View style={{ backgroundColor: pStyle.bg, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: pStyle.color }}>{pStyle.label}</Text>
+              <Text style={{ fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: pStyle.color }}>{pStyle.label}</Text>
             </View>
           </View>
           {rankSignals.map((s, i) => (
-            <Text key={i} style={{ fontSize: 13, color: C.fg2, marginBottom: 4 }}>
+            <Text key={i} style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg2, marginBottom: 4 }}>
               {'● '}{s}
             </Text>
           ))}
-          <Text style={{ fontSize: 11, color: C.fg4, marginTop: 8, lineHeight: 16 }}>
+          <Text style={{ fontSize: 11, fontFamily: fonts.regular, color: C.fg4, marginTop: 8, lineHeight: 16 }}>
             Explainable flag from this client's own visits — you decide who to counsel.
           </Text>
         </View>

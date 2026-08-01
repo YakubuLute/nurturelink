@@ -29,6 +29,7 @@ import {
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
+import { fonts } from '../theme';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
@@ -204,6 +205,7 @@ const pickerStyles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
   },
@@ -228,6 +230,7 @@ const pickerStyles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#FDFDFD',
     padding: 0,
   },
@@ -248,6 +251,7 @@ const pickerStyles = StyleSheet.create({
   listItemText: { flex: 1 },
   listItemLabel: {
     fontSize: 14,
+    fontFamily: fonts.medium,
     fontWeight: '500',
     color: '#C2D0D9',
   },

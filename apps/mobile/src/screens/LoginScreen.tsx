@@ -458,10 +458,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
   },
   footerLink: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     color: BRAND,
     fontWeight: '600',
   },

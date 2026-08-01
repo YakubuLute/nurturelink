@@ -625,6 +625,7 @@ const styles = StyleSheet.create({
 
   sectionLabel: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#6B7280',
     letterSpacing: 0.7,
@@ -665,11 +666,13 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
   },
   settingDesc: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#6B7280',
     lineHeight: 16,
   },
@@ -677,6 +680,7 @@ const styles = StyleSheet.create({
   // Inline card input (phone)
   fieldLabel: {
     fontSize: 11,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#6B7280',
     textTransform: 'uppercase',
@@ -690,6 +694,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#08283B',
     backgroundColor: '#F9FAFB',
   },
@@ -732,6 +737,7 @@ const styles = StyleSheet.create({
   },
   langBtnText: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
   },
   langBtnTextActive: {

@@ -279,7 +279,7 @@ export function PlanScreen({ navigation, route }: Props) {
           {basePlan.rationale.map((item, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 10, marginBottom: i < basePlan.rationale.length - 1 ? 10 : 0 }}>
               <Check size={14} color={C.lb700} strokeWidth={3} />
-              <Text style={{ flex: 1, fontSize: 13, color: C.fg1, lineHeight: 18 }}>{item}</Text>
+              <Text style={{ flex: 1, fontSize: 13, fontFamily: fonts.regular, color: C.fg1, lineHeight: 18 }}>{item}</Text>
             </View>
           ))}
         </View>
@@ -290,7 +290,7 @@ export function PlanScreen({ navigation, route }: Props) {
         {/* Responsible AI note */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
           <Shield size={14} color={C.warningDark} />
-          <Text style={{ flex: 1, fontSize: 12, color: C.warningDark, lineHeight: 17 }}>
+          <Text style={{ flex: 1, fontSize: 12, fontFamily: fonts.regular, color: C.warningDark, lineHeight: 17 }}>
             You remain responsible for this advice — edit it, then approve before sending.
           </Text>
         </View>
@@ -301,7 +301,7 @@ export function PlanScreen({ navigation, route }: Props) {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Check size={16} color="#FFFFFF" strokeWidth={3} />
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Approve & create voice note</Text>
+            <Text style={{ color: '#fff', fontSize: 15, fontFamily: fonts.bold, fontWeight: '700' }}>Approve & create voice note</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -324,11 +324,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#fff',
   },
   headerSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#92C9F9',
     marginTop: 2,
   },
@@ -341,6 +343,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 13,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg1,
     marginBottom: 0,

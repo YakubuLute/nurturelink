@@ -672,6 +672,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 15,
+    fontFamily: fonts.bold,
     fontWeight: '700',
   },
   cardBody: { flex: 1 },
@@ -684,6 +685,7 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: 15,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
     flex: 1,
@@ -695,11 +697,13 @@ const styles = StyleSheet.create({
   },
   priorityText: {
     fontSize: 10,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
   clientMeta: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
     marginBottom: 5,
   },
