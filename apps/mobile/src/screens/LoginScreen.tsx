@@ -96,12 +96,13 @@ export function LoginScreen({ navigation }: Props) {
           console.warn('[Login] loadUserData failed (non-fatal):', e),
         );
         navigation.replace(role === 'sup' ? 'Supervisor' : 'Home');
-      } else if (res.status === 401) {
-        setError('Incorrect phone number or password.');
-      } else if (res.status === 403) {
-        setError('Account not verified. Check your SMS for a verification code.');
       } else {
-        setError('Login failed. Please try again.');
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        if (res.status === 403) {
+          setError('Account not verified. Check your SMS for a verification code.');
+        } else {
+          setError(body.error ?? 'Invalid credentials.');
+        }
       }
     } catch (e) {
       console.error('[Login] unexpected error:', e);
