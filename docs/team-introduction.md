@@ -14,7 +14,7 @@ NurtureLink is built by a two-person team combining 7+ years of production softw
 ## Yakubu Lute — Lead Developer & Team Leader
 
 **Email:** <yakubulute@gmail.com>
-**Location:** Kumasi / Accra, Ghana
+**Location:** Tumu / Accra, Ghana
 **GitHub / LinkedIn / Portfolio:** available on request
 
 ### Profile
