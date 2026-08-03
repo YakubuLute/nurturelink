@@ -9,6 +9,7 @@
   06-referral-guardrail.png
   07-referrals-list.png
   08-register-pregnant.png
+  09-register-child.png
   2. Regenerate the PDF (one command, from the repo root):
   node docs/generate-pdf.mjs
   3. → outputs docs/NurtureLink-pitch.pdf
