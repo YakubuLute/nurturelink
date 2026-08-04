@@ -17,14 +17,18 @@ Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
 
 ## Screenshots
 
-| | | | |
-| --- | --- | --- | --- |
-| ![Sign in](docs/screenshots/01-login.png) | ![Caseload](docs/screenshots/02-home-caseload.png) | ![Trend](docs/screenshots/03-client-amina-declining-hb.png) |
+| | | |
+| --- | --- | --- |
+| ![Sign in](docs/screenshots/01-login.PNG) | ![Caseload](docs/screenshots/02-home-caseload.PNG) | ![Trend](docs/screenshots/03-client-amina-declining-hb.PNG) |
 | **Sign in / offline mode** | **Prioritised caseload** | **Longitudinal nutrition trend** |
-| ![Plan](docs/screenshots/04-plan-amina.png) | ![Visit](docs/screenshots/05-visit-form.png) | ![Records](docs/screenshots/07-amina-records.png) | ![Referral](docs/screenshots/06-issue-referral.png) |
-| **Seasonal food plan + voice note** | **Visit capture** | **Severe-case referral guardrail** |
+| ![Plan](docs/screenshots/04-plan-amina.PNG) | ![Referral guardrail](docs/screenshots/06-issue-referral.PNG) | ![Referrals](docs/screenshots/referrals.PNG) |
+| **Seasonal food plan + voice note** | **Severe-case referral guardrail** | **Referral tracker** |
+| ![Records](docs/screenshots/07-amina-records.PNG) | ![Registration](docs/screenshots/13-registeration-page.PNG) | ![Sync](docs/screenshots/data-sync.PNG) |
+| **Visit history** | **Client registration** | **Data sync** |
+| ![Offline](docs/screenshots/offline-user.PNG) | ![Profile](docs/screenshots/profile-and-device.PNG) | |
+| **Offline mode** | **Profile & device info** | |
 
-> Screenshots are captured on iPhone 11 (portrait). If a tile shows a broken image, the PNG is not yet in `docs/screenshots/`.
+> Screenshots captured on iPhone 11 (portrait).
 
 ---
 
