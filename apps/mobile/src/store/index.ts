@@ -12,7 +12,10 @@ import { loadReferenceBundle } from '../db/bundle-loader';
 import { clearSession, getToken } from '../auth/session';
 import { persistClient, persistVisit, persistReferral, uuidv4 } from '../db/persist';
 import { syncNow } from '../sync/orchestrator';
-import type { ReferenceBundle } from '../engine/types';
+import type { ReferenceBundle, PlanInput, EngineFlag, PlanResult } from '../engine/types';
+import { generatePlan } from '../engine';
+import { NUTRIENT_LABELS } from '../engine/rationale';
+import type { FlagCode } from '@nurturelink/shared';
 
 // ─── Domain types (local, demo-optimised) ────────────────────────────────────
 
@@ -54,6 +57,7 @@ export interface DemoClient {
   age: string | number;
   community: string;
   caregiver: string;
+  phone?: string;
   priority: Priority;
   metric: 'hb' | 'weight' | 'muac';
   severe: boolean;
@@ -85,6 +89,7 @@ export interface DemoReferral {
   type: ClientType;
   reason: string;
   facility: string;
+  phone?: string;
   status: ReferralStatus;
   at: string;
   seenAt?: string;
@@ -158,7 +163,9 @@ export interface VisitForm {
 export interface RegForm {
   type: ClientType;
   name: string;
-  sex: string;          // 'male' | 'female' | ''
+  sex: string;          // 'Male' | 'Female' | ''
+  region: string;
+  district: string;
   community: string;
   dob: string;          // child's DOB or mother's DOB (YYYY-MM-DD)
   consent: boolean;
@@ -183,6 +190,101 @@ export interface RegForm {
 // Plans are generated per-client by the AI layer and stored in state.
 // The PlanScreen falls back to a generic template if no plan is available.
 export const PLANS: Record<string, PlanData> = {};
+
+// ─── Engine helpers ───────────────────────────────────────────────────────────
+
+const TIER_DISPLAY: Record<string, string> = {
+  staple_cheap: 'Low cost',
+  market: 'Market',
+  premium: 'Premium',
+};
+
+const REASON_DISPLAY: Record<string, string> = {
+  in_season_abundant:   'Abundant in season now',
+  in_season_available:  'Available in season',
+  storable_year_round:  'Can be dried and stored year-round',
+  garden_or_wild:       'Available from kitchen garden or wild',
+  affordable_staple:    'Affordable staple food',
+  affordable_market:    'Available at local market',
+  closes_ironMg_gap:    'Helps close iron gap',
+  closes_folateUg_gap:  'Helps close folate gap',
+  closes_proteinG_gap:  'Good source of protein',
+  closes_energyKcal_gap:'Good energy source',
+  closes_vitAUgRae_gap: 'Rich in Vitamin A',
+  closes_zincMg_gap:    'Good source of zinc',
+};
+
+/** Parse a DemoClient's age field into months for the engine. */
+function parseAgeMonths(client: DemoClient): number | undefined {
+  if (client.type === 'pregnant') return undefined;
+  const age = client.age;
+  if (typeof age === 'number') return age * 12;
+  if (typeof age === 'string') {
+    const moMatch = age.match(/^(\d+)\s*mo/);
+    if (moMatch) return parseInt(moMatch[1], 10);
+    const yrMatch = age.match(/^(\d+)/);
+    if (yrMatch) return parseInt(yrMatch[1], 10) * 12;
+  }
+  return 12;
+}
+
+/**
+ * Look up a clinical threshold value from the reference bundle.
+ * Returns null when the bundle is not loaded — callers must supply a safe fallback.
+ */
+function getThreshold(
+  bundle: ReferenceBundle | null,
+  metric: string,
+  condition: string,
+  severity: string,
+): number | null {
+  if (!bundle) return null;
+  const row = bundle.clinicalThresholds.find(
+    (t) => t.metric === metric && t.condition === condition && t.severity === severity,
+  );
+  return row?.thresholdValue ?? null;
+}
+
+/** Map a PlanResult from the engine to the PlanData shape PlanScreen expects. */
+function planResultToPlanData(result: PlanResult, client: DemoClient): PlanData {
+  const monthName = new Date().toLocaleString('en-US', { month: 'long' });
+  const nutrientLabels = result.targetNutrients
+    .map((n) => NUTRIENT_LABELS[n] ?? n)
+    .join(', ');
+
+  const foods: PlanFood[] = result.selectedFoods.map((f) => ({
+    name: f.name,
+    local: f.localName,
+    group: f.foodGroup,
+    tier: TIER_DISPLAY[f.tier] ?? f.tier,
+    why: f.reasons
+      .slice(0, 2)
+      .map((r) => REASON_DISPLAY[r] ?? r)
+      .join('. '),
+  }));
+
+  const adequacy = Object.entries(result.adequacy).map(([key, val]) => ({
+    label: (NUTRIENT_LABELS as Record<string, string>)[key] ?? key,
+    pct: Math.round((val ?? 0) * 100),
+  }));
+
+  const rationale = result.rationale.map((entry) => {
+    const food = result.selectedFoods.find((f) => f.id === entry.foodId);
+    const topReason = entry.reasons[0];
+    return `${food?.name ?? entry.foodId}: ${REASON_DISPLAY[topReason ?? ''] ?? topReason ?? ''}`;
+  });
+
+  return {
+    seasonNote: `In season · ${monthName} · Northern Savannah`,
+    targetNote: `${client.name}'s plan targets ${nutrientLabels} using locally available, affordable foods.`,
+    foods,
+    alternates: [],
+    adequacy,
+    rationale,
+    voiceEn: result.voiceScriptTemplate,
+    voiceDag: result.voiceScriptTemplate,
+  };
+}
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
@@ -408,6 +510,8 @@ const emptyRegForm: RegForm = {
   type: 'child',
   name: '',
   sex: '',
+  region: '',
+  district: '',
   community: '',
   dob: '',
   consent: false,
@@ -567,20 +671,31 @@ export const useAppStore = create<StoreState>((set, get) => ({
     }),
 
   saveVisit: (clientId) => {
-    const { visitForm, clients } = get();
+    const { visitForm, clients, referenceBundle } = get();
     const client = clients.find((c) => c.id === clientId);
     if (!client) return 'plan';
 
     const muac = parseFloat(visitForm.muac) || 0;
     const hb = visitForm.hb ? parseFloat(visitForm.hb) : null;
+    const clientCondition = client.type === 'pregnant' ? 'pregnant' : 'child';
+
+    // Thresholds from reference bundle; safe fallbacks match WHO seeded values
+    const muacReferThreshold = getThreshold(referenceBundle, 'muac_mm', 'child', 'refer') ?? 115;
+    const muacWatchThreshold = getThreshold(referenceBundle, 'muac_mm', 'child', 'watch') ?? 125;
+    const hbReferThreshold   = getThreshold(referenceBundle, 'hb_g_dl', clientCondition, 'refer') ?? 7.0;
+    const hbWatchThreshold   = getThreshold(referenceBundle, 'hb_g_dl', clientCondition, 'watch') ?? (clientCondition === 'pregnant' ? 11.0 : 10.0);
+
     const severe =
       visitForm.danger.length > 0 ||
-      (muac > 0 && muac < 115) ||
-      (hb !== null && hb > 0 && hb < 7);
+      (muac > 0 && muac < muacReferThreshold) ||
+      (hb !== null && hb > 0 && hb < hbReferThreshold);
 
     const lastVisit = client.visits[client.visits.length - 1];
+    const today = new Date();
+    const todayLabel = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
     const newVisit: DemoVisit = {
-      date: '12th Nov, 2026',
+      date: todayLabel,
       weight: parseFloat(visitForm.weight) || lastVisit?.weight || 0,
       hb: hb !== null ? hb : null,
       muac: muac || 235,
@@ -603,24 +718,51 @@ export const useAppStore = create<StoreState>((set, get) => ({
       if (visitForm.danger.length > 0) {
         patch.flagDetail = 'Danger sign recorded at this visit';
         flagReasons.push({ code: 'DANGER_SIGNS' });
-      } else if (muac > 0 && muac < 115) {
-        patch.flagDetail = `MUAC ${Math.round(muac)} mm — below the 115 mm threshold`;
+      } else if (muac > 0 && muac < muacReferThreshold) {
+        patch.flagDetail = `MUAC ${Math.round(muac)} mm — below the ${muacReferThreshold} mm threshold`;
         flagReasons.push({ code: 'SEVERE_MUAC', value: muac });
       } else {
-        patch.flagDetail = 'Hb below the severe-anaemia threshold (7 g/dL)';
+        patch.flagDetail = `Hb below the severe-anaemia threshold (${hbReferThreshold} g/dL)`;
         flagReasons.push({ code: 'SEVERE_ANAEMIA', value: hb ?? undefined });
       }
       patch.trendColor = '#C81E1E';
       patch.trendArrow = 'down';
       patch.trendNote = 'Danger sign — needs clinical care';
     } else {
-      if (muac > 0 && muac < 125) { severity = 'watch'; flagReasons.push({ code: 'SEVERE_MUAC', value: muac }); }
-      if (hb !== null && hb > 0 && hb < 11) { severity = 'watch'; flagReasons.push({ code: 'FALLING_HB', value: hb }); }
+      if (muac > 0 && muac < muacWatchThreshold) { severity = 'watch'; flagReasons.push({ code: 'SEVERE_MUAC', value: muac }); }
+      if (hb !== null && hb > 0 && hb < hbWatchThreshold) { severity = 'watch'; flagReasons.push({ code: 'FALLING_HB', value: hb }); }
       if (client.priority === 'new') patch.priority = 'stable';
     }
 
     get().patchClient(clientId, patch);
     set((s) => ({ telemetryCount: s.telemetryCount + 1, pendingRecords: s.pendingRecords + 1 }));
+
+    // ── Run recommendation engine (synchronous, on-device, pure) ─────────────
+    if (!severe) {
+      const { referenceBundle } = get();
+      if (referenceBundle) {
+        const engineFlags: EngineFlag[] = flagReasons.map((f) => ({
+          code: f.code as FlagCode,
+          value: f.value,
+        }));
+        const agroZoneId =
+          referenceBundle.seasonalAvailability[0]?.agroZoneId ??
+          'a1b2c3d4-0000-0000-0000-000000000001';
+        const planInput: PlanInput = {
+          clientType: client.type,
+          ageMonths: parseAgeMonths(client),
+          flags: engineFlags,
+          agroZoneId,
+          currentMonth: new Date().getMonth() + 1,
+          affordabilityCeiling: 'staple_cheap',
+        };
+        const engineResult = generatePlan(planInput, referenceBundle);
+        if (engineResult.kind === 'plan') {
+          const planData = planResultToPlanData(engineResult, client);
+          set((s) => ({ plans: { ...s.plans, [clientId]: planData } }));
+        }
+      }
+    }
 
     // Persist visit + flag to SQLite + outbox (fire-and-forget)
     const visitId = uuidv4();
@@ -745,6 +887,11 @@ export const useAppStore = create<StoreState>((set, get) => ({
     const client = get().clients.find((c) => c.id === clientId);
     if (!client) return;
     const referralId = uuidv4();
+    const now = new Date();
+    const atLabel  = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const dueDate  = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const dueLabel = dueDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
     const ref: DemoReferral = {
       id: referralId,
       clientId,
@@ -752,9 +899,10 @@ export const useAppStore = create<StoreState>((set, get) => ({
       type: client.type,
       reason: client.flagDetail,
       facility: 'Tamale West Hospital',
+      phone: client.phone,
       status: 'issued',
-      at: '12th Nov, 2026',
-      due: '15th Nov, 2026',
+      at: atLabel,
+      due: dueLabel,
     };
     get().patchClient(clientId, { referred: true });
     set((s) => ({ referrals: [...s.referrals, ref], telemetryCount: s.telemetryCount + 1 }));
@@ -859,6 +1007,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: 24,
         community: 'Kukuo',
         caregiver: 'Amina Yakubu',
+        phone: '+233241234567',
         priority: 'urgent',
         metric: 'hb',
         severe: false,
@@ -882,6 +1031,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: '18 mo',
         community: 'Choggu',
         caregiver: 'Issah Fuseini',
+        phone: '+233209876543',
         priority: 'high',
         metric: 'weight',
         severe: false,
@@ -904,6 +1054,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: '11 mo',
         community: 'Katariga',
         caregiver: 'Fatimatu Mahama',
+        phone: '+233552345678',
         priority: 'urgent',
         metric: 'muac',
         severe: true,
@@ -914,8 +1065,8 @@ export const useAppStore = create<StoreState>((set, get) => ({
         trendArrow: 'down',
         trendColor: '#C81E1E',
         visits: [
-          { date: '1st Jul, 2026',  weight: 6.4, hb: null, muac: 115, diet: ['grains','breast'],   danger: [],         synced: true,  owner: 'You' },
-          { date: '22nd Jul, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'],            danger: ['oedema'], synced: false, owner: 'You' },
+          { date: '1st Jul, 2026',  weight: 6.4, hb: null, muac: 115, diet: ['grains','breast'],              danger: [],                   synced: true,  owner: 'You' },
+          { date: '22nd Jul, 2026', weight: 6.1, hb: null, muac: 108, diet: ['grains'],            danger: ['bilateral_oedema'], synced: false, owner: 'You' },
         ],
       },
       {
@@ -925,6 +1076,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: 27,
         community: 'Lamashegu',
         caregiver: 'Zeinab Alhassan',
+        phone: '+233243456789',
         priority: 'stable',
         metric: 'hb',
         severe: false,
@@ -947,6 +1099,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         age: '36 mo',
         community: 'Voggu',
         caregiver: 'Mohammed Alhassan',
+        phone: '+233204567890',
         priority: 'stable',
         metric: 'weight',
         severe: false,
@@ -972,6 +1125,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
         type: 'child',
         reason: 'MUAC 108 mm — below severe-wasting threshold (115 mm). Bilateral oedema present.',
         facility: 'Tamale West Hospital',
+        phone: '+233552345678',
         status: 'issued',
         at: '22nd Jul, 2026',
         due: '25th Jul, 2026',
@@ -1011,6 +1165,69 @@ export const useAppStore = create<StoreState>((set, get) => ({
       },
     ];
 
+    // Pre-seeded plans so PlanScreen shows real data immediately (no visit needed first)
+    const demoPlans: Record<string, PlanData> = {
+      // Amina — pregnant, declining Hb → iron + folate + energy gap
+      amina: {
+        seasonNote: 'In season · July · Northern Savannah',
+        targetNote: "Amina's plan targets iron, folate, and energy using locally available, affordable foods.",
+        foods: [
+          { name: 'Dawadawa (fermented locust bean)', local: 'Dawadawa', group: 'legumes', tier: 'Low cost', why: 'Highest iron source in the Northern Savannah (9 mg/100g). Adds flavour to soups.' },
+          { name: 'Moringa leaves (fresh)',            local: 'Zogale',   group: 'vita',    tier: 'Low cost', why: 'Rich in iron, folate, and Vitamin A. Grows wild and in kitchen gardens.' },
+          { name: 'Cowpea (beans)',                    local: 'Tuya',     group: 'legumes', tier: 'Low cost', why: 'Iron and folate. Abundant this season. Storable and affordable.' },
+          { name: 'Dried small fish (tilapia)',        local: 'Amani',    group: 'flesh',   tier: 'Low cost', why: 'Iron and protein. Dried fish is available year-round and affordable.' },
+          { name: 'Millet',                            local: 'Nyɔri',    group: 'grains',  tier: 'Low cost', why: 'Energy base for meals. Iron and folate from a local staple grain.' },
+        ],
+        alternates: [
+          { name: 'Bambara beans', local: 'Suya', group: 'legumes', tier: 'Low cost', why: 'Protein and iron when cowpea is unavailable.' },
+          { name: 'Egg',           local: 'Poli', group: 'eggs',    tier: 'Market',   why: 'Protein and Vitamin A when affordable.' },
+        ],
+        adequacy: [
+          { label: 'Iron',    pct: 88 },
+          { label: 'Folate',  pct: 82 },
+          { label: 'Energy',  pct: 91 },
+          { label: 'Protein', pct: 79 },
+          { label: 'Vit A',   pct: 94 },
+        ],
+        rationale: [
+          'Dawadawa: highest iron in the Northern Savannah. Closes iron gap.',
+          'Moringa + cowpea: folate from two complementary local sources.',
+          'All 5 foods are low-cost staples available this month.',
+        ],
+        voiceEn: "Amina's feeding plan: Add dawadawa and dried fish to every soup for iron. Eat moringa leaves with TZ at least 3 times a week. Cook cowpea and millet together for an energy-rich meal. These foods will help your blood stay strong for you and your baby.",
+        voiceDag: "Amina din tuma nɔŋ: Di dawadawa ni amani soup biɛlim naa. Di zogale tuya nɔŋ daa nyɔri biɛlim naa. Di nyɔri ni tuya di biɛlim pam. N di nɔ n tuma din zuɣu.",
+      },
+      // Rahimatu — child 18mo, flat weight → energy + protein + diet diversity gap
+      rahim: {
+        seasonNote: 'In season · July · Northern Savannah',
+        targetNote: "Rahimatu's plan targets energy, protein, and diet diversity to support catch-up growth.",
+        foods: [
+          { name: 'Sorghum (TZ / tuo zaafi)',   local: 'Saa',    group: 'grains',  tier: 'Low cost', why: 'Energy-dense base for daily meals. Familiar staple for complementary feeding.' },
+          { name: 'Groundnut (peanut)',          local: 'Sisim',  group: 'legumes', tier: 'Low cost', why: 'High energy and protein. Abundant this season. Can be made into soup or paste.' },
+          { name: 'Moringa leaves (fresh)',      local: 'Zogale', group: 'vita',    tier: 'Low cost', why: 'Vitamins A and C, iron. Adds micronutrients to any meal.' },
+          { name: 'Egg',                         local: 'Poli',   group: 'eggs',    tier: 'Market',   why: 'Complete protein and Vitamin A for growth. One egg per day if affordable.' },
+        ],
+        alternates: [
+          { name: 'Cowpea (beans)',   local: 'Tuya',  group: 'legumes', tier: 'Low cost', why: 'Protein when groundnut unavailable.' },
+          { name: 'Dried small fish', local: 'Amani', group: 'flesh',   tier: 'Low cost', why: 'Iron and protein; storable.' },
+        ],
+        adequacy: [
+          { label: 'Energy',  pct: 86 },
+          { label: 'Protein', pct: 91 },
+          { label: 'Iron',    pct: 72 },
+          { label: 'Vit A',   pct: 88 },
+          { label: 'Zinc',    pct: 78 },
+        ],
+        rationale: [
+          'Flat weight for 2 months: energy and protein are priority nutrients.',
+          'Groundnut provides high energy density for complementary feeding.',
+          'Moringa closes the Vitamin A and iron gap with a free kitchen garden food.',
+        ],
+        voiceEn: "Rahimatu's feeding plan: Mix groundnut paste into sorghum TZ every day for energy. Add one egg three times a week for growth. Put moringa leaves in the soup for vitamins. Continue breastfeeding alongside these foods.",
+        voiceDag: "Rahimatu din tuma nɔŋ: Di sisim saa nɔŋ daa. Di gala biɛlim naa zuɣ protein. Di zogale soup din zuɣu vitamins. Suɣiri yuli n ti.",
+      },
+    };
+
     set({
       isLoggedIn: true,
       role: 'cho',
@@ -1019,6 +1236,7 @@ export const useAppStore = create<StoreState>((set, get) => ({
       clients: demoClients,
       referrals: demoReferrals,
       notifications: demoNotifications,
+      plans: demoPlans,
       offline: true,
       syncing: false,
       lastSyncAt: null,

@@ -22,6 +22,7 @@ import {
   ChevronLeft, BarChart2, BatteryMedium, HardDrive, Zap, TrendingUp,
   LayoutGrid, ChevronRight, Pencil, X, Check, Camera,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -504,6 +505,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -540,6 +542,7 @@ const styles = StyleSheet.create({
   },
   profileAvatarText: {
     fontSize: 20,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -560,12 +563,14 @@ const styles = StyleSheet.create({
   // View mode name/role
   profileName: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 2,
   },
   profileRole: {
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#92C9F9',
   },
 
@@ -585,6 +590,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -596,6 +602,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FFFFFF',
     marginTop: 4,
   },
@@ -603,7 +610,8 @@ const styles = StyleSheet.create({
     borderColor: '#FCA5A5',
   },
   errorText: {
-    fontSize: 10.5,
+    fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#FCA5A5',
     marginTop: 2,
   },
@@ -617,6 +625,7 @@ const styles = StyleSheet.create({
 
   sectionLabel: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#6B7280',
     letterSpacing: 0.7,
@@ -656,12 +665,14 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   settingTitle: {
-    fontSize: 13.5,
+    fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
   },
   settingDesc: {
-    fontSize: 11.5,
+    fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#6B7280',
     lineHeight: 16,
   },
@@ -669,6 +680,7 @@ const styles = StyleSheet.create({
   // Inline card input (phone)
   fieldLabel: {
     fontSize: 11,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#6B7280',
     textTransform: 'uppercase',
@@ -682,6 +694,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#08283B',
     backgroundColor: '#F9FAFB',
   },
@@ -723,7 +736,8 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   langBtnText: {
-    fontSize: 13.5,
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
   },
   langBtnTextActive: {
@@ -749,11 +763,13 @@ const styles = StyleSheet.create({
   },
   betaBadgeText: {
     fontSize: 10,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#8C6900',
   },
   betaNote: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#8C6900',
     flex: 1,
     lineHeight: 15,
@@ -784,6 +800,7 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#C81E1E',
   },

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Severity } from '@nurturelink/shared';
+import { fonts } from '../theme';
 
 const COLORS: Record<Severity, { bg: string; text: string }> = {
   ok: { bg: '#d4edda', text: '#155724' },
@@ -30,5 +31,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 8,
   },
-  text: { fontSize: 12, fontWeight: '600' },
+  text: { fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600' },
 });

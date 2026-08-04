@@ -13,6 +13,7 @@ import { ChevronLeft, ShieldCheck } from 'lucide-react-native';
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
+import { fonts } from '../theme';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 const OTP_LENGTH = 6;
@@ -258,12 +259,14 @@ const styles = StyleSheet.create({
 
   heading: {
     fontSize: 26,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 8,
   },
   headingSub: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     lineHeight: 20,
     marginBottom: 32,
@@ -283,6 +286,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     fontSize: 22,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
   },
@@ -293,12 +297,14 @@ const styles = StyleSheet.create({
 
   errorText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FC8181',
     marginBottom: 12,
     lineHeight: 18,
   },
   resendSuccessText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#68D391',
     marginBottom: 12,
   },
@@ -319,6 +325,7 @@ const styles = StyleSheet.create({
   },
   verifyBtnText: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
@@ -331,10 +338,12 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
   },
   resendLink: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     color: BRAND,
     fontWeight: '600',
   },

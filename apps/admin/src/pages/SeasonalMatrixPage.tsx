@@ -1,55 +1,20 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { adminApi } from '../api/client';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Avail = 'abundant' | 'available' | 'scarce' | 'none';
 
-interface Cell {
-  availability: Avail;
+interface AgroZone { id: string; name: string; region: string }
+
+interface SeasonalRow {
+  foodId: string;
+  month: number;
+  availability: string;
+  food: { id: string; name: string; foodGroup: string };
 }
 
-// ── Seed data (Kukuo agro-zone, Northern Ghana) ────────────────────────────────
-
-const FOODS = [
-  'Moringa leaves',
-  'Cowpea (beans)',
-  'Groundnut paste',
-  'Orange sweet potato',
-  'Dawadawa',
-  'Millet',
-  'Egg',
-  'Small dried fish',
-  'Baobab fruit',
-  'Ripe pawpaw',
-  'Bambara groundnut',
-  'Sorghum',
-  'Shea butter',
-  'Liver',
-  'Fortified porridge',
-];
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-// Initial seed — reflects Northern Ghana dry/wet season patterns
-const SEED: Record<string, Avail[]> = {
-  'Moringa leaves':       ['scarce','scarce','available','abundant','abundant','abundant','abundant','abundant','abundant','available','scarce','scarce'],
-  'Cowpea (beans)':       ['available','available','scarce','scarce','scarce','scarce','abundant','abundant','available','available','available','available'],
-  'Groundnut paste':      ['available','available','available','scarce','scarce','scarce','scarce','available','abundant','abundant','available','available'],
-  'Orange sweet potato':  ['scarce','scarce','scarce','scarce','scarce','available','abundant','abundant','abundant','available','scarce','scarce'],
-  'Dawadawa':             ['available','available','available','available','abundant','abundant','available','available','available','available','available','available'],
-  'Millet':               ['available','scarce','scarce','scarce','scarce','scarce','scarce','abundant','abundant','abundant','available','available'],
-  'Egg':                  ['available','available','available','available','available','available','available','available','available','available','available','available'],
-  'Small dried fish':     ['abundant','abundant','abundant','abundant','available','available','available','available','available','abundant','abundant','abundant'],
-  'Baobab fruit':         ['abundant','abundant','available','scarce','scarce','scarce','scarce','scarce','scarce','available','available','abundant'],
-  'Ripe pawpaw':          ['scarce','scarce','available','available','abundant','abundant','abundant','available','available','scarce','scarce','scarce'],
-  'Bambara groundnut':    ['available','available','scarce','scarce','scarce','scarce','scarce','available','abundant','abundant','available','available'],
-  'Sorghum':              ['available','available','scarce','scarce','scarce','scarce','scarce','available','abundant','abundant','available','available'],
-  'Shea butter':          ['abundant','abundant','abundant','abundant','available','scarce','scarce','available','available','available','abundant','abundant'],
-  'Liver':                ['available','available','available','available','available','available','available','available','available','available','available','available'],
-  'Fortified porridge':   ['available','available','available','available','available','available','available','available','available','available','available','available'],
-};
-
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const CYCLE: Avail[] = ['abundant', 'available', 'scarce', 'none'];
 
 const COLORS: Record<Avail, { bg: string; fg: string }> = {
@@ -59,52 +24,90 @@ const COLORS: Record<Avail, { bg: string; fg: string }> = {
   none:      { bg: '#e5e7eb', fg: '#9ca3af' },
 };
 
+type MatrixState = Record<string, Avail[]>; // foodId → [12 months]
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
-type MatrixState = Record<string, Avail[]>;
-
-function initMatrix(): MatrixState {
-  const m: MatrixState = {};
-  for (const food of FOODS) {
-    m[food] = SEED[food] ? [...SEED[food]] : Array(12).fill('none');
-  }
-  return m;
-}
-
 export function SeasonalMatrixPage() {
-  const [matrix, setMatrix] = useState<MatrixState>(initMatrix);
-  const [zone, setZone] = useState('Kukuo');
+  const [zones, setZones] = useState<AgroZone[]>([]);
+  const [zoneId, setZoneId] = useState('');
+  const [matrix, setMatrix] = useState<MatrixState>({});
+  const [foodNames, setFoodNames] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [pubMessage, setPubMessage] = useState('');
 
-  function cycleCell(food: string, monthIdx: number) {
+  // Load agro zones on mount
+  useEffect(() => {
+    adminApi.get<AgroZone[]>('/admin/agro-zones').then((zs) => {
+      setZones(zs);
+      if (zs.length > 0) setZoneId(zs[0].id);
+    }).catch(() => {/* ignore — API may not be running */});
+  }, []);
+
+  // Load matrix when zone changes
+  useEffect(() => {
+    if (!zoneId) return;
+    setLoading(true);
+    adminApi.get<SeasonalRow[]>(`/admin/seasonal/${zoneId}`)
+      .then((rows) => {
+        const m: MatrixState = {};
+        const names: Record<string, string> = {};
+        for (const row of rows) {
+          names[row.foodId] = row.food.name;
+          if (!m[row.foodId]) m[row.foodId] = Array(12).fill('none' as Avail);
+          const avail = CYCLE.includes(row.availability as Avail)
+            ? (row.availability as Avail)
+            : 'none';
+          m[row.foodId][row.month - 1] = avail;
+        }
+        setMatrix(m);
+        setFoodNames(names);
+      })
+      .catch(() => {/* API not connected */})
+      .finally(() => setLoading(false));
+  }, [zoneId]);
+
+  async function cycleCell(foodId: string, monthIdx: number) {
+    const cur = matrix[foodId]?.[monthIdx] ?? 'none';
+    const next = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
+    // Optimistic update
     setMatrix((prev) => {
-      const row = [...prev[food]];
-      const cur = row[monthIdx];
-      row[monthIdx] = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
-      return { ...prev, [food]: row };
+      const row = [...(prev[foodId] ?? Array(12).fill('none' as Avail))];
+      row[monthIdx] = next;
+      return { ...prev, [foodId]: row };
     });
+    if (next !== 'none') {
+      try {
+        await adminApi.put(
+          `/admin/seasonal/${zoneId}/${monthIdx + 1}/${foodId}`,
+          { availability: next },
+        );
+      } catch {/* ignore — optimistic */}
+    }
   }
 
   async function handlePublish() {
     setPublishing(true);
     setPubMessage('');
     try {
-      await adminApi.post('/admin/reference/publish', { zone, matrix });
-      setPubMessage('Bundle v' + new Date().toISOString().slice(0, 10) + ' published successfully.');
-    } catch {
-      setPubMessage('Demo mode: bundle staged locally (API not connected).');
+      const result = await adminApi.post<{ versionTag: string }>('/admin/reference/publish', {});
+      setPubMessage(`Bundle ${result.versionTag} published successfully.`);
+    } catch (err) {
+      setPubMessage(err instanceof Error ? err.message : 'Publish failed.');
     } finally {
       setPublishing(false);
     }
   }
+
+  const foodIds = Object.keys(matrix);
 
   return (
     <div>
       <h1 style={s.h1}>Seasonal Availability Matrix</h1>
       <p style={s.desc}>
         Click any cell to cycle: <strong>Abundant → Available → Scarce → None</strong>.
-        Changes are staged. Click <em>Publish Bundle</em> to version and push to field devices.
+        Changes persist immediately. Click <em>Publish Bundle</em> to version and push to field devices.
       </p>
 
       {/* Legend + zone selector */}
@@ -119,63 +122,65 @@ export function SeasonalMatrixPage() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <label style={{ fontSize: 13, fontWeight: 600 }}>Agro-zone:</label>
-          <select
-            value={zone}
-            onChange={(e) => setZone(e.target.value)}
-            style={s.select}
-          >
-            <option>Kukuo</option>
-            <option>Sagnarigu</option>
-            <option>Gizaa</option>
-            <option>Tamale Metro</option>
+          <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} style={s.select}>
+            {zones.length === 0 && <option value="">Loading…</option>}
+            {zones.map((z) => (
+              <option key={z.id} value={z.id}>{z.name}</option>
+            ))}
           </select>
         </div>
+        {loading && <span style={{ fontSize: 13, color: '#888' }}>Loading…</span>}
       </div>
 
       {/* Grid */}
       <div style={{ overflowX: 'auto', background: '#fff', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-        <table style={{ borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
-          <thead>
-            <tr>
-              <th style={{ ...s.th, width: 160, textAlign: 'left', background: '#f9fafb' }}>Food</th>
-              {MONTHS.map((m) => (
-                <th key={m} style={{ ...s.th, width: 54, textAlign: 'center', background: '#f9fafb' }}>{m}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {FOODS.map((food, fi) => (
-              <tr key={food} style={{ background: fi % 2 === 0 ? '#fff' : '#fafafa' }}>
-                <td style={{ ...s.td, fontWeight: 500, color: '#374151', whiteSpace: 'nowrap', borderRight: '1px solid #e5e7eb' }}>
-                  {food}
-                </td>
-                {matrix[food].map((avail, mi) => {
-                  const c = COLORS[avail];
-                  return (
-                    <td
-                      key={mi}
-                      onClick={() => cycleCell(food, mi)}
-                      title={avail}
-                      style={{
-                        ...s.td,
-                        background: c.bg,
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        color: c.fg,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        userSelect: 'none',
-                        transition: 'opacity 0.1s',
-                      }}
-                    >
-                      {avail === 'none' ? '' : avail[0].toUpperCase()}
-                    </td>
-                  );
-                })}
+        {foodIds.length === 0 ? (
+          <div style={{ padding: 32, color: '#888', textAlign: 'center', fontSize: 14 }}>
+            {loading ? 'Loading matrix…' : 'No seasonal data for this zone yet.'}
+          </div>
+        ) : (
+          <table style={{ borderCollapse: 'collapse', fontSize: 12, minWidth: 700 }}>
+            <thead>
+              <tr>
+                <th style={{ ...s.th, width: 160, textAlign: 'left', background: '#f9fafb' }}>Food</th>
+                {MONTHS.map((m) => (
+                  <th key={m} style={{ ...s.th, width: 54, textAlign: 'center', background: '#f9fafb' }}>{m}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {foodIds.map((foodId, fi) => (
+                <tr key={foodId} style={{ background: fi % 2 === 0 ? '#fff' : '#fafafa' }}>
+                  <td style={{ ...s.td, fontWeight: 500, color: '#374151', whiteSpace: 'nowrap', borderRight: '1px solid #e5e7eb' }}>
+                    {foodNames[foodId] ?? foodId}
+                  </td>
+                  {(matrix[foodId] ?? Array(12).fill('none')).map((avail, mi) => {
+                    const c = COLORS[avail as Avail] ?? COLORS.none;
+                    return (
+                      <td
+                        key={mi}
+                        onClick={() => cycleCell(foodId, mi)}
+                        title={avail}
+                        style={{
+                          ...s.td,
+                          background: c.bg,
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          color: c.fg,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          userSelect: 'none',
+                        }}
+                      >
+                        {avail === 'none' ? '' : (avail as string)[0].toUpperCase()}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Publish bar */}
@@ -196,7 +201,11 @@ export function SeasonalMatrixPage() {
         >
           {publishing ? 'Publishing…' : 'Publish Bundle'}
         </button>
-        {pubMessage && <span style={{ color: '#057A55', fontWeight: 600, fontSize: 13 }}>{pubMessage}</span>}
+        {pubMessage && (
+          <span style={{ color: pubMessage.includes('fail') ? '#b91c1c' : '#057A55', fontWeight: 600, fontSize: 13 }}>
+            {pubMessage}
+          </span>
+        )}
       </div>
 
       <p style={{ marginTop: 10, fontSize: 12, color: '#999' }}>
@@ -208,7 +217,7 @@ export function SeasonalMatrixPage() {
 }
 
 const s = {
-  h1: { fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8 } as const,
+  h1:   { fontSize: 24, fontWeight: 700, color: '#111', marginBottom: 8 } as const,
   desc: { color: '#555', marginBottom: 20, lineHeight: 1.6 } as const,
   select: {
     padding: '7px 10px',

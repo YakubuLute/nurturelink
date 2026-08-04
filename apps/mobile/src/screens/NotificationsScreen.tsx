@@ -11,6 +11,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, AppNotification, NotifKind } from '../store';
 import { ChevronLeft, Shield, AlertTriangle, RefreshCw, Package, Volume2, Bell } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
 
@@ -172,16 +173,19 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 24,
+    fontFamily: fonts.semiBold,
     color: '#FFFFFF',
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   markAllText: {
     fontSize: 12,
+    fontFamily: fonts.semiBold,
     color: '#92C9F9',
     fontWeight: '600',
     width: 80,
@@ -200,7 +204,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionLabel: {
-    fontSize: 11.5,
+    fontSize: 12,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#6B7280',
     letterSpacing: 0.6,
@@ -245,6 +250,7 @@ const styles = StyleSheet.create({
   },
   notifTitle: {
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
     flex: 1,
@@ -257,13 +263,15 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   notifBody: {
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#374151',
     lineHeight: 18,
     marginBottom: 5,
   },
   notifTime: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
   },
 
@@ -275,12 +283,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 17,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#374151',
     marginBottom: 8,
   },
   emptyBody: {
-    fontSize: 13.5,
+    fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
     textAlign: 'center',
   },

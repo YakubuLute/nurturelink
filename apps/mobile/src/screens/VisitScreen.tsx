@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, VisitForm } from '../store';
 import { ChevronLeft, Check, AlertTriangle, Droplets, Baby, Info } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Visit'>;
 
@@ -58,11 +59,14 @@ const FOOD_GROUPS = [
 ];
 
 const DANGER_SIGNS = [
-  { id: 'oedema',   label: 'Swelling of both feet (bilateral oedema)' },
-  { id: 'nofeed',   label: 'Not feeding or vomiting everything' },
-  { id: 'convuls',  label: 'Convulsions or unusually sleepy' },
-  { id: 'fever',    label: 'High fever or body very cold' },
-  { id: 'bleeding', label: 'Bleeding or severe pain (obstetric)' },
+  { id: 'bilateral_oedema',       label: 'Swelling of both feet (bilateral oedema)' },
+  { id: 'convulsions',            label: 'Convulsions or unusually sleepy' },
+  { id: 'heavy_vaginal_bleeding', label: 'Heavy vaginal bleeding' },
+  { id: 'severe_headache_visual', label: 'Severe headache or vision problems' },
+  { id: 'severe_abdominal_pain',  label: 'Severe abdominal pain' },
+  { id: 'difficulty_breathing',   label: 'Difficulty breathing at rest' },
+  { id: 'baby_not_moving',        label: 'Baby not moving (3rd trimester)' },
+  { id: 'pallor_severe',          label: 'Severe pallor (whitening of palms/eyelids)' },
 ];
 
 const FEEDING_TEXTURES = [
@@ -451,7 +455,7 @@ export function VisitScreen({ navigation, route }: Props) {
               <Text style={styles.sectionFieldLabel}>Meals per day (including snacks)</Text>
               <View style={[styles.measureCard, { marginBottom: 14, borderWidth: 0, padding: 0 }]}>
                 <TextInput
-                  style={[styles.measureInput, { fontSize: 18 }]}
+                  style={[styles.measureInput, { fontSize: 18, fontFamily: fonts.bold }]}
                   inputMode="numeric"
                   value={form.mealFreqPerDay}
                   onChangeText={(v) => setField('mealFreqPerDay', v)}
@@ -527,7 +531,7 @@ export function VisitScreen({ navigation, route }: Props) {
                 <View style={[styles.chipBox, { backgroundColor: sel ? g.color : '#ECECEB' }]}>
                   {sel && <Check size={13} color="#FFFFFF" strokeWidth={3} />}
                 </View>
-                <Text style={{ fontSize: 12.5, color: sel ? C.fg1 : C.fg2, fontWeight: sel ? '600' : '400', flexShrink: 1 }}>
+                <Text style={{ fontSize: 13, fontFamily: sel ? fonts.semiBold : fonts.regular, color: sel ? C.fg1 : C.fg2, fontWeight: sel ? '600' : '400', flexShrink: 1 }}>
                   {g.label}
                 </Text>
               </TouchableOpacity>
@@ -536,8 +540,8 @@ export function VisitScreen({ navigation, route }: Props) {
         </View>
 
         <View style={[styles.diversityRow, { backgroundColor: scoreBg(dietScore) }]}>
-          <Text style={{ fontSize: 12.5, color: C.fg2 }}>Diet diversity score</Text>
-          <Text style={{ fontSize: 13, fontWeight: '700', color: scoreColor(dietScore) }}>{dietScore}/8</Text>
+          <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg2 }}>Diet diversity score</Text>
+          <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: scoreColor(dietScore) }}>{dietScore}/8</Text>
         </View>
 
         {/* ── VITAMIN A — child 6–59 mo ── */}
@@ -593,7 +597,7 @@ export function VisitScreen({ navigation, route }: Props) {
               <View style={[styles.dangerCheck, { backgroundColor: sel ? C.error : '#fff', borderColor: sel ? C.error : C.border }]}>
                 {sel && <Check size={13} color="#FFFFFF" strokeWidth={3} />}
               </View>
-              <Text style={{ flex: 1, fontSize: 13, color: sel ? C.errorDark : C.fg2, lineHeight: 19 }}>
+              <Text style={{ flex: 1, fontSize: 13, fontFamily: fonts.regular, color: sel ? C.errorDark : C.fg2, lineHeight: 19 }}>
                 {d.label}
               </Text>
             </TouchableOpacity>
@@ -603,7 +607,7 @@ export function VisitScreen({ navigation, route }: Props) {
         {hasDanger && (
           <View style={styles.dangerBanner}>
             <AlertTriangle size={16} color={C.errorDark} style={{ marginRight: 8 }} />
-            <Text style={{ fontSize: 12.5, color: C.errorDark, flex: 1, lineHeight: 18 }}>
+            <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.errorDark, flex: 1, lineHeight: 18 }}>
               Saving will route to referral — counselling is bypassed
             </Text>
           </View>
@@ -617,7 +621,7 @@ export function VisitScreen({ navigation, route }: Props) {
           onPress={handleSave}
           accessibilityLabel={hasDanger ? 'Save and refer' : 'Save visit'}
         >
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+          <Text style={{ color: '#fff', fontSize: 15, fontFamily: fonts.bold, fontWeight: '700' }}>
             {hasDanger ? 'Save & refer' : 'Save visit'}
           </Text>
         </TouchableOpacity>
@@ -641,11 +645,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#fff',
   },
   headerSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#92C9F9',
     marginTop: 2,
   },
@@ -658,6 +664,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg4,
     letterSpacing: 0.8,
@@ -667,6 +674,7 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: C.fg4,
     marginBottom: 10,
   },
@@ -679,11 +687,13 @@ const styles = StyleSheet.create({
   },
   measureLabel: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: C.fg3,
     marginBottom: 4,
   },
   measureInput: {
     fontSize: 22,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg1,
     padding: 0,
@@ -691,6 +701,7 @@ const styles = StyleSheet.create({
   },
   measureUnit: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: C.fg4,
     marginTop: 2,
   },
@@ -705,6 +716,7 @@ const styles = StyleSheet.create({
   },
   sectionFieldLabel: {
     fontSize: 13,
+    fontFamily: fonts.medium,
     color: C.fg2,
     fontWeight: '500',
     marginBottom: 8,
@@ -724,6 +736,7 @@ const styles = StyleSheet.create({
   yesNoLabel: {
     flex: 1,
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: C.fg2,
     lineHeight: 19,
   },
@@ -749,6 +762,7 @@ const styles = StyleSheet.create({
   },
   yesNoBtnText: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: C.fg3,
   },
@@ -775,7 +789,8 @@ const styles = StyleSheet.create({
     borderColor: C.lb200,
   },
   textureChipText: {
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.medium,
     color: C.fg3,
     fontWeight: '500',
   },
@@ -795,7 +810,8 @@ const styles = StyleSheet.create({
   },
   infoBannerText: {
     flex: 1,
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.regular,
     color: C.infoText,
     lineHeight: 18,
   },

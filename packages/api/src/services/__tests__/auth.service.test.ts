@@ -2,8 +2,8 @@
  * Auth service tests — login + refresh token flows.
  *
  * Critical paths:
- * - Invalid password returns 401 (no token leak)
- * - Valid password returns access + refresh tokens with expiresIn
+ * - Invalid PIN returns 401 (no token leak)
+ * - Valid PIN returns access + refresh tokens with expiresIn
  * - Expired refresh token returns 401
  */
 
@@ -40,10 +40,10 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    const CORRECT_PASSWORD = '1234';
+    const CORRECT_PIN = '1234';
 
-    async function makeUser(password: string) {
-      const passwordHash = await bcrypt.hash(password, 10);
+    async function makeUser(pin: string) {
+      const passwordHash = await bcrypt.hash(pin, 10);
       return {
         id: 'user-uuid-0000-0000-0000-000000000001',
         name: 'Yakubu Lute',
@@ -57,12 +57,12 @@ describe('AuthService', () => {
       };
     }
 
-    it('returns access and refresh tokens on correct password', async () => {
-      const user = await makeUser(CORRECT_PASSWORD);
+    it('returns access and refresh tokens on correct PIN', async () => {
+      const user = await makeUser(CORRECT_PIN);
       (mockRepo.findByPhone as jest.Mock).mockResolvedValue(user);
       (mockRepo.createRefreshToken as jest.Mock).mockResolvedValue('refresh-token-uuid');
 
-      const result = await svc.login({ phone: user.phone, password: CORRECT_PASSWORD });
+      const result = await svc.login({ phone: user.phone, pin: CORRECT_PIN });
 
       expect(result.accessToken).toBeTruthy();
       expect(result.refreshToken).toBe('refresh-token-uuid');
@@ -71,11 +71,11 @@ describe('AuthService', () => {
       expect(result.user.role).toBe('CHO');
     });
 
-    it('throws 401 on wrong password', async () => {
-      const user = await makeUser(CORRECT_PASSWORD);
+    it('throws 401 on wrong PIN', async () => {
+      const user = await makeUser(CORRECT_PIN);
       (mockRepo.findByPhone as jest.Mock).mockResolvedValue(user);
 
-      await expect(svc.login({ phone: user.phone, password: '9999' })).rejects.toMatchObject({
+      await expect(svc.login({ phone: user.phone, pin: '9999' })).rejects.toMatchObject({
         status: 401,
       });
       expect(mockRepo.createRefreshToken).not.toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe('AuthService', () => {
     it('throws 401 when user not found', async () => {
       (mockRepo.findByPhone as jest.Mock).mockResolvedValue(null);
 
-      await expect(svc.login({ phone: '+233000000000', password: '1234' })).rejects.toMatchObject({
+      await expect(svc.login({ phone: '+233000000000', pin: '1234' })).rejects.toMatchObject({
         status: 401,
       });
     });

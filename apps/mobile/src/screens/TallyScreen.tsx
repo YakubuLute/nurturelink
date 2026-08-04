@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { ChevronLeft } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Tally'>;
 
@@ -191,10 +192,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backArrow: { fontSize: 28, color: '#FDFDFD', lineHeight: 32 },
+  backArrow: { fontSize: 28, fontFamily: fonts.regular, color: '#FDFDFD', lineHeight: 32 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#FDFDFD' },
-  headerDate: { fontSize: 11, color: '#8D9CA5', marginTop: 2 },
+  headerTitle: { fontSize: 17, fontFamily: fonts.bold, fontWeight: '700', color: '#FDFDFD' },
+  headerDate: { fontSize: 11, fontFamily: fonts.regular, color: '#8D9CA5', marginTop: 2 },
   resetBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#5A6F7C',
   },
-  resetBtnText: { fontSize: 13, fontWeight: '600', color: '#92C9F9' },
+  resetBtnText: { fontSize: 13, fontFamily: fonts.semiBold, fontWeight: '600', color: '#92C9F9' },
 
   // Scroll
   scroll: { flex: 1 },
@@ -220,15 +221,17 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 28,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#08283B',
     lineHeight: 34,
   },
-  summaryLabel: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  summaryLabel: { fontSize: 11, fontFamily: fonts.regular, color: '#9CA3AF', marginTop: 2 },
 
   // Section
   sectionTitle: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#9CA3AF',
     letterSpacing: 0.5,
@@ -249,8 +252,8 @@ const styles = StyleSheet.create({
   },
   colorBar: { width: 5, alignSelf: 'stretch' },
   tallyBody: { flex: 1, paddingVertical: 14, paddingLeft: 14 },
-  tallyLabel: { fontSize: 15, fontWeight: '700', color: '#08283B' },
-  tallySub: { fontSize: 11.5, color: '#9CA3AF', marginTop: 2 },
+  tallyLabel: { fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
+  tallySub: { fontSize: 12, fontFamily: fonts.regular, color: '#9CA3AF', marginTop: 2 },
   counterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -273,12 +276,14 @@ const styles = StyleSheet.create({
   },
   counterBtnText: {
     fontSize: 20,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
     lineHeight: 24,
   },
   counterValue: {
     fontSize: 22,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#08283B',
     minWidth: 36,
@@ -294,5 +299,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#B4DAFB',
   },
-  noteText: { fontSize: 12, color: '#427CAF', lineHeight: 17 },
+  noteText: { fontSize: 12, fontFamily: fonts.regular, color: '#427CAF', lineHeight: 17 },
 });

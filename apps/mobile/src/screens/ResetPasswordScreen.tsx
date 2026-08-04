@@ -13,6 +13,7 @@ import { ChevronLeft, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react-native
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
+import { fonts } from '../theme';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
@@ -262,12 +263,14 @@ const styles = StyleSheet.create({
 
   heading: {
     fontSize: 26,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 8,
   },
   headingSub: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     lineHeight: 20,
     marginBottom: 32,
@@ -281,6 +284,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#C2D0D9',
     marginBottom: 8,
@@ -301,6 +305,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: '#FDFDFD',
     padding: 0,
   },
@@ -332,12 +337,14 @@ const styles = StyleSheet.create({
   },
   strengthText: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     width: 50,
   },
 
   errorText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FC8181',
     marginBottom: 12,
     lineHeight: 18,
@@ -356,6 +363,7 @@ const styles = StyleSheet.create({
   },
   resetBtnText: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
@@ -379,6 +387,7 @@ const styles = StyleSheet.create({
   },
   successHeading: {
     fontSize: 24,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 10,
@@ -386,6 +395,7 @@ const styles = StyleSheet.create({
   },
   successSub: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     textAlign: 'center',
     lineHeight: 20,
@@ -405,6 +415,7 @@ const styles = StyleSheet.create({
   },
   signInBtnText: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,

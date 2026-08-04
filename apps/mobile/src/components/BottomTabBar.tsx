@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Home, Shield, RefreshCw, User } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 const BRAND = '#FF5A00';
 const INACTIVE = '#9CA3AF';
@@ -60,6 +61,9 @@ export function BottomTabBar({ active, onHome, onReferrals, onSync, onProfile, r
             accessibilityLabel={tab.label}
             accessibilityState={{ selected: isActive }}
           >
+            {/* Active indicator bar at top */}
+            <View style={[styles.activeBar, isActive && styles.activeBarVisible]} />
+
             {/* Icon with optional pill background */}
             <View style={[styles.iconWrapper, isActive && styles.iconWrapperActive]}>
               {tab.getIcon(isActive)}
@@ -95,6 +99,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
+  activeBar: {
+    position: 'absolute',
+    top: -8,
+    width: '60%',
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+  },
+  activeBarVisible: {
+    backgroundColor: BRAND,
+  },
   iconWrapper: {
     position: 'relative',
     alignItems: 'center',
@@ -108,12 +123,15 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
+    fontFamily: fonts.regular,
   },
   labelActive: {
+    fontFamily: fonts.bold,
     color: BRAND,
     fontWeight: '700',
   },
   labelInactive: {
+    fontFamily: fonts.medium,
     color: '#9CA3AF',
     fontWeight: '500',
   },
@@ -132,6 +150,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 9,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     lineHeight: 13,
   },

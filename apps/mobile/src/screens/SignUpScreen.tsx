@@ -29,6 +29,7 @@ import {
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
+import { fonts } from '../theme';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8181';
 
@@ -99,10 +100,10 @@ function DarkPickerModal({
       transparent
       animationType="slide"
       onRequestClose={handleDismiss}
-      presentationStyle="pageSheet"
     >
-      <Pressable style={pickerStyles.backdrop} onPress={handleDismiss} />
-      <View style={pickerStyles.sheet}>
+      <View style={pickerStyles.overlay}>
+        <Pressable style={pickerStyles.backdrop} onPress={handleDismiss} />
+        <View style={pickerStyles.sheet}>
         {/* Handle */}
         <View style={pickerStyles.handle} />
 
@@ -167,21 +168,26 @@ function DarkPickerModal({
             <Text style={pickerStyles.emptyText}>No results</Text>
           }
         />
+        </View>
       </View>
     </Modal>
   );
 }
 
 const pickerStyles = StyleSheet.create({
-  backdrop: {
+  overlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   sheet: {
     backgroundColor: '#0E3550',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '70%',
+    maxHeight: '75%',
     paddingBottom: 32,
   },
   handle: {
@@ -204,6 +210,7 @@ const pickerStyles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
   },
@@ -228,11 +235,12 @@ const pickerStyles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#FDFDFD',
     padding: 0,
   },
   searchClear: { padding: 4 },
-  list: { flex: 1 },
+  list: { flexGrow: 1, maxHeight: 320 },
   listContent: { paddingHorizontal: 12, paddingVertical: 4 },
   listItem: {
     flexDirection: 'row',
@@ -248,17 +256,20 @@ const pickerStyles = StyleSheet.create({
   listItemText: { flex: 1 },
   listItemLabel: {
     fontSize: 14,
+    fontFamily: fonts.medium,
     fontWeight: '500',
     color: '#C2D0D9',
   },
   listItemLabelActive: { color: '#FDFDFD' },
   listItemSub: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     marginTop: 2,
   },
   emptyText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     textAlign: 'center',
     paddingVertical: 24,
@@ -307,6 +318,7 @@ const pkBtnStyles = StyleSheet.create({
   group: { marginBottom: 10 },
   label: {
     fontSize: 12,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#8D9CA5',
     marginBottom: 6,
@@ -332,11 +344,13 @@ const pkBtnStyles = StyleSheet.create({
   valueText: {
     flex: 1,
     fontSize: 14,
+    fontFamily: fonts.medium,
     color: '#FDFDFD',
     fontWeight: '500',
   },
   placeholderText: {
     color: '#5A6F7C',
+    fontFamily: fonts.regular,
     fontWeight: '400',
   },
 });
@@ -370,13 +384,19 @@ export function SignUpScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[SignUp] Fetching facilities from:', `${API_URL}/facilities`);
     fetch(`${API_URL}/facilities`)
-      .then((r) => r.json())
-      .then((data: { facilities: Facility[] }) => {
-        setFacilities(data.facilities ?? []);
+      .then((r) => {
+        console.log('[SignUp] Facilities response status:', r.status, r.ok);
+        return r.json();
       })
-      .catch(() => {
-        // Non-fatal — user can still register without a facility
+      .then((data) => {
+        console.log('[SignUp] Facilities data received:', JSON.stringify(data));
+        setFacilities((data as { facilities: Facility[] }).facilities ?? []);
+      })
+      .catch((err) => {
+        console.warn('[SignUp] Failed to load facilities:', err?.message ?? String(err));
+        setError('Could not load facilities. Check your connection and try again.');
       })
       .finally(() => setFacilitiesLoading(false));
   }, []);
@@ -845,12 +865,14 @@ const styles = StyleSheet.create({
 
   heading: {
     fontSize: 26,
+    fontFamily: fonts.bold,
     fontWeight: '800',
     color: '#FDFDFD',
     marginBottom: 6,
   },
   headingSub: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     marginBottom: 28,
   },
@@ -864,6 +886,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#C2D0D9',
     marginBottom: 8,
@@ -888,6 +911,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: '#FDFDFD',
     padding: 0,
   },
@@ -947,6 +971,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#8D9CA5',
     marginBottom: 2,
@@ -956,6 +981,7 @@ const styles = StyleSheet.create({
   },
   optionSub: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     lineHeight: 16,
   },
@@ -978,6 +1004,7 @@ const styles = StyleSheet.create({
   facilitySummaryText: {
     flex: 1,
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#A7F3D0',
     lineHeight: 16,
   },
@@ -993,16 +1020,19 @@ const styles = StyleSheet.create({
   },
   facilitiesLoadingText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
   },
   facilitiesEmpty: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     paddingVertical: 8,
   },
 
   errorText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#FC8181',
     marginBottom: 12,
     lineHeight: 18,
@@ -1022,6 +1052,7 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
@@ -1036,10 +1067,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
   },
   footerLink: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     color: BRAND,
     fontWeight: '600',
   },

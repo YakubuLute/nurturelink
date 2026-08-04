@@ -19,19 +19,115 @@ import { RootStackParamList } from '../../App';
 import { useAppStore, RegForm } from '../store';
 import {
   ChevronLeft, ChevronRight, Check, WifiOff, Baby, User, CalendarDays,
-  Phone, MapPin, FileText, Info, ChevronDown, X, Search, MapPinned,
+  Phone, MapPin, FileText, Info, ChevronDown, X, Search, MapPinned, Globe,
 } from 'lucide-react-native';
 import { syncNow } from '../sync/orchestrator';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
-// Communities in Sagnarigu Municipal District, Northern Region, Ghana
-const SAGNARIGU_COMMUNITIES = [
-  'Barugu', 'Choggu', 'Dohigu', 'Gizaa', 'Gurugu',
-  'Kakpayili', 'Kanvili', 'Kasalgu', 'Katariga', 'Kpinkpanaa',
-  'Kpuyangli', 'Kukuo', 'Kumbuyili', 'Lamashegu', 'Nyanshegu',
-  'Sagnarigu', 'Teshie', 'Voggu', 'Zagyuri',
-] as const;
+// Ghana Northern Regions → Districts → Communities
+const GHANA_LOCATION_DATA: Record<string, Record<string, string[]>> = {
+  'Northern Region': {
+    'Sagnarigu Municipal': [
+      'Barugu', 'Choggu', 'Dohigu', 'Gizaa', 'Gurugu',
+      'Kakpayili', 'Kanvili', 'Kasalgu', 'Katariga', 'Kpinkpanaa',
+      'Kpuyangli', 'Kukuo', 'Kumbuyili', 'Lamashegu', 'Nyanshegu',
+      'Sagnarigu', 'Teshie', 'Voggu', 'Zagyuri',
+    ],
+    'Tamale Metropolitan': [
+      'Aboabo', 'Bamvim', 'Choggu Naa', 'Dichemso', 'Jisonayili',
+      'Kalpohin', 'Kpobigu', 'Lamashegu', 'Nyohini', 'Sabonjida',
+      'Sakasaka', 'Tishigu', 'Vittin', 'Wamale',
+    ],
+    'Kumbungu': [
+      'Gupanarigu', 'Kumbungu', 'Kpene', 'Nyankpala', 'Tunayili', 'Zuo',
+    ],
+    'Tolon': [
+      'Bamvim', 'Dibila', 'Kpalbe', 'Kpene', 'Tolon', 'Wuba', 'Zuo',
+    ],
+    'Savelugu': [
+      'Diari', 'Nanton', 'Pong Tamale', 'Savelugu', 'Tampion',
+    ],
+    'Nanton': [
+      'Gbullung', 'Karaga', 'Nanton', 'Wulensi',
+    ],
+    'Mion': [
+      'Bimbila', 'Demon', 'Gushegu', 'Salaga', 'Sang',
+    ],
+  },
+  'North East Region': {
+    'East Mamprusi': [
+      'Gambaga', 'Langbinsi', 'Nalerigu', 'Nakpayili', 'Yagaba',
+    ],
+    'West Mamprusi': [
+      'Janga', 'Nakpayili', 'Walewale',
+    ],
+    'Mamprugu Moagduri': [
+      'Kubori', 'Soo', 'Yagaba',
+    ],
+    'Bunkpurugu Nyankpala': [
+      'Bunkpurugu', 'Nakpayili', 'Nyankpala',
+    ],
+    'Yunyoo-Nasuan': [
+      'Nasuan', 'Yunyoo',
+    ],
+  },
+  'Savannah Region': {
+    'West Gonja': [
+      'Bole', 'Damongo', 'Larabanga', 'Murugu', 'Yapei',
+    ],
+    'East Gonja': [
+      'Buipe', 'Busunu', 'Salaga', 'Tuluwe',
+    ],
+    'Sawla-Tuna-Kalba': [
+      'Bole', 'Kalba', 'Sawla', 'Tuna',
+    ],
+    'Bole': [
+      'Bamboi', 'Bole', 'Tinga',
+    ],
+    'North East Gonja': [
+      'Canteen', 'Karaga', 'Kpandai',
+    ],
+  },
+  'Upper East Region': {
+    'Bolgatanga Municipal': [
+      'Bolgatanga', 'Kalbeo', 'Sumbrungu', 'Yorogo',
+    ],
+    'Kassena-Nankana Municipal': [
+      'Navrongo', 'Nayorigo', 'Paga', 'Sirigu',
+    ],
+    'Bawku Municipal': [
+      'Bawku', 'Pusiga', 'Widana',
+    ],
+    'Builsa North': [
+      'Fumbisi', 'Kanjarga', 'Sandema',
+    ],
+    'Talensi': [
+      'Tongo', 'Vea', 'Worikambo',
+    ],
+    'Binduri': [
+      'Binduri', 'Garu',
+    ],
+  },
+  'Upper West Region': {
+    'Wa Municipal': [
+      'Busa', 'Kpongu', 'Wa', 'Yipala',
+    ],
+    'Sissala East': [
+      'Gwollu', 'Tumu', 'Wellembelle',
+    ],
+    'Sissala West': [
+      'Hamile', 'Jeffisi', 'Leo',
+    ],
+    'Lawra': [
+      'Lawra', 'Nandom', 'Piina',
+    ],
+    'Jirapa': [
+      'Hamile', 'Jirapa', 'Ko',
+    ],
+  },
+};
 
 const RELATIONSHIPS = ['Mother', 'Father', 'Grandparent', 'Guardian'] as const;
 
@@ -55,7 +151,7 @@ function SectionHeader({ label }: { label: string }) {
 }
 const sh = StyleSheet.create({
   label: {
-    fontSize: 11, fontWeight: '700', color: '#6B7280',
+    fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: '#6B7280',
     letterSpacing: 0.7, textTransform: 'uppercase',
     marginBottom: 12, marginTop: 4,
   },
@@ -93,7 +189,7 @@ const ts = StyleSheet.create({
   },
   btnActive: { backgroundColor: '#08283B', borderColor: '#08283B' },
   btnInactive: { backgroundColor: '#FDFDFD', borderColor: '#D1D5DB' },
-  label: { fontSize: 14, fontWeight: '600' },
+  label: { fontSize: 14, fontFamily: fonts.semiBold, fontWeight: '600' },
   textActive: { color: '#FFFFFF' },
   textInactive: { color: '#08283B' },
 });
@@ -123,7 +219,7 @@ const chip = StyleSheet.create({
   item: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1.5 },
   itemActive: { backgroundColor: '#08283B', borderColor: '#08283B' },
   itemInactive: { backgroundColor: '#FDFDFD', borderColor: '#D1D5DB' },
-  text: { fontSize: 14, fontWeight: '500' },
+  text: { fontSize: 14, fontFamily: fonts.medium, fontWeight: '500' },
   textActive: { color: '#FFFFFF' },
   textInactive: { color: '#08283B' },
 });
@@ -195,7 +291,7 @@ const cp = StyleSheet.create({
     backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB',
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52,
   },
-  triggerText: { flex: 1, fontSize: 15, color: '#08283B' },
+  triggerText: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B' },
   triggerPlaceholder: { color: '#9CA3AF' },
   modal: { flex: 1, backgroundColor: '#FDFDFD' },
   modalHeader: {
@@ -203,30 +299,99 @@ const cp = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12,
     borderBottomWidth: 1, borderBottomColor: '#F0F1F3',
   },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: '#08283B' },
+  modalTitle: { fontSize: 17, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
   closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', margin: 16,
     backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 14, height: 48,
   },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 15, color: '#08283B' },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B' },
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: '#F9FAFB',
   },
   rowSelected: { backgroundColor: '#F0F7FF' },
-  rowText: { fontSize: 15, color: '#374151' },
+  rowText: { fontSize: 15, fontFamily: fonts.regular, color: '#374151' },
   rowTextSelected: { color: '#08283B', fontWeight: '600' },
   customRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#F0F7FF',
     margin: 16, borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE',
   },
-  customText: { fontSize: 14, color: '#1D4ED8', flex: 1 },
+  customText: { fontSize: 14, fontFamily: fonts.regular, color: '#1D4ED8', flex: 1 },
   customBold: { fontWeight: '700' },
-  empty: { textAlign: 'center', color: '#9CA3AF', fontSize: 14, marginTop: 32 },
+  empty: { textAlign: 'center', color: '#9CA3AF', fontSize: 14, fontFamily: fonts.regular, marginTop: 32 },
+});
+
+// Simple picker modal (no custom-entry option) — used for Region and District
+function SelectPicker({
+  title, placeholder, value, options, onChange, icon: Icon, disabled,
+}: {
+  title: string;
+  placeholder: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  icon: React.ComponentType<{ size: number; color: string }>;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+  }, [query, options]);
+
+  function select(v: string) { onChange(v); setQuery(''); setOpen(false); }
+
+  return (
+    <>
+      <TouchableOpacity
+        style={[cp.trigger, disabled && sp.disabled]}
+        onPress={() => !disabled && setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled }}
+      >
+        <Icon size={18} color={value ? '#08283B' : '#9CA3AF'} />
+        <Text style={[cp.triggerText, !value && cp.triggerPlaceholder]}>{value || placeholder}</Text>
+        <ChevronDown size={16} color="#9CA3AF" />
+      </TouchableOpacity>
+      <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
+        <View style={cp.modal}>
+          <View style={cp.modalHeader}>
+            <Text style={cp.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={() => { setQuery(''); setOpen(false); }} style={cp.closeBtn} accessibilityRole="button" accessibilityLabel="Close">
+              <X size={20} color="#374151" />
+            </TouchableOpacity>
+          </View>
+          {options.length > 6 && (
+            <View style={cp.searchWrap}>
+              <Search size={16} color="#9CA3AF" style={cp.searchIcon} />
+              <TextInput style={cp.searchInput} placeholder={`Search ${title.toLowerCase()}…`} placeholderTextColor="#9CA3AF" value={query} onChangeText={setQuery} autoFocus autoCapitalize="words" clearButtonMode="while-editing" />
+            </View>
+          )}
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <TouchableOpacity style={[cp.row, value === item && cp.rowSelected]} onPress={() => select(item)} accessibilityRole="button" accessibilityLabel={item}>
+                <Text style={[cp.rowText, value === item && cp.rowTextSelected]}>{item}</Text>
+                {value === item && <Check size={16} color="#08283B" strokeWidth={2.5} />}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={<Text style={cp.empty}>No results.</Text>}
+          />
+        </View>
+      </Modal>
+    </>
+  );
+}
+const sp = StyleSheet.create({
+  disabled: { opacity: 0.45 },
 });
 
 function DateField({
@@ -253,18 +418,18 @@ function DateField({
           </Pressable>
           {showPicker && (
             <DateTimePicker value={pickerValue} mode="date" display="spinner" maximumDate={maxDate}
-              onValueChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} style={{ marginTop: 4 }} />
+              onChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} style={{ marginTop: 4 }} />
           )}
         </>
       )}
       {Platform.OS === 'android' && showPicker && (
         <DateTimePicker value={pickerValue} mode="date" display="default" maximumDate={maxDate}
-          onValueChange={(_, date) => { setShowPicker(false); if (date) onChange(date.toISOString().slice(0, 10)); }}
+          onChange={(_, date) => { setShowPicker(false); if (date) onChange(date.toISOString().slice(0, 10)); }}
           onDismiss={() => setShowPicker(false)} />
       )}
       {Platform.OS === 'web' && (
         <DateTimePicker value={pickerValue} mode="date" display="default" maximumDate={maxDate}
-          onValueChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} />
+          onChange={(_, date) => { if (date) onChange(date.toISOString().slice(0, 10)); }} />
       )}
       {hint ? <Text style={dp.hint}>{hint}</Text> : null}
     </View>
@@ -277,9 +442,9 @@ const dp = StyleSheet.create({
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52,
   },
   btnOpen: { borderColor: '#08283B' },
-  btnText: { fontSize: 15, color: '#08283B', flex: 1 },
+  btnText: { fontSize: 15, fontFamily: fonts.regular, color: '#08283B', flex: 1 },
   btnPlaceholder: { color: '#9CA3AF' },
-  hint: { fontSize: 11.5, color: '#6B7280', marginTop: 5, marginLeft: 2 },
+  hint: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280', marginTop: 5, marginLeft: 2 },
 });
 
 function ConsentRow({
@@ -318,8 +483,8 @@ const ct = StyleSheet.create({
   boxChecked: { backgroundColor: '#FF5A00', borderColor: '#FF5A00' },
   boxUnchecked: { backgroundColor: '#FFFFFF', borderColor: '#D1D5DB' },
   body: { flex: 1 },
-  title: { fontSize: 13.5, fontWeight: '700', color: '#08283B', marginBottom: 4 },
-  desc: { fontSize: 12, color: '#6B7280', lineHeight: 17 },
+  title: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B', marginBottom: 4 },
+  desc: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280', lineHeight: 17 },
 });
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
@@ -382,7 +547,7 @@ function MotherPicker({ candidates, value, onChange }: MotherPickerProps) {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[cp.rowText, value === item.id && cp.rowTextSelected]}>{item.name}</Text>
-                  <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>{item.community}</Text>
+                  <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: '#9CA3AF', marginTop: 1 }}>{item.community}</Text>
                 </View>
                 {value === item.id && <Check size={16} color="#08283B" strokeWidth={2.5} />}
               </TouchableOpacity>
@@ -400,7 +565,7 @@ const mp = StyleSheet.create({
     backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB',
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52,
   },
-  triggerText: { flex: 1, fontSize: 15, color: '#08283B' },
+  triggerText: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B' },
   placeholder: { color: '#9CA3AF' },
 });
 
@@ -563,7 +728,7 @@ export function RegisterScreen({ navigation }: Props) {
                   <ChipSelector
                     options={['Male', 'Female'] as const}
                     value={regForm.sex}
-                    onChange={(v) => setRegField('sex', v.toLowerCase())}
+                    onChange={(v) => setRegField('sex', v)}
                   />
                 </View>
               )}
@@ -582,30 +747,46 @@ export function RegisterScreen({ navigation }: Props) {
             {/* Location */}
             <View style={styles.section}>
               <SectionHeader label="Location" />
-              <View style={styles.row2}>
-                <View style={[styles.fieldGroup, styles.flex1]}>
-                  <Text style={styles.fieldLabel}>Region</Text>
-                  <View style={styles.readOnlyField}>
-                    <Text style={styles.readOnlyText} numberOfLines={1}>
-                      {currentUser?.facilityRegion ?? 'Northern Region'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={[styles.fieldGroup, styles.flex1]}>
-                  <Text style={styles.fieldLabel}>District</Text>
-                  <View style={styles.readOnlyField}>
-                    <Text style={styles.readOnlyText} numberOfLines={1}>
-                      {currentUser?.facilityDistrict ?? 'Sagnarigu Municipal'}
-                    </Text>
-                  </View>
-                </View>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Region</Text>
+                <SelectPicker
+                  title="Select region"
+                  placeholder="Select region"
+                  value={regForm.region}
+                  options={Object.keys(GHANA_LOCATION_DATA)}
+                  icon={Globe}
+                  onChange={(r) => {
+                    setRegField('region', r);
+                    setRegField('district', '');
+                    setRegField('community', '');
+                  }}
+                />
+              </View>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>District</Text>
+                <SelectPicker
+                  title="Select district"
+                  placeholder={regForm.region ? 'Select district' : 'Select region first'}
+                  value={regForm.district}
+                  options={regForm.region ? Object.keys(GHANA_LOCATION_DATA[regForm.region] ?? {}) : []}
+                  icon={MapPin}
+                  disabled={!regForm.region}
+                  onChange={(d) => {
+                    setRegField('district', d);
+                    setRegField('community', '');
+                  }}
+                />
               </View>
               <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>Community / Town</Text>
                 <CommunityPicker
                   value={regForm.community}
                   onChange={(c) => setRegField('community', c)}
-                  communities={SAGNARIGU_COMMUNITIES}
+                  communities={
+                    regForm.district
+                      ? (GHANA_LOCATION_DATA[regForm.region]?.[regForm.district] ?? [])
+                      : []
+                  }
                 />
               </View>
             </View>
@@ -793,8 +974,8 @@ const styles = StyleSheet.create({
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   backBtnPlaceholder: { width: 36 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  headerStepLabel: { fontSize: 11, color: '#92C9F9', marginTop: 2 },
+  headerTitle: { fontSize: 16, fontFamily: fonts.bold, fontWeight: '700', color: '#FFFFFF' },
+  headerStepLabel: { fontSize: 11, fontFamily: fonts.regular, color: '#92C9F9', marginTop: 2 },
 
   progressTrack: { height: 3, backgroundColor: '#1D4060' },
   progressFill: { height: 3, backgroundColor: '#FF5A00' },
@@ -808,13 +989,13 @@ const styles = StyleSheet.create({
 
   fieldGroup: { marginBottom: 16 },
   fieldLabel: {
-    fontSize: 12, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase',
+    fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase',
     color: '#6B7280', marginBottom: 8,
   },
 
   textInput: {
     backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB',
-    borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, fontSize: 15, color: '#08283B', height: 52,
+    borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, fontSize: 15, fontFamily: fonts.regular, color: '#08283B', height: 52,
   },
 
   iconInput: {
@@ -822,7 +1003,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 12, paddingHorizontal: 14, height: 52,
   },
   iconInputIcon: { marginRight: 10 },
-  iconInputText: { flex: 1, fontSize: 15, color: '#08283B', paddingVertical: 13 },
+  iconInputText: { flex: 1, fontSize: 15, fontFamily: fonts.regular, color: '#08283B', paddingVertical: 13 },
 
   row2: { flexDirection: 'row', gap: 12 },
   flex1: { flex: 1 },
@@ -831,10 +1012,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB',
     borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14, height: 52, justifyContent: 'center',
   },
-  readOnlyText: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
+  readOnlyText: { fontSize: 14, fontFamily: fonts.medium, color: '#6B7280', fontWeight: '500' },
 
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: -4, marginBottom: 4 },
-  infoText: { fontSize: 11.5, color: '#427CAF', flex: 1, lineHeight: 16 },
+  infoText: { fontSize: 12, fontFamily: fonts.regular, color: '#427CAF', flex: 1, lineHeight: 16 },
 
   // Step 2 summary banner
   summaryBanner: {
@@ -847,22 +1028,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#DBEAFE', alignItems: 'center', justifyContent: 'center',
   },
   summaryBody: { flex: 1 },
-  summaryName: { fontSize: 15, fontWeight: '700', color: '#1E3A5F' },
-  summaryMeta: { fontSize: 12, color: '#427CAF', marginTop: 2 },
+  summaryName: { fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: '#1E3A5F' },
+  summaryMeta: { fontSize: 12, fontFamily: fonts.regular, color: '#427CAF', marginTop: 2 },
 
   optionalNote: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#F9FAFB', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14,
     marginBottom: 16,
   },
-  optionalNoteText: { fontSize: 12, color: '#6B7280', flex: 1, lineHeight: 17 },
+  optionalNoteText: { fontSize: 12, fontFamily: fonts.regular, color: '#6B7280', flex: 1, lineHeight: 17 },
 
   offlineNote: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#FFF9E6', borderWidth: 1, borderColor: '#FFE18A',
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 16,
   },
-  offlineText: { fontSize: 12.5, color: '#8C6900', fontWeight: '500', flex: 1 },
+  offlineText: { fontSize: 13, fontFamily: fonts.medium, color: '#8C6900', fontWeight: '500', flex: 1 },
 
   saveWrap: {
     backgroundColor: '#FDFDFD', borderTopWidth: 1, borderTopColor: '#E5E7EB',
@@ -874,5 +1055,5 @@ const styles = StyleSheet.create({
   },
   saveBtnActive: { backgroundColor: '#08283B' },
   saveBtnDisabled: { backgroundColor: '#B2BCC2' },
-  saveBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  saveBtnText: { fontSize: 15, fontFamily: fonts.semiBold, fontWeight: '600', color: '#FFFFFF' },
 });

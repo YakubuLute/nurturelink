@@ -22,8 +22,22 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const adminApi = {
-  get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
-  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
-  delete: <T>(path: string) => request<T>('DELETE', path),
+  get:    <T>(path: string)                => request<T>('GET',    path),
+  post:   <T>(path: string, body?: unknown) => request<T>('POST',   path, body),
+  put:    <T>(path: string, body?: unknown) => request<T>('PUT',    path, body),
+  delete: <T>(path: string)                => request<T>('DELETE',  path),
 };
+
+export function getStoredUser(): { role: string; name: string } | null {
+  try {
+    const raw = localStorage.getItem('admin_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function logout() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('admin_user');
+}

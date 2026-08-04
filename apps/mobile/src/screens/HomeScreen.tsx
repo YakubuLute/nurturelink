@@ -21,6 +21,7 @@ import {
   displayName,
 } from '../store';
 import { Bell, WifiOff, Check, Search, X, Plus, TrendingUp, ChevronRight } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -434,8 +435,8 @@ const banner = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  titleDark: { fontSize: 13.5, fontWeight: '700', color: '#08283B' },
-  subWarn: { fontSize: 11.5, color: '#8C6900', marginTop: 2 },
+  titleDark: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
+  subWarn: { fontSize: 12, fontFamily: fonts.regular, color: '#8C6900', marginTop: 2 },
   warnBtn: {
     backgroundColor: '#FFE18A',
     paddingVertical: 7,
@@ -443,12 +444,12 @@ const banner = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 8,
   },
-  warnBtnText: { fontSize: 12, fontWeight: '600', color: '#08283B' },
+  warnBtnText: { fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600', color: '#08283B' },
 
   // Blue (syncing / pending)
   blueWrap: { backgroundColor: '#EFF7FE', borderColor: '#B4DAFB' },
-  titleBlue: { fontSize: 14, fontWeight: '700', color: '#08283B' },
-  subBlue: { fontSize: 12, color: '#427CAF', marginTop: 2 },
+  titleBlue: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
+  subBlue: { fontSize: 12, fontFamily: fonts.regular, color: '#427CAF', marginTop: 2 },
   darkBtn: {
     backgroundColor: '#08283B',
     paddingVertical: 7,
@@ -456,7 +457,7 @@ const banner = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 8,
   },
-  darkBtnText: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
+  darkBtnText: { fontSize: 12, fontFamily: fonts.semiBold, fontWeight: '600', color: '#FFFFFF' },
 
   // Green (synced)
   greenWrap: { backgroundColor: '#F3FAF7', borderColor: '#BCF0DA' },
@@ -469,8 +470,8 @@ const banner = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  titleGreen: { fontSize: 13.5, fontWeight: '700', color: '#057A55' },
-  subGreen: { fontSize: 11.5, color: '#057A55', marginTop: 2, opacity: 0.8 },
+  titleGreen: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#057A55' },
+  subGreen: { fontSize: 12, fontFamily: fonts.regular, color: '#057A55', marginTop: 2, opacity: 0.8 },
 });
 
 // ─── Screen styles ────────────────────────────────────────────────────────────
@@ -494,9 +495,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   greetingLeft: { flex: 1, paddingRight: 12 },
-  greetingTime: { fontSize: 13, color: '#6B7280', marginBottom: 2 },
-  greetingName: { fontSize: 22, fontWeight: '700', color: '#08283B', lineHeight: 28 },
-  greetingDate: { fontSize: 12.5, color: '#6B7280', marginTop: 3 },
+  greetingTime: { fontSize: 13, fontFamily: fonts.regular, color: '#6B7280', marginBottom: 2 },
+  greetingName: { fontSize: 22, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B', lineHeight: 28 },
+  greetingDate: { fontSize: 13, fontFamily: fonts.regular, color: '#6B7280', marginTop: 3 },
   greetingActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -559,8 +560,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dhimsMid: { flex: 1 },
-  dhimsTitle: { fontSize: 13, fontWeight: '700', color: '#08283B' },
-  dhimsSub: { fontSize: 11, color: '#427CAF', marginTop: 1 },
+  dhimsTitle: { fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: '#08283B' },
+  dhimsSub: { fontSize: 11, fontFamily: fonts.regular, color: '#427CAF', marginTop: 1 },
 
   // Search
   searchWrap: {
@@ -585,6 +586,7 @@ const styles = StyleSheet.create({
     paddingLeft: 40,
     paddingRight: 40,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#08283B',
     height: 46,
   },
@@ -606,6 +608,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 15,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
   },
@@ -617,11 +620,13 @@ const styles = StyleSheet.create({
   },
   sectionBadgeText: {
     fontSize: 12,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#B54000',
   },
   sectionSub: {
-    fontSize: 11.5,
+    fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
     marginBottom: 12,
     lineHeight: 16,
@@ -645,6 +650,7 @@ const styles = StyleSheet.create({
   },
   rank: {
     fontSize: 13,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#9CA3AF',
     width: 26,
@@ -666,6 +672,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 15,
+    fontFamily: fonts.bold,
     fontWeight: '700',
   },
   cardBody: { flex: 1 },
@@ -678,6 +685,7 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: 15,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#08283B',
     flex: 1,
@@ -688,12 +696,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   priorityText: {
-    fontSize: 9.5,
+    fontSize: 10,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
   clientMeta: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
     marginBottom: 5,
   },
@@ -708,7 +718,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   flagText: {
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#374151',
     flex: 1,
   },
@@ -720,12 +731,14 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: 16,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#374151',
     marginBottom: 6,
   },
   emptyStateSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
   },
 });

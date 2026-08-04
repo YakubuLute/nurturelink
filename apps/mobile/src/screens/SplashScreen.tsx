@@ -4,6 +4,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../App';
 import { LogoMark } from '../assets/LogoMark';
+import { fonts } from '../theme';
 import { getDb } from '../db';
 import { useAppStore } from '../store';
 
@@ -88,6 +89,7 @@ const styles = StyleSheet.create({
   brandName: {
     marginTop: 20,
     fontSize: 30,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
     letterSpacing: 0.2,
@@ -95,6 +97,7 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 10,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#92C9F9',
     textAlign: 'center',
     maxWidth: 220,
@@ -107,6 +110,7 @@ const styles = StyleSheet.create({
   tagline: {
     marginTop: 12,
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: '#5A6F7C',
     letterSpacing: 0.8,
     textTransform: 'uppercase',

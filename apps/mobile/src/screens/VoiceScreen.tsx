@@ -11,6 +11,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore, PLANS } from '../store';
 import { ChevronLeft, Check, Volume2, Bluetooth, MessageCircle, Square, Mic } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Voice'>;
 
@@ -78,12 +79,12 @@ function DeliveryCard({
         {icon}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1, marginBottom: 2 }}>{title}</Text>
-        <Text style={{ fontSize: 12, color: C.fg3, lineHeight: 17 }}>{sub}</Text>
+        <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1, marginBottom: 2 }}>{title}</Text>
+        <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, lineHeight: 17 }}>{sub}</Text>
       </View>
       {badge && (
         <View style={{ backgroundColor: badgeBg ?? C.successBg, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-          <Text style={{ fontSize: 10.5, fontWeight: '700', color: badgeColor ?? C.success }}>{badge}</Text>
+          <Text style={{ fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: badgeColor ?? C.success }}>{badge}</Text>
         </View>
       )}
     </View>
@@ -225,7 +226,7 @@ export function VoiceScreen({ navigation, route }: Props) {
         <View style={[styles.approvedBadge]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Check size={13} color={C.success} strokeWidth={3} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: C.success }}>Plan approved by you</Text>
+            <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, fontWeight: '600', color: C.success }}>Plan approved by you</Text>
           </View>
         </View>
 
@@ -233,16 +234,16 @@ export function VoiceScreen({ navigation, route }: Props) {
         <View style={styles.playerCard}>
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1 }}>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>
               {isDag ? 'Dagbani' : 'EN'} counselling note
             </Text>
             {isAiPlan ? (
               <View style={{ backgroundColor: C.successBg, borderWidth: 1, borderColor: C.successBorder, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: C.success }}>AI enriched</Text>
+                <Text style={{ fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: C.success }}>AI enriched</Text>
               </View>
             ) : (
               <View style={{ backgroundColor: C.lb50, borderWidth: 1, borderColor: C.lb200, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: C.lb700 }}>Deterministic</Text>
+                <Text style={{ fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: C.lb700 }}>Deterministic</Text>
               </View>
             )}
           </View>
@@ -273,7 +274,7 @@ export function VoiceScreen({ navigation, route }: Props) {
               }}
               accessibilityLabel={audioPlaying ? 'Pause' : 'Play'}
             >
-              <Text style={{ color: '#fff', fontSize: 20 }}>{audioPlaying ? '⏸' : '▶'}</Text>
+              <Text style={{ color: '#fff', fontSize: 20, fontFamily: fonts.regular }}>{audioPlaying ? '⏸' : '▶'}</Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               {/* Progress bar */}
@@ -281,7 +282,7 @@ export function VoiceScreen({ navigation, route }: Props) {
                 <View style={{ width: `${progressPct}%`, height: '100%', backgroundColor: C.accent, borderRadius: 3 }} />
               </View>
               {/* Time */}
-              <Text style={{ fontSize: 11.5, color: C.fg4 }}>
+              <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg4 }}>
                 {formatTime(audioT)} / {formatTime(AUDIO_DURATION)}
               </Text>
             </View>
@@ -291,11 +292,11 @@ export function VoiceScreen({ navigation, route }: Props) {
         {/* ── Transcript ── */}
         <Text style={styles.eyebrow}>TRANSCRIPT</Text>
         <View style={styles.transcriptCard}>
-          <Text style={{ fontSize: 14, color: C.fg2, lineHeight: 22 }}>{transcript}</Text>
+          <Text style={{ fontSize: 14, fontFamily: fonts.regular, color: C.fg2, lineHeight: 22 }}>{transcript}</Text>
         </View>
         {isDag && (
           <View style={[styles.warningBanner]}>
-            <Text style={{ fontSize: 12.5, color: C.warningDark, fontWeight: '500' }}>
+            <Text style={{ fontSize: 13, fontFamily: fonts.medium, color: C.warningDark, fontWeight: '500' }}>
               Draft translation · pending native-speaker review
             </Text>
           </View>
@@ -355,19 +356,19 @@ export function VoiceScreen({ navigation, route }: Props) {
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>
+              <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>
                 {recording ? 'Recording…' : 'Record in your own words'}
               </Text>
               {recorded && (
                 <View style={{ backgroundColor: C.successBg, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text style={{ fontSize: 10.5, fontWeight: '700', color: C.success }}>READY</Text>
+                  <Text style={{ fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: C.success }}>READY</Text>
                 </View>
               )}
             </View>
             {recording ? (
-              <Text style={{ fontSize: 12, color: C.error, marginTop: 3 }}>{formatTime(recordT)}</Text>
+              <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.error, marginTop: 3 }}>{formatTime(recordT)}</Text>
             ) : (
-              <Text style={{ fontSize: 12, color: C.fg4, marginTop: 3 }}>
+              <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg4, marginTop: 3 }}>
                 {recorded ? 'Tap to re-record' : 'Tap to start · up to 2 minutes'}
               </Text>
             )}
@@ -382,7 +383,7 @@ export function VoiceScreen({ navigation, route }: Props) {
           onPress={handleDeliver}
           accessibilityLabel="Mark as delivered"
         >
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Mark as delivered</Text>
+          <Text style={{ color: '#fff', fontSize: 15, fontFamily: fonts.bold, fontWeight: '700' }}>Mark as delivered</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -407,11 +408,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#fff',
   },
   headerSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#92C9F9',
     marginTop: 2,
   },
@@ -431,7 +434,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   langPillText: {
-    fontSize: 11.5,
+    fontSize: 12,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: 'rgba(255,255,255,0.7)',
   },
@@ -484,6 +488,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg4,
     letterSpacing: 0.8,
@@ -510,6 +515,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg1,
     marginBottom: 10,

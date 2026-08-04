@@ -1,11 +1,11 @@
 /**
- * NurtureLink pilot seed — Tamale Metro district (Kukuo + Sagnarigu CHPS).
+ * NurtureLink pilot seed — all 5 northern Ghana regions.
  * Run with: pnpm --filter api db:seed
  *
  * QA credentials:
- *   CHO (Kukuo):       +233244000001 / PIN: 1234  →  Abubakari Sulemana
- *   CHO (Sagnarigu):   +233244000003 / PIN: 1234  →  Issah Tahiru
- *   Supervisor:        +233244000002 / PIN: 1234  →  Fati Abdulai
+ *   CHO (Kukuo):       +233244000001 / Test1234  →  Abubakari Sulemana
+ *   CHO (Sagnarigu):   +233244000003 / Test1234  →  Issah Tahiru
+ *   Supervisor:        +233244000002 / Test1234  →  Fati Abdulai
  *   System Admin:      +233000000001 / Admin1234!
  */
 
@@ -19,13 +19,31 @@ async function main() {
   console.log('Seeding pilot data...\n');
 
   // ── Agro Zone: Northern Savannah ───────────────────────────────────────────
+  const allDistricts = [
+    // Northern Region
+    'Tamale Metro', 'Sagnarigu', 'Nanton', 'Kumbungu', 'Tolon', 'Savelugu', 'Karaga',
+    'Gushegu', 'Mion', 'Nanumba North', 'Nanumba South', 'Zabzugu', 'Yendi',
+    // North East Region
+    'East Mamprusi', 'West Mamprusi', 'Mamprugu Moaduri', 'Yunyoo-Nasuan',
+    // Upper East Region
+    'Bolgatanga Municipal', 'Bongo', 'Builsa North', 'Builsa South',
+    'Kassena-Nankana East', 'Kassena-Nankana West', 'Talensi', 'Nabdam',
+    'Pusiga', 'Tempane', 'Garu', 'Bawku Municipal', 'Bawku West',
+    // Upper West Region
+    'Wa Municipal', 'Wa West', 'Wa East', 'Nandom', 'Lawra', 'Jirapa',
+    'Lambussie-Karni', 'Sissala East', 'Sissala West', 'Daffiama-Bussie-Issa',
+    // Savannah Region
+    'West Gonja', 'East Gonja', 'North Gonja', 'Central Gonja',
+    'Bole', 'Sawla-Tuna-Kalba', 'Kpandai',
+  ];
+
   const agroZone = await prisma.agroZone.upsert({
     where: { id: 'a1b2c3d4-0000-0000-0000-000000000001' },
-    update: { districts: ['East Mamprusi', 'West Mamprusi', 'Mamprugu Moaduri', 'Tamale Metro', 'Sagnarigu'] },
+    update: { districts: allDistricts },
     create: {
       id: 'a1b2c3d4-0000-0000-0000-000000000001',
       name: 'Northern Savannah',
-      districts: ['East Mamprusi', 'West Mamprusi', 'Mamprugu Moaduri', 'Tamale Metro', 'Sagnarigu'],
+      districts: allDistricts,
     },
   });
   console.log(`✓ Agro zone: ${agroZone.name}`);
@@ -66,10 +84,51 @@ async function main() {
       agroZoneId: agroZone.id,
     },
   });
-  console.log(`✓ Facilities: ${kukuoFacility.name}, ${sagnarigu.name}, ${nalerigu.name}`);
+  // ── Northern Region (additional districts) ────────────────────────────────
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000004' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000004', name: 'Savelugu CHPS Compound',   district: 'Savelugu',        region: 'Northern Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000005' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000005', name: 'Yendi CHPS Compound',      district: 'Yendi',           region: 'Northern Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000006' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000006', name: 'Tolon CHPS Compound',      district: 'Tolon',           region: 'Northern Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000007' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000007', name: 'Kumbungu CHPS Compound',   district: 'Kumbungu',        region: 'Northern Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000008' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000008', name: 'Gushegu CHPS Compound',    district: 'Gushegu',         region: 'Northern Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000009' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000009', name: 'Karaga CHPS Compound',     district: 'Karaga',          region: 'Northern Region', agroZoneId: agroZone.id } });
+
+  // ── North East Region (additional districts) ──────────────────────────────
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000010' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000010', name: 'Walewale CHPS Compound',   district: 'West Mamprusi',   region: 'North East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000011' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000011', name: 'Gambaga CHPS Compound',    district: 'East Mamprusi',   region: 'North East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000012' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000012', name: 'Yunyoo CHPS Compound',     district: 'Yunyoo-Nasuan',   region: 'North East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000013' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000013', name: 'Chereponi CHPS Compound',  district: 'Mamprugu Moaduri', region: 'North East Region', agroZoneId: agroZone.id } });
+
+  // ── Upper East Region ─────────────────────────────────────────────────────
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000014' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000014', name: 'Bolgatanga CHPS Compound',  district: 'Bolgatanga Municipal', region: 'Upper East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000015' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000015', name: 'Bawku CHPS Compound',       district: 'Bawku Municipal',  region: 'Upper East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000016' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000016', name: 'Navrongo CHPS Compound',    district: 'Kassena-Nankana East', region: 'Upper East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000017' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000017', name: 'Sandema CHPS Compound',     district: 'Builsa North',     region: 'Upper East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000018' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000018', name: 'Bongo CHPS Compound',       district: 'Bongo',            region: 'Upper East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000019' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000019', name: 'Paga CHPS Compound',        district: 'Kassena-Nankana West', region: 'Upper East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000020' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000020', name: 'Tongo CHPS Compound',       district: 'Talensi',          region: 'Upper East Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000021' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000021', name: 'Zebilla CHPS Compound',     district: 'Bawku West',       region: 'Upper East Region', agroZoneId: agroZone.id } });
+
+  // ── Upper West Region ─────────────────────────────────────────────────────
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000022' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000022', name: 'Wa CHPS Compound',          district: 'Wa Municipal',     region: 'Upper West Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000023' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000023', name: 'Lawra CHPS Compound',       district: 'Lawra',            region: 'Upper West Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000024' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000024', name: 'Nandom CHPS Compound',      district: 'Nandom',           region: 'Upper West Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000025' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000025', name: 'Jirapa CHPS Compound',      district: 'Jirapa',           region: 'Upper West Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000026' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000026', name: 'Tumu CHPS Compound',        district: 'Sissala East',     region: 'Upper West Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000027' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000027', name: 'Gwolu CHPS Compound',       district: 'Sissala West',     region: 'Upper West Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000028' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000028', name: 'Hamile CHPS Compound',      district: 'Lambussie-Karni',  region: 'Upper West Region', agroZoneId: agroZone.id } });
+
+  // ── Savannah Region ───────────────────────────────────────────────────────
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000029' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000029', name: 'Damongo CHPS Compound',    district: 'West Gonja',       region: 'Savannah Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000030' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000030', name: 'Salaga CHPS Compound',     district: 'East Gonja',       region: 'Savannah Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000031' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000031', name: 'Bole CHPS Compound',       district: 'Bole',             region: 'Savannah Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000032' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000032', name: 'Sawla CHPS Compound',      district: 'Sawla-Tuna-Kalba', region: 'Savannah Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000033' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000033', name: 'Kpandai CHPS Compound',    district: 'Kpandai',          region: 'Savannah Region', agroZoneId: agroZone.id } });
+  await prisma.facility.upsert({ where: { id: 'f1000000-0000-0000-0000-000000000034' }, update: {}, create: { id: 'f1000000-0000-0000-0000-000000000034', name: 'Yapei CHPS Compound',      district: 'Central Gonja',    region: 'Savannah Region', agroZoneId: agroZone.id } });
+
+  console.log('✓ Facilities: 34 CHPS compounds across 5 northern regions');
 
   // ── Users ──────────────────────────────────────────────────────────────────
-  const pinHash = await bcrypt.hash('1234', 10);
+  const passwordHash = await bcrypt.hash('Test1234', 10);
   const adminHash = await bcrypt.hash('Admin1234!', 10);
 
   // CHO 1 — Abubakari Sulemana, Kukuo CHPS (primary QA CHO)
@@ -82,7 +141,7 @@ async function main() {
       lastName:     'Sulemana',
       role:         'CHO',
       phone:        '+233244000001',
-      passwordHash: pinHash,
+      passwordHash: passwordHash,
       facilityId:   kukuoFacility.id,
     },
   });
@@ -97,7 +156,7 @@ async function main() {
       lastName:     'Abdulai',
       role:         'supervisor',
       phone:        '+233244000002',
-      passwordHash: pinHash,
+      passwordHash: passwordHash,
       facilityId:   kukuoFacility.id,
     },
   });
@@ -112,7 +171,7 @@ async function main() {
       lastName:     'Tahiru',
       role:         'CHO',
       phone:        '+233244000003',
-      passwordHash: pinHash,
+      passwordHash: passwordHash,
       facilityId:   sagnarigu.id,
     },
   });
@@ -450,9 +509,9 @@ async function main() {
 
   console.log('\n═══════════════════════════════════════════════════════');
   console.log(' Seed complete ✓ — QA credentials:');
-  console.log('   CHO (Kukuo):     +233244000001 / PIN 1234  →  Abubakari Sulemana');
-  console.log('   CHO (Sagnarigu): +233244000003 / PIN 1234  →  Issah Tahiru');
-  console.log('   Supervisor:      +233244000002 / PIN 1234  →  Fati Abdulai');
+  console.log('   CHO (Kukuo):     +233244000001 / Test1234  →  Abubakari Sulemana');
+  console.log('   CHO (Sagnarigu): +233244000003 / Test1234  →  Issah Tahiru');
+  console.log('   Supervisor:      +233244000002 / Test1234  →  Fati Abdulai');
   console.log('   System Admin:    +233000000001 / Admin1234!');
   console.log('═══════════════════════════════════════════════════════\n');
 }

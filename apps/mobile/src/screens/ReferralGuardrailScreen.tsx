@@ -11,6 +11,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
 import { useAppStore } from '../store';
 import { ChevronLeft, AlertTriangle, Shield, Phone } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReferralGuardrail'>;
 
@@ -144,11 +145,13 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 24,
+    fontFamily: fonts.semiBold,
     color: '#FFFFFF',
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -176,6 +179,7 @@ const styles = StyleSheet.create({
   },
   headingTitle: {
     fontSize: 20,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#9B1C1C',
     textAlign: 'center',
@@ -183,7 +187,8 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   headingBody: {
-    fontSize: 13.5,
+    fontSize: 14,
+    fontFamily: fonts.regular,
     color: '#374151',
     textAlign: 'center',
     maxWidth: 290,
@@ -200,7 +205,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   eyebrow: {
-    fontSize: 10.5,
+    fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#C81E1E',
     letterSpacing: 0.7,
@@ -215,13 +221,14 @@ const styles = StyleSheet.create({
   bulletDot: {
     width: 9,
     height: 9,
-    borderRadius: 4.5,
+    borderRadius: 4,
     backgroundColor: '#C81E1E',
     marginTop: 4,
     flexShrink: 0,
   },
   bulletText: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#374151',
     flex: 1,
     lineHeight: 19,
@@ -235,7 +242,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   facilityEyebrow: {
-    fontSize: 10.5,
+    fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#92C9F9',
     letterSpacing: 0.7,
@@ -243,12 +251,14 @@ const styles = StyleSheet.create({
   },
   facilityName: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   facilityMeta: {
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
   },
 
@@ -265,7 +275,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   followText: {
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#08283B',
     flex: 1,
     lineHeight: 18,
@@ -295,6 +306,7 @@ const styles = StyleSheet.create({
   },
   callBtnText: {
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#C81E1E',
   },
@@ -307,6 +319,7 @@ const styles = StyleSheet.create({
   },
   issueBtnText: {
     fontSize: 14,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },

@@ -5,6 +5,31 @@ An offline-first nutrition decision-support app for CHPS Community Health Office
 Built for the **UNICEF AI for Nurturing Care Hackathon** (KOICA / MEST StartUp Lab).
 Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
 
+> **Status — working offline-first MVP.** The recommendation engine, encrypted on-device storage (SQLCipher), outbox sync, the severe-case referral guardrail, and 50+ passing engine tests are implemented and runnable against a seeded pilot district. Voice audio playback, the longitudinal trend chart, and the DHIMS2 export are in progress for the 26–28 August bootcamp.
+
+**Team:** Yakubu Lute (Technical Lead) · Leticia Offeibea (Health & Nutrition Domain)
+**Jump to:** [Screenshots](#screenshots) · [Recommendation Engine](#10-recommendation-engine) · [AI Architecture](#12-ai-architecture) · [Challenge Mapping](#20-unicef-challenge-area-mapping)
+
+**Implemented:** client registration · visit capture · dietary-diversity scoring · deterministic recommendation engine · seasonal + affordability food selection · referral guardrail · offline SQLite with outbox sync · at-rest encryption · JWT/PIN auth · reference-bundle versioning · Express + Prisma backend · pilot-district seed data
+**In progress (bootcamp):** Dagbani audio playback · trend chart on client screen · pull-sync UI · DHIMS2 export serializer · field validation of food/threshold data
+
+---
+
+## Screenshots
+
+| | | |
+| --- | --- | --- |
+| ![Sign in](docs/screenshots/01-login.PNG) | ![Caseload](docs/screenshots/02-home-caseload.PNG) | ![Trend](docs/screenshots/03-client-amina-declining-hb.PNG) |
+| **Sign in / offline mode** | **Prioritised caseload** | **Longitudinal nutrition trend** |
+| ![Plan](docs/screenshots/04-plan-amina.PNG) | ![Referral guardrail](docs/screenshots/06-issue-referral.PNG) | ![Referrals](docs/screenshots/referrals.PNG) |
+| **Seasonal food plan + voice note** | **Severe-case referral guardrail** | **Referral tracker** |
+| ![Records](docs/screenshots/07-amina-records.PNG) | ![Registration](docs/screenshots/13-registeration-page.PNG) | ![Sync](docs/screenshots/data-sync.PNG) |
+| **Visit history** | **Client registration** | **Data sync** |
+| ![Offline](docs/screenshots/offline-user.PNG) | ![Profile](docs/screenshots/profile-and-device.PNG) | |
+| **Offline mode** | **Profile & device info** | |
+
+> Screenshots captured on iPhone 11 (portrait).
+
 ---
 
 ## Table of Contents
@@ -20,7 +45,7 @@ Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
 9. [Data Model](#9-data-model)
 10. [Recommendation Engine](#10-recommendation-engine)
 11. [Offline-First and Sync Protocol](#11-offline-first-and-sync-protocol)
-12. [AI Integration](#12-ai-integration)
+12. [AI Architecture](#12-ai-architecture)
 13. [Voice Delivery System](#13-voice-delivery-system)
 14. [Admin Web Back-Office](#14-admin-web-back-office)
 15. [DHIMS2 Interoperability](#15-dhims2-interoperability)
@@ -37,6 +62,7 @@ Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
 In Northern Ghana, roughly a third of children aged 6–23 months are stunted and fewer than 4 in 10 receive a minimum acceptable diet. Children eating fewer than 4 food groups are nearly 4× more likely to be wasted. The Northern Region reported 100 institutional maternal deaths in 2023 (ratio: 136.7 per 100,000 live births) against the national SDG 3.1 target of < 70 per 100,000 by 2030.
 
 The health worker currently has no tool for two critical tasks:
+
 1. Seeing how a client's nutrition is trending across visits (not just point-in-time readings).
 2. Knowing which specific foods to recommend that are nutritious, in season, affordable, and locally available today.
 
@@ -48,24 +74,25 @@ NurtureLink adds **no new measurements**. It makes the data the CHO already coll
 
 ## 2. Tech Stack
 
-| Layer | Choice | Rationale |
-|---|---|---|
-| Mobile | React Native + Expo (EAS) | Team's existing RN/Expo expertise; TypeScript shared with backend |
-| Backend | Express.js + TypeScript | Repository→Service→Route pattern; one language across stack |
-| ORM | Prisma | Typed models, clean Postgres migrations |
-| Server DB | PostgreSQL | Given |
-| On-device DB | op-sqlite (SQLCipher encryption) | Control + simplicity; encrypted at rest |
-| Validation | Zod (shared client/server) | End-to-end type safety |
-| Object storage | S3-compatible | Voice pack audio assets |
-| Admin UI | React + Vite (or Express Admin) | Reference data curation for district nutrition officers |
-| LLM | Claude API (Haiku tier) | Script rephrasing and free-text recall parsing only |
+| Layer            | Choice                                        | Rationale                                                                        |
+| ---------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
+| Mobile           | React Native + Expo (EAS)                     | Team's existing RN/Expo expertise; TypeScript shared with backend                |
+| Backend          | Express.js + TypeScript                       | Repository→Service→Route pattern; one language across stack                       |
+| ORM              | Prisma                                        | Typed models, clean Postgres migrations                                          |
+| Server DB        | PostgreSQL                                     | Given                                                                            |
+| On-device DB     | op-sqlite (SQLCipher encryption)              | Control + simplicity; encrypted at rest                                          |
+| Validation       | Zod (shared client/server)                    | End-to-end type safety                                                           |
+| Object storage   | S3-compatible                                 | Voice pack audio assets                                                          |
+| Admin UI         | React + Vite (or Express Admin)               | Reference data curation for district nutrition officers                         |
+| AI engine (core) | On-device deterministic recommendation engine | Explainable, constraint-based decision-support AI — the product's core intelligence |
+| LLM (enrichment) | Claude API (Haiku tier)                       | Bounded accessibility layer: rephrases the fixed plan into local language and parses recall; makes no clinical decision |
 
 ---
 
 ## 3. Repository Structure
 
-```text
-mest-hackathon/
+```
+nurturelink/
 ├── apps/
 │   ├── mobile/              # React Native / Expo app
 │   │   ├── src/
@@ -95,6 +122,7 @@ mest-hackathon/
 │   ├── schema.prisma
 │   └── migrations/
 ├── docs/
+│   ├── screenshots/         # App screenshots used in this README
 │   └── specifications/      # Source specs — read-only reference
 ├── CLAUDE.md
 ├── SKILLS.md
@@ -105,7 +133,7 @@ mest-hackathon/
 
 ## 4. Getting Started
 
-```bash
+```
 # Install (from root — monorepo managed with pnpm workspaces)
 pnpm install
 
@@ -138,7 +166,7 @@ pnpm test                       # All tests
 
 ### Backend: Repository → Service → Route
 
-```typescript
+```
 // Route: thin. Validate input, delegate to service, return response.
 router.post('/sync/push', authenticate, async (req, res) => {
   const body = SyncPushSchema.parse(req.body);   // Zod — throws on invalid
@@ -164,7 +192,7 @@ class SyncRepository {
 
 The recommendation engine (`apps/mobile/src/engine/`) must be a pure function:
 
-```typescript
+```
 generatePlan(input: PlanInput, referenceBundle: ReferenceBundle): PlanResult | ReferralRequired
 ```
 
@@ -178,17 +206,17 @@ Define all entity schemas in `packages/shared`. Import them in both `apps/mobile
 
 Use the platform's own widgets wherever they exist. Never use a `TextInput` to collect data that has a dedicated native control.
 
-| Use case | Component | Notes |
-|---|---|---|
-| Date / time entry | `@react-native-community/datetimepicker` | Renders native calendar on Android/iOS; `<input type="date">` on web |
-| Toggle / on-off | `Switch` (React Native built-in) | Use for boolean settings, not custom `View` toggles |
-| Scroll lists | `FlatList` / `SectionList` | Never render a long list inside a `ScrollView` |
-| Alerts / confirmations | `Alert` (React Native built-in) | Never build a custom modal for simple yes/no prompts |
-| Loading indicator | `ActivityIndicator` (React Native built-in) | |
+| Use case               | Component                                   | Notes                                                                |
+| ---------------------- | ------------------------------------------- | -------------------------------------------------------------------- |
+| Date / time entry      | `@react-native-community/datetimepicker`    | Renders native calendar on Android/iOS; `<input type="date">` on web |
+| Toggle / on-off        | `Switch` (React Native built-in)            | Use for boolean settings, not custom `View` toggles                  |
+| Scroll lists           | `FlatList` / `SectionList`                  | Never render a long list inside a `ScrollView`                       |
+| Alerts / confirmations | `Alert` (React Native built-in)             | Never build a custom modal for simple yes/no prompts                 |
+| Loading indicator      | `ActivityIndicator` (React Native built-in) |                                                                      |
 
 **Date picker implementation pattern:**
 
-```typescript
+```
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform, Pressable } from 'react-native';
 import { CalendarDays } from 'lucide-react-native';
@@ -224,6 +252,7 @@ const dateValue = isoString ? new Date(isoString) : null;
 ```
 
 **Date picker rules:**
+
 - Never use `TextInput` with `keyboardType="numeric"` for dates — use `DateTimePicker`
 - Always store dates as ISO strings (`YYYY-MM-DD`) internally, format for display only
 - Pass `maximumDate={new Date()}` for past dates (DOB), omit for future dates (EDD)
@@ -233,20 +262,21 @@ const dateValue = isoString ? new Date(isoString) : null;
 
 All icons in the mobile app **must** use `lucide-react-native`. No exceptions.
 
-```typescript
+```
 // Correct
 import { ChevronLeft, Bell, AlertTriangle } from 'lucide-react-native';
 <ChevronLeft size={24} color="#08283B" />
 
 // Forbidden — never do any of these
 <Text>‹</Text>          // Unicode character as icon
-<Text>🔔</Text>         // Emoji as icon
-<Text>⚠</Text>          // Symbol as icon
+<Text>(bell emoji)</Text>   // Emoji as icon
+<Text>(warning symbol)</Text> // Symbol as icon
 // Custom View-drawn icon shapes (border trick triangles, etc.)
 // @expo/vector-icons or any other icon library
 ```
 
 **Icon rules:**
+
 - Import named icon components directly from `lucide-react-native`
 - Always pass `size` (number, default 24) and `color` (hex string)
 - No emoji characters anywhere in UI components — not even for "convenience"
@@ -259,7 +289,7 @@ import { ChevronLeft, Bell, AlertTriangle } from 'lucide-react-native';
 
 **Never break these.**
 
-1. **The LLM never makes clinical decisions.** The clinical core (flags, food selection, nutrient adequacy, referral thresholds) is deterministic rule-based logic running on-device. The LLM only rephrases a fixed plan into natural language and parses free-text recall. If the LLM is down, care continues.
+1. **The core intelligence is the deterministic on-device engine; the LLM never makes clinical decisions.** The engine (flags, food selection, nutrient adequacy, referral thresholds) is explainable, constraint-based decision-support that runs on-device and is auditable. The LLM only rephrases the engine's fixed plan into natural language and parses free-text recall. If the LLM is down, care continues unchanged.
 
 2. **The mobile app is fully functional with no network.** Every core flow — register client, record visit, compute flags, generate plan, issue referral — must work offline indefinitely. Network is an enhancement for sync and AI enrichment only.
 
@@ -286,11 +316,11 @@ import { ChevronLeft, Bell, AlertTriangle } from 'lucide-react-native';
 - **CHO** = Community Health Officer. The primary user. Covers a zone of scattered rural households. Carries a smartphone, frequently offline.
 - **CHPS compound** = The local health post serving one zone.
 - **DHIMS2** = District Health Information Management System (version 2). Ghana's national health information system.
-- **TTFPP** = Targeted Therapeutic Feeding Programme — intervention pathway for severe acute malnutrition.
 
 ### What the CHO Already Measures
 
 At each client visit:
+
 - **Weight (kg)** — plotted against WHO weight-for-age growth standards for children
 - **Haemoglobin / Hb (g/dL)** — anaemia indicator for pregnant women
 - **MUAC (mm)** — Mid-Upper Arm Circumference; acute malnutrition indicator for children
@@ -301,6 +331,7 @@ At each client visit:
 **Minimum Acceptable Diet (MAD):** WHO/UNICEF composite indicator for children 6–23 months. Requires meeting both minimum meal frequency and minimum dietary diversity (≥ 4 of 8 food groups).
 
 **8 IYCF Food Groups:**
+
 1. Grains, roots, and tubers
 2. Legumes and nuts
 3. Dairy products (milk, yogurt, cheese)
@@ -313,6 +344,7 @@ At each client visit:
 **Diet Diversity Score (DDS):** count of distinct food groups consumed. Target: ≥ 4 for MAD.
 
 **Nutrient Gaps (common in Northern Ghana):**
+
 - Pregnant women: iron (anaemia), folate (neural tube), energy
 - Children 6–23 months: iron, vitamin A, zinc, protein, energy (diet diversity)
 - Children 24–59 months: iron, protein, energy
@@ -321,23 +353,24 @@ At each client visit:
 
 ### CHO Daily Workflow
 
-| Time | CHO Action | NurtureLink |
-|---|---|---|
-| Start of day | Review today's visit list | Pre-sorted priority list by risk score |
-| At household | Greet, take measurements | < 60 sec data entry (numeric fields + tap-selectors) |
-| During visit | Counsel on nutrition | View flags, generate plan, review rationale |
-| Play/share | Hand guidance to caregiver | Play local-language voice note, or share via WhatsApp/Xender |
-| Severe case | Route to referral | Referral guardrail blocks counselling, prompts referral |
-| End of month | Submit DHIMS2 tally | Auto-generated tally summary from digital entries |
+| Time         | CHO Action                 | NurtureLink                                                  |
+| ------------ | -------------------------- | ------------------------------------------------------------ |
+| Start of day | Review today's visit list  | Pre-sorted priority list by risk score                       |
+| At household | Greet, take measurements   | < 60 sec data entry (numeric fields + tap-selectors)         |
+| During visit | Counsel on nutrition       | View flags, generate plan, review rationale                  |
+| Play/share   | Hand guidance to caregiver | Play local-language voice note, or share via WhatsApp/Xender |
+| Severe case  | Route to referral          | Referral guardrail blocks counselling, prompts referral      |
+| End of month | Submit DHIMS2 tally        | Auto-generated tally summary from digital entries            |
 
 ### Voice Asset Transfer to Caregivers
 
-The caregiver often has a feature phone and is low-literacy. Three transfer methods:
+The caregiver often has a feature phone and is low-literacy. Three transfer methods today:
+
 1. **In-person playback** (primary): CHO plays the voice note through the phone speaker during the visit.
 2. **Bluetooth push** (offline): direct device-to-device transfer for feature phones.
 3. **WhatsApp/Xender share** (online/peer-to-peer): share the audio file if the caregiver has a smartphone.
 
-No app or data connection required on the caregiver's device.
+No app or data connection required on the caregiver's device. A direct IVR channel is on the roadmap (see §13).
 
 ---
 
@@ -348,21 +381,24 @@ All thresholds are sourced from WHO/IYCF/GHS references and stored in the `clini
 ### Severity Classification
 
 **For children (MUAC):**
-| MUAC | Severity | Action |
-|---|---|---|
-| ≥ 125 mm | OK / Green | Proceed to counselling |
-| 115–124 mm | Watch / Yellow | Flag; counsel with extra emphasis |
-| < 115 mm | Severe / Red | **Referral required — no home plan** |
+
+| MUAC       | Severity       | Action                               |
+| ---------- | -------------- | ------------------------------------ |
+| ≥ 125 mm   | OK / Green     | Proceed to counselling               |
+| 115–124 mm | Watch / Yellow | Flag; counsel with extra emphasis    |
+| < 115 mm   | Severe / Red   | **Referral required — no home plan** |
 
 **For pregnant women (Hb):**
-| Hb (g/dL) | Severity | Action |
-|---|---|---|
-| ≥ 11.0 | OK / Green | Proceed to counselling |
-| 8.0–10.9 | Watch / Yellow | Flag; iron/folate emphasis |
-| 7.0–7.9 | Moderate | Flag; counsel + reinforce supplement |
-| < 7.0 | Severe / Red | **Referral required — no home plan** |
+
+| Hb (g/dL) | Severity       | Action                               |
+| --------- | -------------- | ------------------------------------ |
+| ≥ 11.0    | OK / Green     | Proceed to counselling               |
+| 8.0–10.9  | Watch / Yellow | Flag; iron/folate emphasis           |
+| 7.0–7.9   | Moderate       | Flag; counsel + reinforce supplement |
+| < 7.0     | Severe / Red   | **Referral required — no home plan** |
 
 **Obstetric danger signs** (any present → referral required):
+
 - Severe headache or visual disturbance
 - Severe abdominal pain
 - Heavy vaginal bleeding
@@ -371,38 +407,39 @@ All thresholds are sourced from WHO/IYCF/GHS references and stored in the `clini
 - Baby not moving (third trimester)
 
 **Weight-for-age (children):**
-| Z-score | Classification |
-|---|---|
-| ≥ −1 SD | Normal |
-| −2 to −1 SD | Watch |
-| −3 to −2 SD | Moderately underweight |
-| < −3 SD | Severely underweight — referral |
+
+| Z-score     | Classification                  |
+| ----------- | ------------------------------- |
+| ≥ −1 SD     | Normal                          |
+| −2 to −1 SD | Watch                           |
+| −3 to −2 SD | Moderately underweight          |
+| < −3 SD     | Severely underweight — referral |
 
 ### Prioritisation Flags
 
-| Flag | Signal |
-|---|---|
-| `FALLING_HB` | Hb decreased by ≥ 0.5 g/dL vs. previous visit |
-| `FLAT_WEIGHT` | Weight gain < expected trajectory for 2+ consecutive visits |
-| `LOW_DIVERSITY` | DDS < 4 in latest dietary recall |
-| `DANGER_SIGNS` | Any obstetric danger sign present |
-| `SEVERE_MUAC` | MUAC < 115 mm |
-| `SEVERE_ANAEMIA` | Hb < 7.0 g/dL |
+| Flag             | Signal                                                      |
+| ---------------- | ----------------------------------------------------------- |
+| `FALLING_HB`     | Hb decreased by ≥ 0.5 g/dL vs. previous visit               |
+| `FLAT_WEIGHT`    | Weight gain < expected trajectory for 2+ consecutive visits |
+| `LOW_DIVERSITY`  | DDS < 4 in latest dietary recall                            |
+| `DANGER_SIGNS`   | Any obstetric danger sign present                           |
+| `SEVERE_MUAC`    | MUAC < 115 mm                                               |
+| `SEVERE_ANAEMIA` | Hb < 7.0 g/dL                                               |
 
 ### Nutrient Targets (WHO/IYCF)
 
-| Profile | Nutrient | Daily Target |
-|---|---|---|
-| Pregnant | Iron | 27 mg |
-| Pregnant | Folate | 600 µg DFE |
-| Pregnant | Energy | 2340 kcal |
-| Child 6–23m | Iron | 11 mg |
-| Child 6–23m | Vitamin A | 400 µg RAE |
-| Child 6–23m | Zinc | 3 mg |
-| Child 6–23m | Protein | 13 g |
-| Child 24–59m | Iron | 7 mg |
-| Child 24–59m | Protein | 19 g |
-| Child 24–59m | Energy | 1350 kcal |
+| Profile      | Nutrient  | Daily Target |
+| ------------ | --------- | ------------ |
+| Pregnant     | Iron      | 27 mg        |
+| Pregnant     | Folate    | 600 µg DFE   |
+| Pregnant     | Energy    | 2340 kcal    |
+| Child 6–23m  | Iron      | 11 mg        |
+| Child 6–23m  | Vitamin A | 400 µg RAE   |
+| Child 6–23m  | Zinc      | 3 mg         |
+| Child 6–23m  | Protein   | 13 g         |
+| Child 24–59m | Iron      | 7 mg         |
+| Child 24–59m | Protein   | 19 g         |
+| Child 24–59m | Energy    | 1350 kcal    |
 
 ---
 
@@ -648,11 +685,11 @@ CREATE TABLE telemetry_events (
 
 ## 10. Recommendation Engine
 
-The core IP of the product. Runs entirely on-device, is deterministic, and produces reproducible results from the same inputs.
+The core AI of the product, and its core IP. Runs entirely on-device, is deterministic, and produces reproducible results from the same inputs. Matching a nutrient gap to the right foods under seasonal, availability, and affordability constraints is a constraint-satisfaction and optimisation problem; solving it transparently is what makes this explainable decision-support AI rather than a black box.
 
 ### Function Signature
 
-```typescript
+```
 interface PlanInput {
   clientType: 'pregnant' | 'child';
   ageMonths?: number;
@@ -687,6 +724,7 @@ interface PlanResult {
 **Step 0: Referral guardrail (hard stop)**
 
 Before any computation, check `clinical_thresholds` for severe flags:
+
 - MUAC < 115 mm → `ReferralRequired`
 - Hb < 7.0 g/dL → `ReferralRequired`
 - Any `DANGER_SIGNS` flag present → `ReferralRequired`
@@ -704,6 +742,7 @@ child, 24–59 months → profile: 'child_24_59m'→ { iron: 7mg, protein: 19g, 
 **Step 2: Identify active nutrient gaps**
 
 From the flags:
+
 - `FALLING_HB` or anaemia watch → iron, folate (pregnant); iron (children)
 - `FLAT_WEIGHT` → energy, protein
 - `LOW_DIVERSITY` → all food groups; prioritise missing groups from diet recall
@@ -712,6 +751,7 @@ From the flags:
 **Step 3: Build candidate food set**
 
 Filter `foods` to items where ALL of:
+
 - `affordability_tier` ≤ `affordabilityCeiling`
 - AND at least one of:
   - `seasonal_availability` for (`agroZoneId`, `currentMonth`) is `abundant` or `available`
@@ -724,6 +764,7 @@ Filter `foods` to items where ALL of:
 Goal: select 5–6 foods that maximise nutrient gap coverage with minimum cost and variety.
 
 Greedy selection:
+
 1. For each active nutrient gap, score all candidate foods by: `nutrient_value / affordability_cost_band_rank`
 2. Pick the highest-scoring food for the primary gap not yet covered
 3. Add to basket. Recompute which gaps remain
@@ -742,7 +783,8 @@ Report as a fraction (0–1). The UI renders this as a percentage.
 **Step 6: Build rationale**
 
 For each selected food, record which constraints drove its selection:
-```json
+
+```
 {
   "food_id": "uuid",
   "reasons": ["in_season_abundant", "closes_iron_gap", "storable", "affordability_staple_cheap"]
@@ -804,12 +846,12 @@ This is the fallback voice script. AI enrichment replaces it with a warmer versi
 
 ### Conflict Resolution
 
-| Entity | Strategy |
-|---|---|
-| `visits` | Append-only. No true conflicts. |
-| `client` profile fields | Last-write-wins by server `updated_at`. |
-| `referral` status | Surface conflict flag for worker resolution. Never silently overwrite. |
-| `plans`, `flags` | Derived — can be recomputed. Safe to overwrite. |
+| Entity                  | Strategy                                                               |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `visits`                | Append-only. No true conflicts.                                        |
+| `client` profile fields | Last-write-wins by server `updated_at`.                                |
+| `referral` status       | Surface conflict flag for worker resolution. Never silently overwrite. |
+| `plans`, `flags`        | Derived — can be recomputed. Safe to overwrite.                        |
 
 ### Sync Trigger Events
 
@@ -821,9 +863,23 @@ This is the fallback voice script. AI enrichment replaces it with a warmer versi
 
 ---
 
-## 12. AI Integration
+## 12. AI Architecture
 
-### Architecture
+NurtureLink's intelligence lives in two layers, kept deliberately apart. The split is what makes the system both genuinely AI-driven and safe.
+
+### Layer 1 — The decision-support engine (the core AI)
+
+The intelligence at the heart of the product is the recommendation engine. Matching a client's specific nutrient gap to the right foods, under the real-world constraints of what is in season, affordable, and locally available this month, is a constraint-satisfaction and optimisation problem. The engine solves it deterministically against a curated knowledge base of WHO/IYCF nutrient targets, food composition, and per-district seasonal availability.
+
+This is explainable, knowledge-based decision-support AI, built for a safety-critical, low-trust setting. Its determinism is a feature, not a limitation: every recommendation is auditable, reproducible from its inputs and reference-bundle version, and carries a plain-language rationale the health worker can see. It runs fully on-device, so the intelligence is available with no connectivity at all. See §10 for the full algorithm.
+
+We deliberately keep generative models out of the clinical decision path, because a food or dosage recommendation must be traceable to a reference, never invented.
+
+### Layer 2 — The LLM enrichment layer (bounded, optional)
+
+A large language model (Claude Haiku) sits on top as an accessibility layer. It decides nothing clinical. Its only jobs are to rephrase the engine's already-fixed plan into warm, natural local language for the caregiver, and optionally to parse a free-text dietary recall into food groups. It runs server-side when online, its output is validated against the deterministic plan before use, and if it is unavailable a template produces a functional version of the same plan, so care never depends on it.
+
+### How the two layers fit together
 
 ```
 CLINICAL CORE (device, deterministic, always available)
@@ -840,18 +896,19 @@ free-text recall ─(online)─► LLM: parse ──► food groups ──► di
                  └─(offline)─► manual food-group tap-select (fallback)
 ```
 
-The LLM never decides what to recommend. It only formats and parses.
+The engine decides; the LLM only formats and parses.
 
 ### Flow 1 — Counselling Script Generation
 
-**Purpose:** Turn the deterministic plan into a warm, culturally appropriate caregiver script ready for voice.
+**Purpose:** turn the deterministic plan into a warm, culturally appropriate caregiver script ready for voice.
 
-**Trigger:** Plan generated and device is online.
+**Trigger:** plan generated and device is online.
 
-**Where it runs:** Backend proxies to Claude API. Keys never touch the device.
+**Where it runs:** backend proxies to the Claude API. Keys never touch the device.
 
 **Input to LLM:**
-```json
+
+```
 {
   "client": { "type": "pregnant", "gestation_weeks": 30 },
   "language": "dagbani",
@@ -866,6 +923,7 @@ The LLM never decides what to recommend. It only formats and parses.
 ```
 
 **System prompt (essence):**
+
 ```
 You are a nutrition counselling translator. Rephrase ONLY the facts provided into a short,
 warm, plain caregiver message in the target language. Do not add any food, quantity, dosage,
@@ -874,15 +932,16 @@ fences, no explanation.
 ```
 
 **Output validation (non-negotiable):**
+
 - Parse JSON; reject if malformed
 - Check every food name in the script is present in the input foods list
 - Check no numeric value appears in the script that is not in the input
-- On validation failure: discard, fall back to template script
+- On validation failure: discard, fall back to the template script
 - Log: input hash, model, version, output hash, validation_passed
 
-**Caching:** Cache by plan signature = hash(client_profile + food_ids + language + bundle_version).
+**Caching:** cache by plan signature = hash(client_profile + food_ids + language + bundle_version).
 
-**Offline fallback:** Use templated script from the engine. AI script replaces it on next sync.
+**Offline fallback:** the engine's template script. The AI script replaces it on next sync.
 
 ### Flow 2 — Dietary Recall Parsing (Could-Have)
 
@@ -890,31 +949,33 @@ fences, no explanation.
 
 **Output:** `{ "food_groups": ["grains", "legumes_nuts", "eggs"] }`
 
-Worker must confirm output before it counts toward the DDS. Manual tap-select is the default fallback.
+The worker confirms the output before it counts toward the DDS. Manual tap-select is the default fallback.
 
 ### Responsible AI Controls
 
-| Control | Implementation |
-|---|---|
-| No PII to LLM | Send plan facts only; no client name, ID, or health record |
-| Output validation | Check foods + claims against deterministic plan before use |
-| Fallback | Template always available; LLM is enhancement only |
-| Audit log | Every LLM call: input hash, model, version, output hash, validation result |
-| Human review | Worker reviews every plan and script before caregiver sees it |
-| Explainability | Every plan reproducible from inputs + bundle version; rationale exposed in UI |
+| Control              | Implementation                                                                |
+| -------------------- | ----------------------------------------------------------------------------- |
+| Core is explainable  | Clinical decisions come from the deterministic engine, reproducible from inputs + bundle version |
+| No PII to LLM        | Send plan facts only; no client name, ID, or health record                    |
+| Output validation    | Check foods + claims against the deterministic plan before use                |
+| Fallback             | Template always available; the LLM is enhancement only                        |
+| Audit log            | Every LLM call: input hash, model, version, output hash, validation result    |
+| Human review         | Worker reviews every plan and script before the caregiver sees it             |
+| Severe-case bypass   | MUAC < 115, Hb < 7, or any danger sign routes to referral without touching the LLM |
 
-**Model:** Claude Haiku. API keys server-side only — never shipped to the device.
+**Model:** Claude Haiku. API keys server-side only, never shipped to the device.
 
 ### Responsible AI Checklist
 
 Before any AI feature ships:
 
-- [ ] LLM output validated against deterministic plan before use
+- [ ] Clinical decision made by the deterministic engine, not the LLM
+- [ ] LLM output validated against the deterministic plan before use
 - [ ] Fallback to template on validation failure or LLM unavailability
-- [ ] No PII sent to LLM
+- [ ] No PII sent to the LLM
 - [ ] Every LLM call logged with input, model, version, and output hash
 - [ ] Human worker reviews every plan before it reaches a caregiver
-- [ ] Severe-case guardrail bypasses AI entirely
+- [ ] Severe-case guardrail bypasses the LLM entirely
 
 ---
 
@@ -927,11 +988,13 @@ Before any AI feature ships:
 ### Phrase Architecture
 
 A voice pack contains:
+
 - **Named audio clips** for: each food's local name, standard counselling phrases (greetings, "eat this food", "every day", "remember your supplement", "go to the health facility immediately"), and connecting words.
 - **Template map:** a JSON structure mapping plan fields to an ordered sequence of phrase keys.
 
 Example template map:
-```json
+
+```
 {
   "pregnant_plan": [
     "greeting",
@@ -953,13 +1016,17 @@ The app assembles clips in order → a single `.aac` audio file per plan.
 
 ### Playback and Sharing
 
-```typescript
+```
 // Playback
 Audio.Sound.createAsync({ uri: plan.assembledAudioUri });
 
 // Share
 Share.share({ url: plan.assembledAudioUri, message: 'NurtureLink nutrition plan' });
 ```
+
+### Between-Visit Reach (Roadmap)
+
+Today the caregiver receives the plan through the CHO's phone (in-person playback, Bluetooth push, or WhatsApp/Xender share). On the roadmap, the same voice plan extends to an **IVR (interactive voice response)** line: a caregiver on any basic feature phone can receive the plan and reminders as a call in her own language, with no app and no data, and respond by keypad. This reuses the voice content the engine already produces, so it is a delivery step, not a redesign.
 
 ### Language Roadmap
 
@@ -973,39 +1040,45 @@ Planned: Mampruli, Gonja, Gurune, Dagaare, Kusaal, Hausa.
 
 ### Roles
 
-| Role | Permissions |
-|---|---|
-| `system_admin` | User provisioning, facility mappings, system parameters, publish bundles |
-| `district_admin` | Food composition CRUD, seasonal calendar, audio uploads, DHIMS2 export |
+| Role             | Permissions                                                              |
+| ---------------- | ------------------------------------------------------------------------ |
+| `system_admin`   | User provisioning, facility mappings, system parameters, publish bundles |
+| `district_admin` | Food composition CRUD, seasonal calendar, audio uploads, DHIMS2 export   |
 
 ### Modules
 
 **Food Composition Manager**
+
 - Bulk CSV/Excel upload with validation
 - Visual table editor for in-place edits
 
 **Seasonal Matrix Scheduler**
+
 - Interactive grid: rows = foods, columns = months 1–12
 - Filter by agro-zone
 - Changes staged until admin publishes a new bundle
 
 **Voice Pack Audio Studio**
+
 - Upload `.mp3`/`.aac` audio files tagged with a phrase key
 - Preview playback in browser
 - Auto-packages into compressed ZIP bundle on publish
 
 **Clinical Rules Governance Console**
+
 - View current thresholds with WHO/GHS source citations
 - Propose update: fill new value + justification
 - Requires a second admin to sign off before the updated bundle is published
 - Full change log
 
 **Reference Bundle Publisher**
+
 - Shows current vs. staged changes across all reference tables
 - One-click publish: generates version tag (e.g., `v1.4-2026-08`), computes checksum
 - Makes available at `/reference/manifest`
 
 **DHIMS2 Export**
+
 - Select facility + reporting period → generate CHPS tally summary
 - Download as CSV or dispatch as DHIMS2-compatible payload
 
@@ -1094,42 +1167,42 @@ RBAC middleware → check role against route permission map
 
 ## 18. Non-Functional Targets
 
-| Metric | Target |
-|---|---|
-| Target device | Android 8+, ~2 GB RAM |
-| APK size | < 30 MB |
-| Voice packs | < 15 MB per language |
-| On-device storage cap | 250 MB total |
-| Recommendation generation | < 1 s on-device |
-| App cold start | < 3 s |
-| Priority list load | < 500 ms (from local SQLite) |
-| Client visit screen load | < 300 ms |
-| Voice note assembly | < 2 s |
-| Audio encoding | AAC-HE or Opus, 32 kbps mono |
-| Accessibility | Large tap targets (≥ 48 dp), sun-readable contrast, voice output |
+| Metric                    | Target                                                           |
+| ------------------------- | ---------------------------------------------------------------- |
+| Target device             | Android 8+, ~2 GB RAM                                            |
+| APK size                  | < 30 MB                                                          |
+| Voice packs               | < 15 MB per language                                             |
+| On-device storage cap     | 250 MB total                                                     |
+| Recommendation generation | < 1 s on-device                                                  |
+| App cold start            | < 3 s                                                            |
+| Priority list load        | < 500 ms (from local SQLite)                                     |
+| Client visit screen load  | < 300 ms                                                         |
+| Voice note assembly       | < 2 s                                                            |
+| Audio encoding            | AAC-HE or Opus, 32 kbps mono                                     |
+| Accessibility             | Large tap targets (≥ 48 dp), sun-readable contrast, voice output |
 
 Auto-clear synced audio cache when device storage drops below 10% free.
 
 ### Battery Awareness
 
-| Sync Type | Battery Condition |
-|---|---|
-| Emergency push (referral) | Always — lightweight JSON payload |
-| Standard push/pull | Any — small payload |
-| Reference bundle download | Battery > 30% OR charging |
-| Voice pack download | Battery > 30% OR charging + WiFi preferred |
+| Sync Type                 | Battery Condition                          |
+| ------------------------- | ------------------------------------------ |
+| Emergency push (referral) | Always — lightweight JSON payload          |
+| Standard push/pull        | Any — small payload                        |
+| Reference bundle download | Battery > 30% OR charging                  |
+| Voice pack download       | Battery > 30% OR charging + WiFi preferred |
 
 ---
 
 ## 19. Hackathon Timeline
 
-| Date | Milestone |
-|---|---|
-| 11 Aug 2026 | Application deadline |
-| Aug (virtual) | Pre-workshops (attend if possible) |
-| 26 Aug 2026 | Bootcamp Day 1 — Tamale: lock scope, offline register + visit capture |
-| 27 Aug 2026 | Bootcamp Day 2: recommendation engine, sync, voice note, explainable UI |
-| 28 Aug 2026 | Bootcamp Day 3: polish, demo path, pitch |
+| Date          | Milestone                                                               |
+| ------------- | ----------------------------------------------------------------------- |
+| 11 Aug 2026   | Application deadline                                                    |
+| Aug (virtual) | Pre-workshops (attend if possible)                                      |
+| 26 Aug 2026   | Bootcamp Day 1 — Tamale: lock scope, offline register + visit capture   |
+| 27 Aug 2026   | Bootcamp Day 2: recommendation engine, sync, voice note, explainable UI |
+| 28 Aug 2026   | Bootcamp Day 3: polish, demo path, pitch                                |
 
 **Before bootcamp:** scaffold repo, seed one pilot district's food + seasonal data (validated with a nutrition contact), record a handful of Dagbani audio phrases, convert prototype to RN screen skeleton.
 
@@ -1137,14 +1210,14 @@ Auto-clear synced audio cache when device storage drops below 10% free.
 
 ## 20. UNICEF Challenge Area Mapping
 
-| # | Challenge Area | NurtureLink | Depth |
-|---|---|---|---|
-| 1 | Predicting risk before crisis | Priority list ranked by each client's own visit trend (falling Hb, flat weight-for-age, low DDS, danger signs) | Touched (solid) |
-| 2 | Last-mile follow-up | Severe cases route to referral guardrail; post-referral tracking deferred to roadmap | Deferred (roadmap) |
-| 3 | Local-food nutrition intelligence | Core product: seasonal, affordable, locally available feeding plan matched to nutrient gap with longitudinal record | Core (deep) |
-| 4 | Voice-first caregiver support | Plan delivered as local-language voice note the caregiver keeps on any phone | Core (channel) |
-| 5 | Smarter CHPS workflows | Offline visit capture, auto-computed trends and flags, DHIMS2-compatible tally export | Touched (solid) |
-| 6 | Hidden barriers to care | Accounts for seasonal and affordability access barriers; socio-cultural barriers deferred | Lightly touched |
+| # | Challenge Area                    | NurtureLink                                                                                                         | Depth              |
+| - | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| 1 | Predicting risk before crisis     | Priority list ranked by each client's own visit trend (falling Hb, flat weight-for-age, low DDS, danger signs)      | Touched (solid)    |
+| 2 | Last-mile follow-up               | Severe cases route to referral guardrail; post-referral tracking deferred to roadmap                                | Deferred (roadmap) |
+| 3 | Local-food nutrition intelligence | Core product: seasonal, affordable, locally available feeding plan matched to nutrient gap with longitudinal record | Core (deep)        |
+| 4 | Voice-first caregiver support     | Plan delivered as local-language voice note the caregiver keeps on any phone                                        | Core (channel)     |
+| 5 | Smarter CHPS workflows            | Offline visit capture, auto-computed trends and flags, DHIMS2-compatible tally export                               | Touched (solid)    |
+| 6 | Hidden barriers to care           | Accounts for seasonal and affordability access barriers; socio-cultural barriers deferred                           | Lightly touched    |
 
 ### Pitch Framing
 

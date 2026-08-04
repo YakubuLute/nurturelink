@@ -24,6 +24,7 @@ import {
   ChevronLeft, TrendingUp, TrendingDown, Minus, Check, AlertTriangle,
   BarChart2, ClipboardList, ShieldCheck, ChevronRight, Link,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Client'>;
 
@@ -202,7 +203,7 @@ function TrendChart({
                 borderRadius: 4,
               }}
             />
-            <Text style={{ fontSize: 9, color: C.fg4, textAlign: 'center', marginTop: 4 }} numberOfLines={1}>
+            <Text style={{ fontSize: 9, fontFamily: fonts.regular, color: C.fg4, textAlign: 'center', marginTop: 4 }} numberOfLines={1}>
               {v.date.split(',')[0]}
             </Text>
           </View>
@@ -220,8 +221,8 @@ function DietDiversityCard({ lastVisit }: { lastVisit: DemoVisit }) {
   return (
     <View style={[styles.card, { marginBottom: 12 }]}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Diet diversity · last visit</Text>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: scoreColor }}>{score}/8 groups</Text>
+        <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>Diet diversity · last visit</Text>
+        <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: scoreColor }}>{score}/8 groups</Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 5, marginBottom: 10 }}>
         {FOOD_GROUPS.map((g) => {
@@ -243,7 +244,7 @@ function DietDiversityCard({ lastVisit }: { lastVisit: DemoVisit }) {
           );
         })}
       </View>
-      <Text style={{ fontSize: 11.5, color: met ? C.success : C.warning, fontWeight: '600' }}>
+      <Text style={{ fontSize: 12, fontFamily: fonts.semiBold, color: met ? C.success : C.warning, fontWeight: '600' }}>
         {met ? 'Minimum diet diversity \u2713 met' : 'Below minimum diet diversity'}
       </Text>
     </View>
@@ -341,7 +342,7 @@ export function ClientScreen({ navigation, route }: Props) {
         {/* Avatar row */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 14 }}>
           <View style={[styles.avatar, { backgroundColor: aStyle.bg }]}>
-            <Text style={{ color: aStyle.fg, fontSize: 18, fontWeight: '700' }}>{abbrev}</Text>
+            <Text style={{ color: aStyle.fg, fontSize: 18, fontFamily: fonts.bold, fontWeight: '700' }}>{abbrev}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.clientName}>{client.name}</Text>
@@ -360,7 +361,7 @@ export function ClientScreen({ navigation, route }: Props) {
         {isSupervisor && (
           <View style={[styles.card, { backgroundColor: C.lb50, borderColor: C.lb200, marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
             <ShieldCheck size={16} color={C.lb700} />
-            <Text style={{ fontSize: 13, color: C.lb700, fontWeight: '600', flex: 1 }}>
+            <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, color: C.lb700, fontWeight: '600', flex: 1 }}>
               Supervisor view — you can review records but not edit them.
             </Text>
           </View>
@@ -375,11 +376,11 @@ export function ClientScreen({ navigation, route }: Props) {
           >
             <Link size={16} color={C.fg3} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: C.fg3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 }}>
+              <Text style={{ fontSize: 12, fontFamily: fonts.semiBold, color: C.fg3, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 }}>
                 {isChild ? 'Linked mother' : 'Linked child'}
               </Text>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: C.fg1 }}>{linkedClient.name}</Text>
-              <Text style={{ fontSize: 12, color: C.fg3, marginTop: 1 }}>{linkedClient.community}</Text>
+              <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>{linkedClient.name}</Text>
+              <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, marginTop: 1 }}>{linkedClient.community}</Text>
             </View>
             <ChevronRight size={16} color={C.fg4} />
           </TouchableOpacity>
@@ -388,10 +389,10 @@ export function ClientScreen({ navigation, route }: Props) {
         {/* Referral banner */}
         {client.referred && referral && (
           <View style={[styles.card, { backgroundColor: C.errorBg, borderColor: C.errorBorder, marginBottom: 12 }]}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: C.error, marginBottom: 4 }}>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.error, marginBottom: 4 }}>
               Referral issued · {referral.facility}
             </Text>
-            <Text style={{ fontSize: 12.5, color: C.errorDark, marginBottom: referral.status === 'issued' ? 12 : 0 }}>
+            <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.errorDark, marginBottom: referral.status === 'issued' ? 12 : 0 }}>
               {referral.reason}
             </Text>
             {referral.status === 'issued' && (
@@ -399,7 +400,7 @@ export function ClientScreen({ navigation, route }: Props) {
                 style={{ backgroundColor: C.error, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14, alignSelf: 'flex-start' }}
                 onPress={() => confirmReferralSeen(clientId)}
               >
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Confirm client was seen</Text>
+                <Text style={{ color: '#fff', fontSize: 13, fontFamily: fonts.bold, fontWeight: '700' }}>Confirm client was seen</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -414,10 +415,10 @@ export function ClientScreen({ navigation, route }: Props) {
                 : <Check size={16} color={flagTextColor} />}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: flagTextColor, marginBottom: 3 }}>
+              <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: flagTextColor, marginBottom: 3 }}>
                 {client.flag}
               </Text>
-              <Text style={{ fontSize: 12.5, color: C.fg2, lineHeight: 18 }}>{client.flagDetail}</Text>
+              <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg2, lineHeight: 18 }}>{client.flagDetail}</Text>
             </View>
           </View>
         </View>
@@ -427,18 +428,18 @@ export function ClientScreen({ navigation, route }: Props) {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <BarChart2 size={14} color={C.fg3} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Why NurtureLink ranked this client</Text>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>Why NurtureLink ranked this client</Text>
             </View>
             <View style={{ backgroundColor: pStyle.bg, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: pStyle.color }}>{pStyle.label}</Text>
+              <Text style={{ fontSize: 11, fontFamily: fonts.bold, fontWeight: '700', color: pStyle.color }}>{pStyle.label}</Text>
             </View>
           </View>
           {rankSignals.map((s, i) => (
-            <Text key={i} style={{ fontSize: 12.5, color: C.fg2, marginBottom: 4 }}>
+            <Text key={i} style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg2, marginBottom: 4 }}>
               {'● '}{s}
             </Text>
           ))}
-          <Text style={{ fontSize: 11, color: C.fg4, marginTop: 8, lineHeight: 16 }}>
+          <Text style={{ fontSize: 11, fontFamily: fonts.regular, color: C.fg4, marginTop: 8, lineHeight: 16 }}>
             Explainable flag from this client's own visits — you decide who to counsel.
           </Text>
         </View>
@@ -447,11 +448,11 @@ export function ClientScreen({ navigation, route }: Props) {
         <View style={[styles.card, { marginBottom: 12 }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
             <View>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>{label}</Text>
-              <Text style={{ fontSize: 11, color: C.fg3 }}>across {visits.length} visits</Text>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>{label}</Text>
+              <Text style={{ fontSize: 11, fontFamily: fonts.regular, color: C.fg3 }}>across {visits.length} visits</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 26, fontWeight: '700', color: C.fg1, lineHeight: 30 }}>{currentValue}</Text>
+              <Text style={{ fontSize: 26, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1, lineHeight: 30 }}>{currentValue}</Text>
               {trendDelta ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                   {client.trendArrow === 'up'
@@ -459,12 +460,12 @@ export function ClientScreen({ navigation, route }: Props) {
                     : client.trendArrow === 'down'
                     ? <TrendingDown size={13} color={client.trendColor} />
                     : <Minus size={13} color={client.trendColor} />}
-                  <Text style={{ fontSize: 13, color: client.trendColor, fontWeight: '600' }}>{trendDelta}</Text>
+                  <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, color: client.trendColor, fontWeight: '600' }}>{trendDelta}</Text>
                 </View>
               ) : null}
             </View>
           </View>
-          <Text style={{ fontSize: 11.5, color: client.trendColor, fontWeight: '500', marginBottom: 10 }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.medium, color: client.trendColor, fontWeight: '500', marginBottom: 10 }}>
             {client.trendNote}
           </Text>
           {visits.length > 0 && (
@@ -486,8 +487,8 @@ export function ClientScreen({ navigation, route }: Props) {
               <ShieldCheck size={18} color={C.lb700} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Immunization record</Text>
-              <Text style={{ fontSize: 12, color: C.fg3, marginTop: 2 }}>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>Immunization record</Text>
+              <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, marginTop: 2 }}>
                 {vaccinationCount}/{TOTAL_VACCINES} vaccines recorded · Ghana EPI
               </Text>
             </View>
@@ -500,8 +501,8 @@ export function ClientScreen({ navigation, route }: Props) {
         {visits.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 36 }}>
             <ClipboardList size={32} color={C.fg4} style={{ marginBottom: 12 }} />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg2, marginBottom: 6 }}>No visits yet</Text>
-            <Text style={{ fontSize: 13, color: C.fg3, textAlign: 'center', lineHeight: 20 }}>
+            <Text style={{ fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: C.fg2, marginBottom: 6 }}>No visits yet</Text>
+            <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg3, textAlign: 'center', lineHeight: 20 }}>
               Record a visit to start tracking nutrition trends for this client.
             </Text>
           </View>
@@ -514,15 +515,15 @@ export function ClientScreen({ navigation, route }: Props) {
                 key={i}
                 style={[styles.visitRow, { borderColor: isLast ? C.borderStrong : C.border }]}
               >
-                <View style={{ width: 9, height: 9, borderRadius: 4.5, backgroundColor: client.trendColor, marginTop: 3 }} />
+                <View style={{ width: 9, height: 9, borderRadius: 4, backgroundColor: client.trendColor, marginTop: 3 }} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.fg1 }}>{v.date}</Text>
-                  <Text style={{ fontSize: 11.5, color: C.fg3, marginTop: 2 }}>
+                  <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>{v.date}</Text>
+                  <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, marginTop: 2 }}>
                     {`Wt: ${v.weight.toFixed(1)} kg · Hb: ${v.hb !== null ? v.hb.toFixed(1) + ' g/dL' : '—'} · MUAC: ${v.muac} mm`}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: C.fg1 }}>
+                  <Text style={{ fontSize: 15, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>
                     {formatMetric(client.metric, metricVal)}
                   </Text>
                   <View style={{
@@ -533,7 +534,7 @@ export function ClientScreen({ navigation, route }: Props) {
                   }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                       {v.synced && <Check size={10} color={C.success} strokeWidth={3} />}
-                      <Text style={{ fontSize: 10.5, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
+                      <Text style={{ fontSize: 11, fontFamily: fonts.semiBold, fontWeight: '600', color: v.synced ? C.success : C.warning }}>
                         {v.synced ? 'Synced' : 'Draft — offline'}
                       </Text>
                     </View>
@@ -553,7 +554,7 @@ export function ClientScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate('Visit', { clientId })}
             accessibilityLabel="Record visit"
           >
-            <Text style={{ fontSize: 14, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: C.primary }}>+ Record visit</Text>
           </TouchableOpacity>
         )}
 
@@ -566,7 +567,7 @@ export function ClientScreen({ navigation, route }: Props) {
             onPress={handlePlanPress}
             accessibilityLabel={client.severe ? 'Referral required' : 'View plan'}
           >
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>
+            <Text style={{ fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#fff' }}>
               {client.severe ? 'Referral required' : visits.length > 0 ? 'View plan' : 'Generate plan'}
             </Text>
           </TouchableOpacity>
@@ -591,6 +592,7 @@ const styles = StyleSheet.create({
   },
   headerLabel: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#8D9CA5',
     marginTop: 2,
   },
@@ -603,16 +605,19 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: 20,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#fff',
   },
   clientSub: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: C.lb300,
     marginTop: 2,
   },
   clientId: {
     fontSize: 11,
+    fontFamily: fonts.regular,
     color: 'rgba(180,218,251,0.65)',
     marginTop: 3,
     fontVariant: ['tabular-nums'],
@@ -628,6 +633,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 13,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg3,
     textTransform: 'uppercase',

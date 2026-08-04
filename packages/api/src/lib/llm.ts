@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001';
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001';
+
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL ?? 'deepseek-chat';
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 
 export interface ScriptInput {
   clientType: 'pregnant' | 'child';
@@ -24,19 +28,61 @@ export interface ScriptOutput {
  * - Output is validated before use (see validateScript).
  * - On validation failure, caller must fall back to the templated script.
  * - No PII is included in the input.
+ *
+ * FALLBACK ORDER: Claude (primary) → DeepSeek (if DEEPSEEK_API_KEY is set)
  */
 export async function generateCounsellingScript(input: ScriptInput): Promise<ScriptOutput> {
   const prompt = buildPrompt(input);
 
-  const message = await client.messages.create({
-    model: MODEL,
+  try {
+    return await callClaude(prompt, input);
+  } catch (claudeErr) {
+    if (!DEEPSEEK_API_KEY) {
+      throw claudeErr;
+    }
+    console.warn('[LLM] Claude failed — falling back to DeepSeek:', (claudeErr as Error).message);
+  }
+
+  return await callDeepSeek(prompt, input);
+}
+
+async function callClaude(prompt: string, input: ScriptInput): Promise<ScriptOutput> {
+  const message = await anthropic.messages.create({
+    model: CLAUDE_MODEL,
     max_tokens: 512,
     messages: [{ role: 'user', content: prompt }],
   });
 
   const text = message.content[0].type === 'text' ? message.content[0].text : '';
   const parsed = JSON.parse(text) as ScriptOutput;
+  validateScript(parsed, input);
+  return parsed;
+}
 
+async function callDeepSeek(prompt: string, input: ScriptInput): Promise<ScriptOutput> {
+  const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      max_tokens: 512,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`DeepSeek API error: ${res.status} ${res.statusText}`);
+  }
+
+  const data = await res.json() as {
+    choices: Array<{ message: { content: string } }>;
+  };
+
+  const text = data.choices[0]?.message?.content ?? '';
+  const parsed = JSON.parse(text) as ScriptOutput;
   validateScript(parsed, input);
   return parsed;
 }

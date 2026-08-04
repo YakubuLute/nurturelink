@@ -122,5 +122,19 @@ export const shadows = {
   },
 };
 
+// Typography — Inter primary, Open Sans fallback
+// Use these constants with fontFamily in StyleSheet to render Inter.
+// If Inter fails to load (offline install, first launch), the OS falls back to its system sans-serif.
+export const fonts = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semiBold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+  // Open Sans — loaded as fallback; use when Inter weight doesn't map cleanly
+  fallbackRegular: 'OpenSans_400Regular',
+  fallbackSemiBold: 'OpenSans_600SemiBold',
+  fallbackBold: 'OpenSans_700Bold',
+};
+
 // Minimum tap target — 48dp per WCAG
 export const TAP_TARGET = 48;

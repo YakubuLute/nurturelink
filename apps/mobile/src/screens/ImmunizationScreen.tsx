@@ -17,6 +17,7 @@ import { useAppStore, VaccineRecord } from '../store';
 import {
   ChevronLeft, Check, AlertTriangle, ShieldCheck, CalendarDays, ChevronDown,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Immunization'>;
 
@@ -298,10 +299,10 @@ const vr = StyleSheet.create({
     paddingVertical: 13,
   },
   dot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  label: { fontSize: 13.5, color: C.fg2, fontWeight: '400' },
-  givenDate: { fontSize: 11.5, color: C.success, marginTop: 2 },
+  label: { fontSize: 14, fontFamily: fonts.regular, color: C.fg2, fontWeight: '400' },
+  givenDate: { fontSize: 12, fontFamily: fonts.regular, color: C.success, marginTop: 2 },
   aefiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  aefiLabel: { fontSize: 11, color: C.warning, fontWeight: '600' },
+  aefiLabel: { fontSize: 11, fontFamily: fonts.semiBold, color: C.warning, fontWeight: '600' },
   form: {
     borderTopWidth: 1,
     borderTopColor: C.border,
@@ -310,6 +311,7 @@ const vr = StyleSheet.create({
   },
   formLabel: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg3,
     textTransform: 'uppercase',
@@ -327,7 +329,7 @@ const vr = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 12,
   },
-  dateBtnText: { fontSize: 14, color: C.fg1, flex: 1 },
+  dateBtnText: { fontSize: 14, fontFamily: fonts.regular, color: C.fg1, flex: 1 },
   textInput: {
     backgroundColor: C.surface,
     borderWidth: 1,
@@ -336,6 +338,7 @@ const vr = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: C.fg1,
     height: 44,
   },
@@ -351,7 +354,7 @@ const vr = StyleSheet.create({
   sevMild: { backgroundColor: C.successBg, borderColor: C.successBorder },
   sevMod:  { backgroundColor: C.warningBg, borderColor: C.warningBorder },
   sevSev:  { backgroundColor: C.errorBg,   borderColor: C.errorBorder },
-  sevText: { fontSize: 12.5, color: C.fg2, fontWeight: '500' },
+  sevText: { fontSize: 13, fontFamily: fonts.medium, color: C.fg2, fontWeight: '500' },
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -363,7 +366,7 @@ const vr = StyleSheet.create({
     paddingVertical: 12,
   },
   saveBtnDisabled: { backgroundColor: '#B2BCC2' },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  saveBtnText: { fontSize: 14, fontFamily: fonts.bold, fontWeight: '700', color: '#fff' },
 });
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -377,7 +380,7 @@ export function ImmunizationScreen({ navigation, route }: Props) {
   if (!client) {
     return (
       <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: C.fg3 }}>Client not found.</Text>
+        <Text style={{ fontSize: 14, fontFamily: fonts.regular, color: C.fg3 }}>Client not found.</Text>
       </View>
     );
   }
@@ -418,13 +421,13 @@ export function ImmunizationScreen({ navigation, route }: Props) {
         {/* Progress card */}
         <View style={styles.progressCard}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>Ghana EPI schedule</Text>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: pctColor }}>{pct}% complete</Text>
+            <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>Ghana EPI schedule</Text>
+            <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: pctColor }}>{pct}% complete</Text>
           </View>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: pctColor }]} />
           </View>
-          <Text style={{ fontSize: 11.5, color: C.fg3, marginTop: 6 }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.regular, color: C.fg3, marginTop: 6 }}>
             {givenCount} of {TOTAL_VACCINES} doses recorded · tap any row to record
           </Text>
         </View>
@@ -449,7 +452,7 @@ export function ImmunizationScreen({ navigation, route }: Props) {
           <View style={styles.aefiCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 12 }}>
               <AlertTriangle size={14} color={C.warning} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.fg1 }}>
+              <Text style={{ fontSize: 13, fontFamily: fonts.bold, fontWeight: '700', color: C.fg1 }}>
                 Adverse events recorded (AEFI)
               </Text>
             </View>
@@ -457,10 +460,10 @@ export function ImmunizationScreen({ navigation, route }: Props) {
               const vax = allVaccines.find((v) => v.id === r.vaccineId);
               return (
                 <View key={r.vaccineId} style={styles.aefiRow}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: C.fg1, marginBottom: 3 }}>
+                  <Text style={{ fontSize: 13, fontFamily: fonts.semiBold, fontWeight: '600', color: C.fg1, marginBottom: 3 }}>
                     {vax?.label ?? r.vaccineId}
                   </Text>
-                  <Text style={{ fontSize: 12.5, color: C.fg2 }}>{r.aefi}</Text>
+                  <Text style={{ fontSize: 13, fontFamily: fonts.regular, color: C.fg2 }}>{r.aefi}</Text>
                   {r.aefiSeverity && (
                     <View style={[
                       styles.sevPill,
@@ -498,14 +501,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   backBtn: { width: 36, height: 36, justifyContent: 'center' },
-  headerLabel: { fontSize: 13, color: '#8D9CA5', marginTop: 2 },
+  headerLabel: { fontSize: 13, fontFamily: fonts.regular, color: '#8D9CA5', marginTop: 2 },
   iconBox: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(180,218,251,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  clientName: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  clientSub:  { fontSize: 12, color: '#92C9F9', marginTop: 2 },
+  clientName: { fontSize: 18, fontFamily: fonts.bold, fontWeight: '700', color: '#fff' },
+  clientSub:  { fontSize: 12, fontFamily: fonts.regular, color: '#92C9F9', marginTop: 2 },
 
   scroll:  { flex: 1, backgroundColor: C.bg, borderTopLeftRadius: 16, borderTopRightRadius: 16, marginTop: -8 },
   content: { padding: 16, paddingBottom: 40 },
@@ -523,6 +526,7 @@ const styles = StyleSheet.create({
 
   groupHeading: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: C.fg4,
     textTransform: 'uppercase',
@@ -557,5 +561,5 @@ const styles = StyleSheet.create({
   sevMild: { backgroundColor: C.successBg },
   sevMod:  { backgroundColor: C.warningBg },
   sevSev:  { backgroundColor: C.errorBg },
-  sevPillText: { fontSize: 11, fontWeight: '700' },
+  sevPillText: { fontSize: 11, fontFamily: fonts.bold, fontWeight: '700' },
 });

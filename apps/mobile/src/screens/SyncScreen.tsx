@@ -27,6 +27,7 @@ import {
   XCircle,
   CloudUpload,
 } from 'lucide-react-native';
+import { fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Sync'>;
 
@@ -311,6 +312,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 16,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -331,6 +333,7 @@ const styles = StyleSheet.create({
   },
   connText: {
     fontSize: 12,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
   },
   connTextOnline: {
@@ -349,6 +352,7 @@ const styles = StyleSheet.create({
 
   sectionLabel: {
     fontSize: 11,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#6B7280',
     letterSpacing: 0.7,
@@ -381,12 +385,14 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     fontSize: 14,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#08283B',
     marginBottom: 2,
   },
   rowDesc: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#6B7280',
     lineHeight: 17,
   },
@@ -407,7 +413,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   dataLabel: {
-    fontSize: 13.5,
+    fontSize: 14,
+    fontFamily: fonts.medium,
     color: '#374151',
     fontWeight: '500',
   },
@@ -427,6 +434,7 @@ const styles = StyleSheet.create({
   },
   countText: {
     fontSize: 12,
+    fontFamily: fonts.bold,
     fontWeight: '700',
   },
   countTextPending: {
@@ -451,12 +459,14 @@ const styles = StyleSheet.create({
   },
   resultTextSuccess: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#065F46',
     flex: 1,
   },
   resultTextError: {
     fontSize: 13,
+    fontFamily: fonts.semiBold,
     fontWeight: '600',
     color: '#DC2626',
     flex: 1,
@@ -477,18 +487,21 @@ const styles = StyleSheet.create({
   },
   syncBtnText: {
     fontSize: 15,
+    fontFamily: fonts.bold,
     fontWeight: '700',
     color: '#FDFDFD',
   },
   offlineHint: {
     fontSize: 12,
+    fontFamily: fonts.regular,
     color: '#9CA3AF',
     textAlign: 'center',
     marginBottom: 20,
   },
 
   infoText: {
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: fonts.regular,
     color: '#6B7280',
     lineHeight: 18,
     paddingVertical: 12,
