@@ -1,9 +1,9 @@
 # NurtureLink
 
-An offline-first nutrition decision-support app for CHPS Community Health Officers (CHOs) in rural Northern Ghana. Tracks longitudinal client nutrition trends and generates seasonally appropriate, affordable, local-language feeding plans.
+An offline-first nutrition tool that helps CHPS Community Health Officers in rural Northern Ghana turn the visit data they already collect into affordable, in-season feeding guidance a caregiver can actually act on, delivered in local language. It supports the health worker's judgement rather than replacing it.
 
 Built for the **UNICEF AI for Nurturing Care Hackathon** (KOICA / MEST StartUp Lab).
-Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
+Bootcamp: 26–28 August 2026, Tamale.
 
 > **Status — working offline-first MVP.** The recommendation engine, encrypted on-device storage (SQLCipher), outbox sync, the severe-case referral guardrail, and 50+ passing engine tests are implemented and runnable against a seeded pilot district. Voice audio playback, the longitudinal trend chart, and the DHIMS2 export are in progress for the 26–28 August bootcamp.
 
@@ -59,17 +59,16 @@ Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
 
 ## 1. Why This Exists
 
-In Northern Ghana, roughly a third of children aged 6–23 months are stunted and fewer than 4 in 10 receive a minimum acceptable diet (GDHS 2022: 26.4% nationally). Children eating fewer than 4 food groups are nearly 4× more likely to be wasted. The Northern Region reported 100 institutional maternal deaths in 2023 (ratio: 136.7 per 100,000 live births) against the national SDG 3.1 target of < 70 per 100,000 by 2030. In Savannah Region, 91.8% of neonatal deaths occurred in the first seven days of life (DHIMS-2, 2018–2022) — the window that matters most. Food insecurity in Upper East Region stands at 73.7%, the highest of the five northern regions (GDHS 2022).
+In Northern Ghana, roughly a third of children aged 6–23 months are stunted, and nationally only 26.4% of children 6–23 months receive a minimum acceptable diet (GDHS 2022), lower still in the northern regions. Children eating fewer than 4 food groups are nearly 4× more likely to be wasted. The Northern Region reported 100 institutional maternal deaths in 2023 (ratio: 136.7 per 100,000 live births) against the national SDG 3.1 target of < 70 per 100,000 by 2030, with maternal anaemia a leading and largely nutritional driver. Food insecurity in Upper East Region stands at 73.7%, the highest of the five northern regions (GDHS 2022).
 
 The health worker currently has no tool for two critical tasks:
 
 1. Seeing how a client's nutrition is trending across visits (not just point-in-time readings).
 2. Knowing which specific foods to recommend that are nutritious, in season, affordable, and locally available today.
 
-Generic advice ("eat more greens") fails because the right foods change by season and these are poor households who cannot act on a list of foods they cannot find or afford.
+Generic advice ("eat more greens") fails because the right foods change by season and these are poor households who cannot act on a list of foods they cannot find or afford. This framing was confirmed with a practising Community Health Officer, whose counselling protocol organises everything around the same food-group diversity rule the engine uses.
 
-NurtureLink adds **no new measurements**. It makes the data the CHO already collects actionable.
-
+NurtureLink adds no new measurements. It makes the data the CHO already collects actionable
 ---
 
 ## 2. Tech Stack
