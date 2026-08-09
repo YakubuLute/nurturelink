@@ -28,7 +28,7 @@ Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
 | ![Sync](docs/screenshots/data-sync.PNG) | ![Offline](docs/screenshots/offline-user.PNG) | ![Profile](docs/screenshots/profile-and-device.PNG) |
 | **Data sync** | **Offline mode** | **Profile & device info** |
 
-> Screenshots captured on iPhone 11 (portrait).
+> Screenshots captured in development on iOS; production target is Android 8+, ~2 GB RAM (the actual CHO device).
 
 ---
 
@@ -59,7 +59,7 @@ Bootcamp: 26–28 August 2026, Tamale. Application deadline: 11 August 2026.
 
 ## 1. Why This Exists
 
-In Northern Ghana, roughly a third of children aged 6–23 months are stunted and fewer than 4 in 10 receive a minimum acceptable diet. Children eating fewer than 4 food groups are nearly 4× more likely to be wasted. The Northern Region reported 100 institutional maternal deaths in 2023 (ratio: 136.7 per 100,000 live births) against the national SDG 3.1 target of < 70 per 100,000 by 2030.
+In Northern Ghana, roughly a third of children aged 6–23 months are stunted and fewer than 4 in 10 receive a minimum acceptable diet (GDHS 2022: 26.4% nationally). Children eating fewer than 4 food groups are nearly 4× more likely to be wasted. The Northern Region reported 100 institutional maternal deaths in 2023 (ratio: 136.7 per 100,000 live births) against the national SDG 3.1 target of < 70 per 100,000 by 2030. In Savannah Region, 91.8% of neonatal deaths occurred in the first seven days of life (DHIMS-2, 2018–2022) — the window that matters most. Food insecurity in Upper East Region stands at 73.7%, the highest of the five northern regions (GDHS 2022).
 
 The health worker currently has no tool for two critical tasks:
 

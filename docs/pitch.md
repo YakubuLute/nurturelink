@@ -10,14 +10,14 @@
 
 ## 1. The Problem
 
-In Northern Ghana, **1 in 3 children under 5 is stunted**. Fewer than 4 in 10 receive a minimum acceptable diet. Children eating fewer than 4 food groups are **nearly 4× more likely to be wasted** (peer-reviewed northern-Ghana IYCF studies). The Northern Region reported **100 institutional maternal deaths in 2023** — a ratio of 136.7 per 100,000 live births, well above the SDG 3.1 target of < 70.
+In Northern Ghana, **1 in 3 children under 5 is stunted**. Fewer than 4 in 10 receive a minimum acceptable diet (GDHS 2022: 26.4% nationally). Children eating fewer than 4 food groups are **nearly 4× more likely to be wasted**. In Savannah Region, **91.8% of neonatal deaths occurred in the first 7 days of life** (DHIMS-2, 2018–2022) — a window so tight that any tool arriving at the six-week postnatal visit is already too late. Food insecurity stands at **73.7% in Upper East Region**, the highest of the five northern regions. The Northern Region reported **100 institutional maternal deaths in 2023** — a ratio of 136.7 per 100,000 live births, well above the SDG 3.1 target of < 70.
 
 Community Health Officers (CHOs) at CHPS compounds are the last-mile workers visiting 10–25 households per day. They have **no tool** for two critical tasks:
 
 1. Seeing how a client's nutrition is **trending** across visits — not just today's isolated reading.
 2. Knowing which **specific foods to recommend** that are nutritious, in season, affordable, and actually available in that community this month.
 
-Generic advice ("eat more greens") fails poor households who cannot act on a list of foods they cannot find or afford.
+A field conversation with a working CHPS CHO (August 2026) confirmed the gap directly: they already use a 4+ food-group framework — staples, protein, fruits and vegetables, fats/oils — but must apply it from memory, generically, with no way to know which of those foods are abundant in that district *this month*, or whether *this particular client's* trend is improving or worsening. Generic advice ("eat more greens") fails poor households who cannot act on a list of foods they cannot find or afford.
 
 > *NurtureLink adds no new measurements. It makes the data the CHO already collects actionable.*
 
@@ -50,7 +50,9 @@ For a flagged client, the app generates a feeding plan using foods that are in s
 
 ### Responsible AI design
 
-The LLM (Claude Haiku) **never makes clinical decisions**. It only rephrases a deterministically generated plan into natural spoken language. If the LLM is unavailable, a template fallback produces the same output. **Severe cases bypass AI entirely and route to referral.** No client PII is sent to the LLM.
+The **CHO always makes the final decision** — the app surfaces evidence and a suggested plan; the worker confirms before the caregiver hears anything. The LLM (Claude Haiku) **never makes clinical decisions**. It only rephrases a deterministically generated plan into natural spoken language. If the LLM is unavailable, a template fallback produces the same output. **Severe cases bypass AI entirely and route to referral.** No client PII is sent to the LLM. Clinical thresholds are stored in versioned reference data, not hard-coded, so district nutrition officers can update guidance without a code release. Client data is governed by **Ghana's Data Protection Act, 2012 (Act 843)** — only data the CHO already records on paper is collected, purpose is limited to nutrition decision support, and consent is captured at registration.
+
+A complete visit record takes **under 60 seconds of input**. The priority list and feeding plan are returned instantly from on-device data. The app subtracts planning work from the CHO's round; it adds none.
 
 ---
 
